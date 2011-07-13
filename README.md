@@ -1,5 +1,5 @@
-= HaskellerZ Scratchpad
-
+HaskellerZ Scratchpad
+=====================
 
 For now, we just use a chronological directory structure to store the notes,
 slides, code from our HaskellerZ meetups. Once we have some more material, we
