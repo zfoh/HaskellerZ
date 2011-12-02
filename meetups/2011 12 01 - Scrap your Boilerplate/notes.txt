@@ -1,0 +1,4 @@
+== notes
+
+ * [Language.C](http://hackage.haskell.org/package/language-c)
+ * [Scrap you Boilerplate](http://research.microsoft.com/en-us/um/people/simonpj/papers/hmap/)
