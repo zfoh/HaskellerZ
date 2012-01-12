@@ -176,14 +176,40 @@ Blog entry: E. Z. Yang
 
 Solves problem of slow append.
 
-~~~
+\begin{code}
+import qualified Data.DList as DL
 
 data Tree a = Leaf | Node a (Tree a) (Tree a)
 
-preorder :: Tree a -> [a]
-preorder Leaf         = []
-preorder (Node x l r) = x ++ (preorder l ++ preorder r)
+inorder :: Tree a -> [a]
+inorder Leaf         = []
+inorder (Node x l r) = inorder l ++ [x] ++ inorder r
 
+
+inorder' :: Tree a -> [a]
+inorder' t = 
+    go t []
+  where
+    go Leaf         rest = rest
+    go (Node x l r) rest = go l (x : go r rest)
+
+inorder'' :: Tree a -> [a]
+inorder'' =
+    DL.fromList . go
+  where
+    go Leaf         = []
+    go (Node x l r) = go l `mappend` DL.singleton x `mappend` go r
+
+fullTree n
+  | n <= 0    = Leaf
+  | otherwise = Node n t' t'
+  where
+    t' = fullTree (n - 1)
+
+
+\end{code}
+
+TODO: Check whether GHCi benchmark suffices.
 
 ~~~
 
