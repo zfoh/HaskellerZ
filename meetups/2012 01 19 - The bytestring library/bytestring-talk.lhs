@@ -1,12 +1,12 @@
-# A guided tour through the new bytestring library
+= A guided tour through the new bytestring library
 
-# The purpose of the library #
+= The purpose of the library #
 
 Provide datastructures for *efficiently* (both in time and space) computing
 with (possibly infinite) sequences of bytes.
 
 
-# Why not `[Word8]`?
+= Why not `[Word8]`?
 
 - Too many indirections: lots of pointer chasing, cache misses
 - Too much space overhead (5 words for one byte): 
@@ -27,10 +27,9 @@ represents one word.
          +------------+---+            +------------+---+
 ~~~
 
-Let us have a look using vacuum-cairo.
 
 
-# Datastructures supported by the bytestring library #
+= Datastructures supported by the bytestring library #
 
 - Strict bytestrings
 
@@ -40,7 +39,7 @@ Let us have a look using vacuum-cairo.
 
 (http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects)
 
-# Strict ByteStrings
+= Strict ByteStrings
 
 ~~~
 
@@ -63,7 +62,7 @@ data ForeignPtrContents
 
 ~~~
 
-# Slicing 1
+= Slicing 1
 
 ~~~
 take :: Int -> ByteString -> ByteString
@@ -74,7 +73,7 @@ take n ps@(PS x s l)
 {-# INLINE take #-}
 ~~~
 
-# Slicing 2
+= Slicing 2
 
 ~~~
 dropWhile :: (Word8 -> Bool) -> ByteString -> ByteString
@@ -105,7 +104,7 @@ inlinePerformIO (IO m) = case m realWorld# of (# _, r #) -> r
 ~~~
 
 
-# Creating strict bytestrings
+= Creating strict bytestrings
 
 ~~~
 -- | /O(1)/ The empty 'ByteString'
@@ -142,7 +141,7 @@ append (PS fp1 off1 len1) (PS fp2 off2 len2) =
       withForeignPtr fp2 $ \p2 -> memcpy destptr2 (p2 `plusPtr` off2) len2
 ~~~
 
-# Strict ByteStrings Summary
+= Strict ByteStrings Summary
 
 ~~~~
 
@@ -160,7 +159,7 @@ Cons
 ~~~~
 
 
-# Lazy ByteStrings
+= Lazy ByteStrings
 
 ~~~
 data ByteString = 
@@ -169,22 +168,41 @@ data ByteString =
 
 ~~~
 
-# Interlude: Difference Lists
+= Interlude: Difference Lists 1/2
 
-See package `dlist`.
-Blog entry: E. Z. Yang
 
-Solves problem of slow append.
+Difference lists allow an O(1) append (at the cost of a loss of sharing).
+
+  - See package `dlist`.
+  - Blog entry: E. Z. Yang
+
+Enable strictness annotations.
+
+> {-# LANGUAGE BangPatterns #-}
+
+A bunch of imports for later use.
 
 \begin{code}
-import qualified Data.DList as DL
+import Data.Monoid (Monoid(..))
+import Criterion.Main (defaultMain, nf, bgroup, bench)
+\end{code}
 
+== A canonical example: in-order traversal of trees ==
+
+\begin{code}
 data Tree a = Leaf | Node a (Tree a) (Tree a)
+    deriving( Eq, Ord, Show )
+
+fullTree :: Int -> Tree Int
+fullTree n
+  | n <= 0    = Leaf
+  | otherwise = Node n t' t'
+  where
+    t' = fullTree (n - 1)
 
 inorder :: Tree a -> [a]
 inorder Leaf         = []
 inorder (Node x l r) = inorder l ++ [x] ++ inorder r
-
 
 inorder' :: Tree a -> [a]
 inorder' t = 
@@ -193,27 +211,72 @@ inorder' t =
     go Leaf         rest = rest
     go (Node x l r) rest = go l (x : go r rest)
 
-inorder'' :: Tree a -> [a]
-inorder'' =
-    DL.fromList . go
-  where
-    go Leaf         = []
-    go (Node x l r) = go l `mappend` DL.singleton x `mappend` go r
-
-fullTree n
-  | n <= 0    = Leaf
-  | otherwise = Node n t' t'
-  where
-    t' = fullTree (n - 1)
-
-
 \end{code}
 
-TODO: Check whether GHCi benchmark suffices.
+
+= Difference Lists: 
+
+\begin{code}
+newtype DList a = DList { runDList :: [a] -> [a] }
+
+singleton :: a -> DList a
+singleton x = DList (x:)
+
+toList :: DList a -> [a]
+toList dl = runDList dl []
+
+instance Monoid (DList a) where
+   mempty            = DList id
+   dl1 `mappend` dl2 = DList (runDList dl1 . runDList dl2)
+
+(<>) :: Monoid m => m -> m -> m
+(<>) = mappend
+
+inorderDL :: Tree a -> [a]
+inorderDL =
+    toList . go
+  where
+    go Leaf         = mempty
+    go (Node x l r) = go l <> singleton x <> go r
+
+main :: IO ()
+main = defaultMain $ 
+  [ bgroup "inorder" $ concatMap (\mkBench -> map mkBench depths) $
+    [ \n -> bench ("inorder"   ++ show n) $ nf inorder   $ (fullTree n) 
+    , \n -> bench ("inorder'"  ++ show n) $ nf inorder'  $ (fullTree n) 
+    , \n -> bench ("inorderDL" ++ show n) $ nf inorderDL $ (fullTree n) 
+    ]
+  , bgroup "size" $ concatMap (\mkBench -> map mkBench depths) $
+      [ \n -> bench ("size"      ++ show n) $ nf size      $ (fullTree n) 
+      , \n -> bench ("size'"     ++ show n) $ nf size'     $ (fullTree n) 
+      ]
+  ]
+  where
+    depths = [10..13]
+\end{code}
+
+== Side note: removing lazyness ==
+
+Note that a similar transform also speeds up the size computionat of `Tree`s.
+However, here we "only" get a constant factor. It is due to the removed
+unnecessary lazyness.
+
+\begin{code}
+size :: Tree a -> Int
+size Leaf         = 0
+size (Node _ l r) = 1 + size l + size r
+
+size' :: Tree a -> Int
+size' t0 = 
+    go t0 0
+  where
+    go Leaf         !s = s
+    go (Node _ l r) !s = go l (go r (s + 1))
+\end{code}
 
 ~~~
 
-# Lazy ByteString Difference List
+= Lazy ByteString Difference List
 
 ~~~
 import qualified Data.ByteString.Lazy as L
@@ -226,7 +289,7 @@ instance Monoid LazyByteStringC where
 
 ~~~
 
-# Lazy ByteString Builder
+= Lazy ByteString Builder
 
 ~~~
 data BufferRange = BufferRange 
