@@ -1,12 +1,15 @@
-= A guided tour through the new bytestring library
+A guided tour through the bytestring library
+============================================
 
-= The purpose of the library #
+The purpose of the library
+--------------------------
 
 Provide datastructures for *efficiently* (both in time and space) computing
 with (possibly infinite) sequences of bytes.
 
 
-= Why not `[Word8]`?
+Why not `[Word8]`?
+------------------
 
 - Too many indirections: lots of pointer chasing, cache misses
 - Too much space overhead (5 words for one byte): 
@@ -15,7 +18,7 @@ with (possibly infinite) sequences of bytes.
 
 The representation of `[1,2] :: [Word8]` illustrates that nicely. Each box
 represents one word.
-~~~
+~~~~
   +---------+-----+-----+       +---------+-----+-----+       +--------+
   | (:)-Tag | Ptr | Ptr | ----> | (:)-Tag | Ptr | Ptr | ----> | []-Tag |
   +---------+-----+-----+       +---------+-----+-----+       +--------+
@@ -25,11 +28,12 @@ represents one word.
          +------------+---+            +------------+---+
          | Word8#-Tag | 1 |            | Word8#-Tag | 2 |
          +------------+---+            +------------+---+
-~~~
+~~~~
 
 
 
-= Datastructures supported by the bytestring library #
+Datastructures supported by the bytestring library
+--------------------------------------------------
 
 - Strict bytestrings
 
