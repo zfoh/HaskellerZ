@@ -2,58 +2,94 @@
 % Simon Meier
 % January 19th, 2012
 
-The purpose of the library
-==========================
+Purpose of the bytestring library
+=================================
 
-Provide datastructures for *efficiently* (both in time and space) computing
-with (possibly infinite) sequences of bytes.
+Provide datastructures for computing *efficiently*, both in time and space,
+with (finite) sequences and (infinite) streams of bytes.
 
 
 Why not `[Word8]`?
-==========================
+==================
 
 - Too many indirections: lots of pointer chasing, cache misses
-- Too much space overhead (5 words for one byte): 
-    * factor 19 on 32-bit systems
-    * factor 39 on 64-bit systems
+- Too much space overhead (5 machine words for one byte): 
+    * i.e., a factor 19 overhead on 32-bit systems
+    * i.e., a factor 39 overhead on 64-bit systems
 
-The representation of `[1,2] :: [Word8]` illustrates that nicely. Each box
-represents one machine word.
+See below for the actual manual representation of `[1,2] :: [Word8]`.
+Each box represents one machine word.
 
 ~~~
-  +---------+-----+-----+       +---------+-----+-----+       +--------+
-  | (:)-Tag | Ptr | Ptr | ----> | (:)-Tag | Ptr | Ptr | ----> | []-Tag |
-  +---------+-----+-----+       +---------+-----+-----+       +--------+
-               |                             |
-               |                             |
-               v                             v
-         +------------+---+            +------------+---+
-         | Word8#-Tag | 1 |            | Word8#-Tag | 2 |
-         +------------+---+            +------------+---+
+  +----------+-----+-----+      +----------+-----+-----+      +---------+
+  | (:)-Info | Ptr | Ptr | ---> | (:)-Info | Ptr | Ptr | ---> | []-Info |
+  +----------+-----+-----+      +----------+-----+-----+      +---------+
+               |                            |
+               |                            |
+               v                            v
+         +-------------+---+          +-------------+---+
+         | Word8#-Info | 1 |          | Word8#-Info | 2 |
+         +-------------+---+          +-------------+---+
 ~~~
 
+For more information on the heap layout of the GHC RTS see the 
+[GHC commentary](http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects)
+or the 2004 paper on pointer-tagging.
 
 
 Datastructures supported by the bytestring library
 ==================================================
 
-- Strict bytestrings
+Strict bytestrings
 
-- Lazy bytestrings
+  - a chunk of memory 
+  - finite by construction
+  - used for finite sequences of bytes (e.g., result of parsing binary data)
 
-- Lazy bytestring builder (new in 0.10.0.0, not yet on Hackage)
+Lazy bytestrings
 
-(http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects)
+  - a lazy, linked list of chunks of memory
+  - used for lazily generated sequences of bytes
+
+Lazy bytestring builder 
+  (new in 0.10.0.0, not yet on Hackage, 
+  [repo](https://github.com/meiersi/bytestring),
+  [docs](http://people.inf.ethz.ch/meiersi/downloads/private/bytestring-0.10.0.0-public)
+  )
+
+  - a buffer filling function
+  - supports *O(1)* append
+  - ensures large chunk sizes 
+    (important to amortize overhead introduced by chunk boundaries)
+  - used for implementing encodings, i.e., 
+    conversion from Haskell values to sequences/streams of bytes
+
+*Missing:* Strict bytestring builder
+
+  - might be interesting for implementing efficient length-prefixing in
+    Google's [protocol buffer
+    encoding](http://code.google.com/apis/protocolbuffers/docs/encoding.html)
+    for short messages
 
 
-Strict ByteStrings
+Strict bytestrings
 ==================
 
-~~~ {.haskell }
+~~~~ {.haskell }
+-- Copied from "bytestring:Data.ByteString.Internal":
 
 data ByteString = PS {-# UNPACK #-} !(ForeignPtr Word8) -- payload
                      {-# UNPACK #-} !Int                -- offset
                      {-# UNPACK #-} !Int                -- length
+
+-- A typical bytestring is of the form
+exampleBS = PS (ForeignPtr addr (PlainPtr array) len off
+~~~~
+
+*Overhead* of a typical bytestring: 9 machine words.
+
+~~~~ {.haskell }
+-- Copied from "base:GHC.ForeignPtr":
 
 data ForeignPtr a = ForeignPtr Addr# ForeignPtrContents
 
@@ -67,14 +103,23 @@ data ForeignPtrContents
   = PlainForeignPtr !(IORef (Finalizers, [IO ()]))
   | MallocPtr      (MutableByteArray# RealWorld) !(IORef (Finalizers, [IO ()]))
   | PlainPtr       (MutableByteArray# RealWorld)
+~~~~
 
-~~~
 
-Slicing 1
-=========
+
+
+Strict bytestrings support slicing
+==================================
+
+  - slicing allows efficient `take` and `drop`
+  - may result in memory leaks due to sharing 
+    (consider: a 5-byte slice of a 32kb chunk of input)
 
 ~~~ {.haskell}
-take :: Int -> ByteString -> ByteString
+-- Assume the following qualified import
+import qualified Data.ByteString      as S
+
+take :: Int -> S.ByteString -> S.ByteString
 take n ps@(PS x s l)
     | n <= 0    = empty
     | n >= l    = ps
@@ -82,10 +127,15 @@ take n ps@(PS x s l)
 {-# INLINE take #-}
 ~~~
 
-Slicing 2
-=========
+More slicing examples
+=====================
 
-~~~
+Key elements for performance
+
+  - exploit unboxed datastructure using the FFI => lots of `IO` code
+  - inline "wrappings" to remove abstraction overhead
+
+~~~ {.haskell}
 dropWhile :: (Word8 -> Bool) -> ByteString -> ByteString
 dropWhile f ps = unsafeDrop (findIndexOrEnd (not . f) ps) ps
 {-# INLINE dropWhile #-}
@@ -114,9 +164,17 @@ inlinePerformIO (IO m) = case m realWorld# of (# _, r #) -> r
 ~~~
 
 
-= Creating strict bytestrings
+Creating strict bytestrings
+===========================
 
-~~~
+Further performance trick:
+
+  - exploit standard C-routines like `memset` and `memcpy`.
+    They are highly optimized.
+
+Nevertheless: repeated `append` **is slow** => use bytestring builders
+
+~~~ {.haskell}
 -- | /O(1)/ The empty 'ByteString'
 empty :: ByteString
 empty = PS nullForeignPtr 0 0
@@ -151,34 +209,54 @@ append (PS fp1 off1 len1) (PS fp2 off2 len2) =
       withForeignPtr fp2 $ \p2 -> memcpy destptr2 (p2 `plusPtr` off2) len2
 ~~~
 
-= Strict ByteStrings Summary
+
+Strict ByteStrings Summary
+==========================
 
 ~~~~
-
 Pros
-  - compact representation
-  - simple 
-  - slicing
+
+  - simple compact representation
+  - supports slicing
+  - works well for interacting with C-APIs
 
 Cons
+
   - expensive append
   - require exactly the space 
-  - overhead per bytestring: 9 words (according to Johan Tibell)
+  - overhead per bytestring: 9 words
 
 
 ~~~~
 
 
-= Lazy ByteStrings
+Lazy ByteStrings
+================
 
-~~~
+Just a lazy list of strict bytestrings.
+
+~~~ {.haskell}
 data ByteString = 
        Empty 
      | Chunk {-# UNPACK #-} !S.ByteString ByteString
-
 ~~~
 
-= Interlude: Difference Lists 1/2
+Mostly an intermediate representation
+
+  - efficient represention for a pure stream of bytes
+      * sometimes not expressive enough; errors cannot be reported
+
+  - used, /but not recommended/, for lazy input from the OS
+      * works for simple one-shot programs
+      * for long-running programs a better means for dealing with scarce
+        resources like file descriptors is required 
+        (see libraries like: iteratee, enumerator, iterIO, conduit, etc.)
+
+  - repeated `append`s are slow => use bytestring builders
+
+
+Interlude: Difference Lists
+===========================
 
 
 Difference lists allow an O(1) append (at the cost of a loss of sharing).
@@ -197,7 +275,7 @@ import Data.Monoid (Monoid(..))
 import Criterion.Main (defaultMain, nf, bgroup, bench)
 \end{code}
 
-== A canonical example: in-order traversal of trees ==
+A canonical example: in-order traversal of trees
 
 \begin{code}
 data Tree a = Leaf | Node a (Tree a) (Tree a)
@@ -224,7 +302,8 @@ inorder' t =
 \end{code}
 
 
-= Difference Lists: 
+Difference Lists: 
+=================
 
 \begin{code}
 newtype DList a = DList { runDList :: [a] -> [a] }
@@ -265,7 +344,8 @@ main = defaultMain $
     depths = [10..13]
 \end{code}
 
-== Side note: removing lazyness ==
+Side note: removing lazyness
+============================
 
 Note that a similar transform also speeds up the size computionat of `Tree`s.
 However, here we "only" get a constant factor. It is due to the removed
@@ -286,7 +366,8 @@ size' t0 =
 
 ~~~
 
-= Lazy ByteString Difference List
+Lazy ByteString Difference List
+===============================
 
 ~~~
 import qualified Data.ByteString.Lazy as L
@@ -299,7 +380,8 @@ instance Monoid LazyByteStringC where
 
 ~~~
 
-= Lazy ByteString Builder
+Lazy ByteString Builder
+=======================
 
 ~~~
 data BufferRange = BufferRange 
