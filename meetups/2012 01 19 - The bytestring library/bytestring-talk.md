@@ -17,8 +17,9 @@ Why not `[Word8]`?
     * factor 39 on 64-bit systems
 
 The representation of `[1,2] :: [Word8]` illustrates that nicely. Each box
-represents one word.
-~~~~
+represents one machine word.
+
+~~~
   +---------+-----+-----+       +---------+-----+-----+       +--------+
   | (:)-Tag | Ptr | Ptr | ----> | (:)-Tag | Ptr | Ptr | ----> | []-Tag |
   +---------+-----+-----+       +---------+-----+-----+       +--------+
@@ -28,7 +29,7 @@ represents one word.
          +------------+---+            +------------+---+
          | Word8#-Tag | 1 |            | Word8#-Tag | 2 |
          +------------+---+            +------------+---+
-~~~~
+~~~
 
 
 
