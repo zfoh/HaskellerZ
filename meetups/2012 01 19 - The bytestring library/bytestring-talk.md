@@ -1,15 +1,16 @@
-A guided tour through the bytestring library
-============================================
+% A guided tour through the bytestring library
+% Simon Meier
+% January 19th, 2012
 
 The purpose of the library
---------------------------
+==========================
 
 Provide datastructures for *efficiently* (both in time and space) computing
 with (possibly infinite) sequences of bytes.
 
 
 Why not `[Word8]`?
-------------------
+==========================
 
 - Too many indirections: lots of pointer chasing, cache misses
 - Too much space overhead (5 words for one byte): 
@@ -34,7 +35,7 @@ represents one machine word.
 
 
 Datastructures supported by the bytestring library
---------------------------------------------------
+==================================================
 
 - Strict bytestrings
 
@@ -44,9 +45,11 @@ Datastructures supported by the bytestring library
 
 (http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects)
 
-= Strict ByteStrings
 
-~~~
+Strict ByteStrings
+==================
+
+~~~ {.haskell }
 
 data ByteString = PS {-# UNPACK #-} !(ForeignPtr Word8) -- payload
                      {-# UNPACK #-} !Int                -- offset
@@ -67,9 +70,10 @@ data ForeignPtrContents
 
 ~~~
 
-= Slicing 1
+Slicing 1
+=========
 
-~~~
+~~~ {.haskell}
 take :: Int -> ByteString -> ByteString
 take n ps@(PS x s l)
     | n <= 0    = empty
@@ -78,7 +82,8 @@ take n ps@(PS x s l)
 {-# INLINE take #-}
 ~~~
 
-= Slicing 2
+Slicing 2
+=========
 
 ~~~
 dropWhile :: (Word8 -> Bool) -> ByteString -> ByteString
