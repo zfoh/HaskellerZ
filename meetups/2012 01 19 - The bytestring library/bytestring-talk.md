@@ -28,20 +28,19 @@ Purpose of the bytestring library
 =================================
 
 Provide datastructures for computing *efficiently*, both in time and space,
-with (finite) sequences and (infinite) streams of bytes.
+with finite sequences and infinite streams of bytes.
 
 
 Why not `[Word8]`?
 ==================
 
 - Too many indirections: lots of pointer chasing,
-  [memory prefetching](http://www.akkadia.org/drepper/cpumemory.pdf)
-  does not really work
+  [cache misses](http://www.akkadia.org/drepper/cpumemory.pdf)
 - Too much space overhead (5 machine words for one byte): 
     * i.e., a factor 19 (!) overhead on 32-bit systems
     * i.e., a factor 39 (!) overhead on 64-bit systems
 
-See below for the actual manual representation of `[1,2] :: [Word8]`.
+See below for the actual memory representation of `[1,2] :: [Word8]`.
 Each box represents one machine word.
 
 ~~~
@@ -64,20 +63,17 @@ by [Simmon Marlow](http://research.microsoft.com/en-us/people/simonmar/),
 Yakushev](http://arodriguezyakushev.wordpress.com/publications/), and
 [Simon Peyton Jones](http://research.microsoft.com/en-us/people/simonpj/).
 [Johan Tibell](http://blog.johantibell.com/) also posted a good overview of the 
-[memory overhead of typical Haskell types](http://blog.johantibell.com/2011/06/memory-footprints-of-some-common-data.html).
+[memory overhead of common Haskell types](http://blog.johantibell.com/2011/06/memory-footprints-of-some-common-data.html).
 
 
 Datastructures supported by the `bytestring` library
 ====================================================
 
   - strict bytestrings
-
     - a chunk of memory
-    - finite by construction
     - use for finite sequences of bytes (e.g., result of parsing binary data)
 
   - lazy bytestrings
-
     - a lazy, linked list of chunks of memory
     - use for long sequences of bytes, possibly generated lazily
 
@@ -86,7 +82,6 @@ Datastructures supported by the `bytestring` library
      [repo](https://github.com/meiersi/bytestring),
      [docs](http://people.inf.ethz.ch/meiersi/downloads/private/bytestring-0.10.0.0-public)
     )
-
     - a buffer filling function
     - supports *O(1)* `append` ⇒ efficient composition of short byte sequences
     - ensures large chunk sizes 
@@ -99,7 +94,7 @@ Strict bytestrings
 ==================
 
  - *Overhead* of a typical bytestring: 9 machine words.
- - uses pinned memory ⇒ pointers are stable, can be handed to C-APIs
+ - uses pinned memory ⇒ pointers are stable, can be passed to C-APIs
  - `ForeignPtr`s are versatile: safely reference memory allocated by C-APIs
    (e.g., [memory mapped files](http://hackage.haskell.org/package/mmap))
 
@@ -182,7 +177,7 @@ findIndexOrEnd k (PS x s l) =
                                 else go (ptr `plusPtr` 1) (n+1)
 {-# INLINE findIndexOrEnd #-}
 
-unsafeDrop  :: Int -> ByteString -> ByteString
+unsafeDrop :: Int -> ByteString -> ByteString
 unsafeDrop n (PS x s l) = assert (0 <= n && n <= l) $ PS x (s+n) (l-n)
 {-# INLINE unsafeDrop #-}
 
@@ -280,7 +275,7 @@ data ByteString =
      | Chunk {-# UNPACK #-} !S.ByteString ByteString
 ~~~
 
-  - efficient represention of a pure stream of bytes
+  - efficient and compact represention of a pure stream of bytes
       - unreferenced chunks collected by GC
       - sometimes not expressive enough; errors cannot be reported
 
@@ -340,11 +335,11 @@ fullTree n
   where
     t' = fullTree (n - 1)
 
--- This version does not scale linearly. 
--- It repeatedly traverses the first argument of (++).
+-- This version does not scale linearly with the number of nodes 
+-- in the tree, as (++) is required to traverse some nodes repeatedly.
 inorder :: Tree a -> [a]
 inorder Leaf         = []
-inorder (Node x l r) = inorder l ++ [x] ++ inorder r
+inorder (Node x l r) = inorder l ++ ([x] ++ inorder r)
 
 -- This version scales linearly, but is hard to read.
 inorder' :: Tree a -> [a]
@@ -380,11 +375,12 @@ singleton x = DList (x:)
 toList :: DList a -> [a]
 toList dl = runDList dl []
 
--- provide the empty `DList` and concatenation
+-- The standard API for the empty `DList` and concatenation
 instance Monoid (DList a) where
    mempty            = DList id
    dl1 `mappend` dl2 = DList (runDList dl1 . runDList dl2)
 
+-- This operator should really make it into base.
 (<>) :: Monoid m => m -> m -> m
 (<>) = mappend
 
@@ -441,8 +437,8 @@ Side note: removing lazyness
 ============================
 
 Note that a similar transform as for `inorder'` also speeds up the size
-computation of `Tree`s. However, here we gain "only" get a constant factor 2
-speedup. It is due to the removing the unnecessary lazyness in the size
+computation of `Tree`s. However, here we gain "only" a constant factor 2
+speedup. It is due to the removing the unnecessary laziness in the size
 computation.
 
 \begin{code}
@@ -477,7 +473,7 @@ The lazy bytestring builder
           allocation by executing directly on a `Handle`'s internal buffer)
     - allow full transfer of control over chunk creation
         - insert (large) strict and lazy bytestrings directly
-        - switching to a different application-specific method for generating
+        - efficiently switch to a different application-specific method for generating
           lazy bytestrings (e.g., parallel encoding for extra-low latency)
         - used in zero-copy algorithms for [size-prefixing and chunking of
           builders](http://people.inf.ethz.ch/meiersi/downloads/private/bytestring-0.10.0.0-public/Data-ByteString-Lazy-Builder-Extras.html#g:8)
@@ -486,7 +482,10 @@ The lazy bytestring builder
     [Jasper van der Jeugt](http://jaspervdj.be/)'s and 
     [Simon Meier](http://lambda-view.blogspot.com)'s
     [`blaze-builder`](http://hackage.haskell.org/package/blaze-builder)
-    library 
+    library (used for example in 
+    [`yesod`](http://www.yesodweb.com/),
+    [`snap`](http://snapframework.com/), and
+    [`aeson`](http://hackage.haskell.org/package/aeson))
 
 
 The types underlying the lazy bytestring builder
@@ -530,20 +529,25 @@ newtype Put a = Put { unPut :: forall r. (a -> BuildStep r) -> BuildStep r }
 ~~~
 
 
-Fixed-size and bounded-size encodings
-=====================================
+How to construct primitive lazy bytestring builders
+===================================================
 
-  - explicit types and combinators provided for
-    - *fixed-size encodings*, which always result in a sequence of bytes of a
-      predetermined, fixed length
-    - *bounded-size encodings*, which always result in a sequence of bytes
-      that is no larger than a predetermined bound
+  - use the [types and combinators](http://people.inf.ethz.ch/meiersi/downloads/private/bytestring-0.10.0.0-public/Data-ByteString-Lazy-Builder-BasicEncoding.html)
+    provided for
+    - [*fixed-size encodings*](http://people.inf.ethz.ch/meiersi/downloads/private/bytestring-0.10.0.0-public/Data-ByteString-Lazy-Builder-BasicEncoding.html#g:1),
+      which always result in a sequence of bytes of a predetermined, fixed
+      length
+    - [*bounded-size
+      encodings*](http://people.inf.ethz.ch/meiersi/downloads/private/bytestring-0.10.0.0-public/Data-ByteString-Lazy-Builder-BasicEncoding.html#g:4),
+      which always result in a sequence of bytes that is no larger than a
+      predetermined bound
 
-  - used to construct primitive builders for encoding standard Haskell values
   - combinators allow to fuse escaping with character encoding
     (e.g., combined escaping and UTF-8 encoding of HTML, JSON, or Haskell
     strings)
   - rewriting rules fuse buffer-free checks of consecutive primitive builders
+  - useful for wrapping C-implementions like [V8's decimal encodings for IEEE
+    floats](http://hackage.haskell.org/package/double-conversion)
 
 
 An example of a bounded-size encoding: `int8Dec`
@@ -623,8 +627,7 @@ charUtf8HtmlEscaped =
  - The resulting code checks first, if there are 5 bytes free in the current
    buffer. If not, then it requests a new buffer. Otherwise, the character is
    encoded. Note the writing of the escaped characters is compiled down to
-   the corresponding sequence of fixed `mov` operations.
-
+   the corresponding sequence of fixed `mov` operations. Nice.
 
 Some missing pieces in our library infrastructure
 =================================================
@@ -632,7 +635,8 @@ Some missing pieces in our library infrastructure
   - Use cases not covered well by any existing Haskell library
     - representing short sequences of bytes (slicing and `ForeignPtr` overhead
       too expensive)
-    - efficiently creating short bytestrings (i.e, strict bytestring builders)
+    - very efficiently creating short bytestrings,
+      i.e., strict bytestring builders
         - typical use-case: remote procedure calls
         - may support more efficient length-prefixing for
           Google's [protocol buffer
@@ -655,12 +659,19 @@ Conclusions
 
   - use bytestrings to represent binary data
   - use the lazy bytestring builder to implement encodings
-  - use `pack`, `unpack`, and `append` conciously; when writing performance
-    critical code
+  - use `pack`, `unpack`, and `append` conciously 
+    (when writing performance critical code)
   - ensure that the chunks of lazy bytestrings are large enough to amortize
     the chunk boundary overhead
   - *for writing very efficient code*: understand the memory layout and the
     cost of the operations of your types
 
-Enjoy Haskell: 
+**Enjoy Haskell**: 
 enabling the construction of pure *and* efficient API's is just beautiful ☺
+
+Thanks...
+=========
+
+...for listening. 
+
+> Control.Monad.Has.Questions> ?
