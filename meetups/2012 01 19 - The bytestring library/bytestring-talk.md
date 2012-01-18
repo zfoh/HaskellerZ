@@ -478,11 +478,9 @@ The lazy bytestring builder
         - used in zero-copy algorithms for [size-prefixing and chunking of
           builders](http://people.inf.ethz.ch/meiersi/downloads/private/bytestring-0.10.0.0-public/Data-ByteString-Lazy-Builder-Extras.html#g:8)
 
-  - a redesigned/extended version of 
-    [Jasper van der Jeugt](http://jaspervdj.be/)'s and 
-    [Simon Meier](http://lambda-view.blogspot.com)'s
+  - a redesigned/extended version of the
     [`blaze-builder`](http://hackage.haskell.org/package/blaze-builder)
-    library (used for example in 
+    library (which is for example used in 
     [`yesod`](http://www.yesodweb.com/),
     [`snap`](http://snapframework.com/), and
     [`aeson`](http://hackage.haskell.org/package/aeson))
@@ -674,4 +672,6 @@ Thanks...
 
 ...for listening. 
 
-> Control.Monad.Has.Questions> ?
+~~~~ {.haskell}
+Control.Monad.Has.Questions> ?
+~~~~
