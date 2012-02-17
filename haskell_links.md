@@ -1,4 +1,13 @@
-## Haskell Links
+## HaskellerZ - Link Collection
+
+This link collection was originally assembled for the
+[Functional Programming and Formal Methods](http://www.infsec.ethz.ch/education/ss2012/fmfp)
+taught at [ETH Zurich](http://www.infsec.ethz.ch).
+It is now maintained by the 
+[HaskellerZ meetup group](http://www.meetup.com/HaskellerZ/)
+for the benefit of all fellow Haskellers.
+The collection is organized in three parts: links for Haskell beginners, programmers, and experts.
+
 
 ### Haskell Beginners
 
