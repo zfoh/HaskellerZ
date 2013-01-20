@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, TypeSynonymInstances, FlexibleInstances #-}
 module Main where
 
 -- imports {{{1
@@ -19,6 +19,7 @@ data Expr =
     ExVar Variable
   | ExConst Value
   | ExOp Expr Operation Expr
+  | ExCall String [Expr]
 
 data Operation =
   Plus | Minus | Equals
@@ -26,6 +27,7 @@ data Operation =
 data Node e x where
   Lbl    :: Label                  -> Node C O
   Assign :: Variable -> Expr       -> Node O O
+  Stmt   :: Expr                   -> Node O O
   Branch :: Label                  -> Node O C
   Cond   :: Expr -> Label -> Label -> Node O C
   Return ::                           Node O C
@@ -37,7 +39,6 @@ instance NonLocal Node where
   successors Return         = []
 
 -- printing {{{1
-
 instance Show Operation where
   show Plus   = "+"
   show Minus  = "-"
@@ -54,13 +55,20 @@ instance Show Expr where
     . showChar ' '
     . shows rhs
     . showChar ')'
+  showsPrec _ (ExCall f ps) =
+      showString f
+    . shows ps
 
 instance Show (Node e x) where
   show (Lbl lbl)      = printf "\n%s:\n" (show lbl)
   show (Assign v e)   = printf "%s = %s;" v (show e)
+  show (Stmt e)       = printf "%s;" (show e)
   show (Branch lbl)   = printf "goto %s;" (show lbl)
   show (Cond e tl el) = printf "if %s then goto %s else goto %s;" (show e) (show tl) (show el)
   show (Return)       = "return;"
+
+instance Show (Graph Node e x) where
+  show = showGraph show
 
 -- analysis {{{1
 type LiveFact = S.Set Variable
@@ -85,6 +93,7 @@ liveTransfer = mkBTransfer3 trFirst trMiddle trLast
 
     trMiddle :: Node O O -> LiveFact -> LiveFact
     trMiddle (Assign v e) = addUses e . S.delete v
+    trMiddle (Stmt e)     = addUses e
 
     trLast :: Node O C -> FactBase LiveFact -> LiveFact
     trLast (Branch l)     = fact l
@@ -95,9 +104,10 @@ liveTransfer = mkBTransfer3 trFirst trMiddle trLast
     fact l = fromMaybe (fact_bot liveLattice) . lookupFact l
 
     addUses :: Expr -> LiveFact -> LiveFact
-    addUses (ExVar v)   = S.insert v
-    addUses (ExConst _) = id
+    addUses (ExVar v)        = S.insert v
+    addUses (ExConst _)      = id
     addUses (ExOp lhs _ rhs) = addUses lhs . addUses rhs
+    addUses (ExCall _ ps)    = foldl (.) id (map addUses ps)
 
 liveRewrite :: BwdRewrite M Node LiveFact
 liveRewrite = mkBRewrite3 rwFirst rwMiddle rwLast
@@ -109,6 +119,7 @@ liveRewrite = mkBRewrite3 rwFirst rwMiddle rwLast
     rwMiddle (Assign v _) fact
       | S.member v fact = return Nothing
       | otherwise       = return (Just GNil)
+    rwMiddle (Stmt _) _ = return Nothing
 
     rwLast :: Node O C -> FactBase LiveFact -> M (Maybe (Graph Node O C))
     rwLast _ _ = return Nothing
@@ -116,10 +127,13 @@ liveRewrite = mkBRewrite3 rwFirst rwMiddle rwLast
 -- execution {{{1
 type M = CheckingFuelMonad (SimpleUniqueMonad)
 
-runLiveness :: (Label, Graph Node C C) -> M String
+runM :: M a -> a
+runM = runSimpleUniqueMonad . runWithFuel infiniteFuel
+
+runLiveness :: (Label, Graph Node C C) -> M (Graph Node C C, FactBase LiveFact)
 runLiveness (entry, graph) = do
   (graph', facts, _) <- analyzeAndRewriteBwd bwd (JustC [entry]) graph mapEmpty
-  return (showGraph show graph' ++ "\n" ++ showFactBase facts)
+  return (graph', facts)
   where bwd = BwdPass {
       bp_lattice  = liveLattice
     , bp_transfer = liveTransfer 
@@ -127,7 +141,7 @@ runLiveness (entry, graph) = do
     }
 
 main :: IO ()
-main = putStrLn $ runSimpleUniqueMonad $ runWithFuel infiniteFuel (example >>= runLiveness)
+main = putStrLn $ show $ runM (example >>= runLiveness)
 
 -- example graph {{{1
 example :: M (Label, Graph Node C C)
@@ -135,39 +149,26 @@ example = do
   l1 <- freshLabel
   l2 <- freshLabel
   l3 <- freshLabel
-  l4 <- freshLabel
-
   let
-    block1 = mkBlock
-      (Lbl l1)                        
-      [ 
-        Assign "x" (ExConst 23)      
+    block1 = mkBlock l1 [
+        Assign "x" (ExConst 1),
+        Assign "y" (ExConst 2),
+        Assign "z" (ExConst 3)
       ]
-      (Branch l2)                     
+      (Cond (ExOp (ExVar "y") Equals (ExConst 0)) l2 l3)
 
-    block2 = mkBlock
-      (Lbl l2)
-      []
-      (Cond (ExOp (ExVar "x") Equals (ExConst 42)) l3 l4)
-
-    block3 = mkBlock
-      (Lbl l3)
-      [
-        Assign "x" (ExConst 42)
+    block2 = mkBlock l2 [
+        Assign "y" (ExVar "x")
       ]
-      (Branch l2)
+      (Branch l3)
 
-    block4 = mkBlock
-      (Lbl l4)
-      [
-        Assign "x" (ExConst 0)
-      ]
-      Return
+    block3 = mkBlock l3 [
+        Stmt (ExCall "f" [ExVar "y"])
+      ] Return
 
-    graph = foldl (|*><*|) emptyClosedGraph [block1, block2, block3, block4]
-
+    graph = foldl (|*><*|) emptyClosedGraph [block1, block2, block3]
   return (l1, graph)
   where
     splice = (H.<*>)
-    mkBlock f ms l = mkFirst f `splice` mkMiddles ms `splice` mkLast l
+    mkBlock lbl ms l = mkFirst (Lbl lbl) `splice` mkMiddles ms `splice` mkLast l
 
