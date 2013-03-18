@@ -1,0 +1,7 @@
+*.dump-asm
+*.dump-cmm
+*.dump-prep
+*.dump-stg
+handout.html
+slides.html
+
