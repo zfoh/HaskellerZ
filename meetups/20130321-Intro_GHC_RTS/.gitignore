@@ -2,6 +2,9 @@
 *.dump-cmm
 *.dump-prep
 *.dump-stg
+*.dump-stranal
+*.dump-simpl
+*.log
 handout.html
 slides.html
 
