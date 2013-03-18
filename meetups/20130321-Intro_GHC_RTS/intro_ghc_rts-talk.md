@@ -78,7 +78,8 @@ case x of _ -> e
 ~~~~
 
 ensures that the value denoted by the variable `x` is in weak head normal
-form, i.e., has no outermost function application.
+form (i.e., has no outermost function application) when the expression `e` is
+evaluated.
 
 TODO: Add examples from stack overflow question.
 
@@ -355,7 +356,7 @@ sumNAcc =
 Exploiting our newly gained knowledge (II)
 ==========================================
 
-**-> Your example here <-**
+**-> your example here <-**
 
 
 
@@ -364,9 +365,11 @@ Thanks...
 
 ...for listening. Further references,
 
+ - sources for this talk
  - stock hardware
  - fast curry
  - pointer tagging
+ - Stanford Haskell lecture
  - GHC commentary
  - GHC sources
 
