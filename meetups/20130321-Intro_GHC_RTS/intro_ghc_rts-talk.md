@@ -1,5 +1,5 @@
 % An introduction to GHC's Haskell execution model
-% Simon Meier
+% Simon Meier, Erudify AG
 % HaskellerZ meetup - March 21st, 2013
 
 Goal of this talk
@@ -40,7 +40,22 @@ Basic closure layout                          Basic info table layout
 ![Basic closure layout](fig/heap-object.png)  ![Basic info table layout](fig/basic-itbl.png)
 --------------------------------------------  ----------------------------------------------
 
-See also: [GHC commentary](http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects)
+Structure of a header.
+
+~~~~ {.c}
+typedef struct {
+    const struct _StgInfoTable* info;
+#ifdef PROFILING
+    StgProfHeader         prof;
+#endif
+#ifdef GRAN
+    StgGranHeader         gran;
+#endif
+} StgHeader;
+~~~~
+
+For more information, see the [GHC
+commentary](http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects).
 
 Example: a list of Int's
 ===========================
@@ -68,20 +83,77 @@ ex1 = OneI 1 (OneI 2 (OneI 3 NilI))
 TODO: Image
 
 
+Normal forms
+============
+
+normal form (NF)
+
+:   An expression in normal form is fully evaluated, and no sub-expression
+    could be evaluated any further (i.e. it contains no un-evaluated thunks).
+
+weak head normal form (WHNF)
+
+:   An expression in weak head normal form has been evaluated to the outermost
+    data constructor or lambda abstraction (the head).
+
+
+~~~~{.haskell}
+-- in NF
+42
+(2, "hello")
+\x -> (x + 1)
+
+-- not in NF
+1 + 2                 -- we could evaluate this to 3
+(\x -> x + 1) 2       -- we could apply the function
+"he" ++ "llo"         -- we could apply the (++)
+(1 + 1, 2 + 2)        -- we could evaluate 1 + 1 and 2 + 2
+
+-- in WHNF 
+(1 + 1, 2 + 2)       -- the outermost part is the data constructor (,)
+\x -> 2 + 2          -- the outermost part is a lambda abstraction
+'h' : ("e" ++ "llo") -- the outermost part is the data constructor (:)
+
+-- not in WHNF
+1 + 2                -- the outermost part here is an application of (+)
+(\x -> x + 1) 2      -- the outermost part is an application of (\x -> x + 1)
+"he" ++ "llo"        -- the outermost part is an application of (++)
+~~~~
+
+For more information, see this [StackOverflow
+question](http://stackoverflow.com/questions/6872898/haskell-what-is-weak-head-normal-form).
+
+
 Haskell evaluation
 ==================
 
-Case distinctions are the fuel for the execution of Haskell code.
+**Case distinctions are the fuel of the execution of Haskell code.**
 
-~~~~ {.haskell}
+A case distinction
+
+~~~~{.haskell}
 case x of _ -> e
 ~~~~
 
-ensures that the value denoted by the variable `x` is in weak head normal
-form (i.e., has no outermost function application) when the expression `e` is
-evaluated.
+forces the evaluation of the value denoted by the variable `x` to WHNF
+when the expression `e` is evaluated to WHNF.
 
-TODO: Add examples from stack overflow question.
+Ultimately, Haskell programs are run by forcing the value of 
+`(runIO main) theWorld#`{.haskell} 
+to WHNF, where
+
+~~~~{.haskell}
+
+newtype IO a = IO { runIO :: World# -> (# a, World# #) }
+
+theWorld# :: World#    -- magical reference to the world
+
+~~~~
+
+For more information on the implementation of the `IO` monad, see
+[`GHC.Types`](http://www.haskell.org/ghc/docs/7.6.2/html/libraries/ghc-prim-0.3.0.0/GHC-Types.html#t:IO).
+
+
 
 
 
@@ -97,7 +169,7 @@ test :: Int
 test = sumList (One 1 (One 2 (One 3 Nil)))
 ~~~~~
 
-High-level outline of reducing `test` to WHNF:
+High-level outline of evaluating `test` to WHNF:
 
 ~~~~ {.haskell}
    test
@@ -130,21 +202,23 @@ ex1_2 = One 3 ex1_3
 ex1_3 = Nil
 ~~~~
 
-Reducing `test` to WHNF with explicit stack management.
+Evaluating `test` to WHNF with explicit stack management.
 
 ~~~~ {.haskell}
-   test                                    <| []
-~> sumList ex_1                            <| []
+   test                                    <| []                  -- tail call
+~> sumList ex_1                            <| []                  -- tail call
 ~> case ex1 of Nil      -> 0
-               One x xs -> x + sumList xs  <| []
-~> ex1                                     <| [case ?? of ...]
-~> One 1 ex1_1                             <| [case ?? of ...]
-~> case One 1 ex1_1 of ...                 <| []
-~> (+) 1 (sumList ex1_1)
-~> sumList ex1_1                           <| [(+) 1 ??]
-~> case ex1_1 of ...                       <| [(+) 1 ??]
-~> ex1_1                                   <| [case ?? of ..., (+) 1 ??]
-~> One 2 ex1_2                             <| [case ?? of ..., (+) 1 ??]
+               One x xs -> x + sumList xs  <| []                  -- push return-closure onto stack
+~> ex1                                     <| [case ?? of ...]    -- tail call
+~> One 1 ex1_1                             <| [case ?? of ...]    -- WHNF reached: return control to caller, i.e.,
+                                                                  --   jump to the top-most stack frame
+~> case One 1 ex1_1 of ...                 <| []                  -- select appropriate case
+~> (+) 1 (sumList ex1_1)                   <| []                  -- force 'sumList ex1_1' to WHNF 
+                                                                  --   => push return-closure onto stack
+~> sumList ex1_1                           <| [(+) 1 ??]          -- tail call
+~> case ex1_1 of ...                       <| [(+) 1 ??]          -- push return-closure onto stack
+~> ex1_1                                   <| [case ?? of ..., (+) 1 ??]  -- ...
+~> One 2 ex1_2                             <| [case ?? of ..., (+) 1 ??]  -- ...
 ~> case One 2 ex1_2 of ...                 <| [(+) 1 ??]
 ~> (+) 2 (sumList ex1_2)                   <| [(+) 1 ??]
 ~> sumList ex1_2                           <| [(+) 2 ??, (+) 1 ??]
@@ -164,14 +238,14 @@ Evaluation costs
 
 When executing a Haskell program, time is spent on
 
-- allocating new heap objects
+- constructing new objects on the stack or the heap
 - executing primitive operations
-- case distinctions
+- performing case distinctions
 - calling functions
 
-The Spineless Tagless G-machine (STG machine) makes these costs explicit.
-
-See also TODO: Link to SPJ journal paper.
+The [Spineless Tagless G-machine (STG
+machine)](http://research.microsoft.com/pubs/67083/spineless-tagless-gmachine.ps.gz)
+makes these costs explicit.
 
 
 Overview: GHC's compilation pipeline
@@ -179,7 +253,49 @@ Overview: GHC's compilation pipeline
 
 ![](fig/HscPipe2.png)
 
-See also [GHC commentary]( TODO
+For more information, see 
+[this](http://hackage.haskell.org/trac/ghc/wiki/Commentary/Compiler/HscPipe)
+and
+[that](http://hackage.haskell.org/trac/ghc/wiki/Commentary/Compiler/HscMain).
+
+
+Invariants established by CorePrep
+==================================
+
+- expression are in in *A-normal form* (ANF), i.e.,
+  the argument of every application is a variable or literal
+- constructors and primitive operations only occur fully saturated
+- no nested patterns in case distinctions
+- and a few [more
+  invariants](https://github.com/ghc/ghc/blob/master/compiler/coreSyn/CorePrep.lhs)
+
+
+~~~~{.haskell}
+-- not in ANF --
+----------------
+\x -> f (g x) [x]    -- use of compound arguments 'g x' and '[x]'
+
+\x -> (x:)           -- unsaturated use of ':' constructor
+
+case x of            -- nested pattern in case distinction
+  [y] -> e1
+   _  -> e_def
+
+-- in ANF --
+------------
+\x -> let y = g x 
+          z = [x]
+      in f y z
+
+\x y -> x:y
+
+let zz = e_def
+in case x of
+      []     -> zz
+      x1:xs1 -> case xs1 of
+                  [] -> e1
+                  _  -> zz
+~~~~
 
 
 Example: core-prep of `sumList`
@@ -198,12 +314,12 @@ ex1 = One 1 (One 2 (One 3 Nil))
 test = sumList ex1
 ~~~~
 
-Compiled with `ghc -O2 -dsuppress-all -ddump-prep List.hs`
+Compiled with [`ghc -O2 -dsuppress-all -ddump-prep
+List.hs`](http://www.haskell.org/ghc/docs/7.6.2/html/users_guide/options-debugging.html)
 yields
 
 ~~~~ {.haskell}
 ==================== CorePrep ====================
-
 ex6 = I# 1
 ex5 = I# 2
 ex4 = I# 3
@@ -249,7 +365,8 @@ test :: List Int
 test = mapList foo (One 1 (One 2 (One 3 Nil)))
 ~~~~
 
-Compiled with `ghc -O2 -dsuppress-all -ddump-prep List.hs`
+Compiled with [`ghc -O2 -dsuppress-all -ddump-prep
+List.hs`](http://www.haskell.org/ghc/docs/7.6.2/html/users_guide/options-debugging.html)
 yields
 
 ~~~~ {.haskell}
@@ -287,50 +404,6 @@ One = \ @ a_aab eta_B2 eta_B1 -> One eta_B2 eta_B1
 ~~~~
 
 
-Example: memory layout during execution (I)
-===========================================
-
-~~~~ {.haskell}
-mapList f Nil        = Nil
-mapList f (One x xs) = One (f x) (mapList f xs)
-
-foo :: Int -> Int
-foo x = x + 0xDeadBeef
-~~~~
-
-Memory layout *before* reducing `mapList foo (One 1 (One 2 Nil))` to WHNF.
-
-TODO: Image
-
-Example: memory layout during execution (II)
-============================================
-
-~~~~ {.haskell}
-mapList f Nil        = Nil
-mapList f (One x xs) = One (f x) (mapList f xs)
-
-foo :: Int -> Int
-foo x = x + 0xDeadBeef
-~~~~
-
-Memory layout *after* reducing `mapList foo (One 1 (One 2 Nil))` to WHNF.
-
-TODO: Image
-
-
-Common closure types
-====================
-
-  - Constructors: `CONSTR`, `CONSTR_p_n`, `CONSTR_STATIC`, ...
-  - Functions: `FUN`, `FUN_p_n`, `FUN_STATIC`, ...
-  - Thunks: `THUNK`, `THUNK_p_n`, `THUNK_SELECTOR`, ...
-  - (Partial) applications: `PAP`, `AP`
-  - Indirections: `IND`, `IND_OLD_GEN`, ...
-  - MVars, Black holes, Byte-code objects, Thread State Objects, ...
-
-
-For more information see 
-[GHC commentary](http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects#Typesofobject):
 
 
 
@@ -356,22 +429,91 @@ sumNAcc =
 Exploiting our newly gained knowledge (II)
 ==========================================
 
-**-> your example here <-**
+*It's time for some interactive experimentation; i.e., let's have some fun
+with*
+
+[`ghc -O2 -dsuppress-all -ddump-prep`](http://www.haskell.org/ghc/docs/7.6.2/html/users_guide/options-debugging.html)
+
+and all the [other debugging flags](http://www.haskell.org/ghc/docs/7.6.2/html/users_guide/options-debugging.html)
+provided by GHC.
+
+Note that some of the examples are included in the sources of this talk at
+[Github](https://github.com/meiersi/HaskellerZ/tree/master/meetups/20130321-Intro_GHC_RTS).
+
+The end...
+==========
+
+**..and further references for the curious:**
+
+ - [sources](https://github.com/meiersi/HaskellerZ/tree/master/meetups/20130321-Intro_GHC_RTS)
+   for this talk
+ - [Videos](http://hackage.haskell.org/trac/ghc/wiki/AboutVideos) about GHC's architecture
+ - Papers leading up to GHC's current execution model:
+     - [Implementing lazy functional languages on stock hardware: the
+       Spineless Tagless
+       G-machine](http://research.microsoft.com/~simonpj/papers/spineless-tagless-gmachine.ps.gz),
+       SL Peyton Jones, Journal of Functional Programming 2(2), Apr 1992,
+       pp127-202.
+     - [How to make a fast curry: push/enter vs eval/apply, Simon Marlow and
+       Simon Peyton Jones, Proc International Conference on Functional
+       Programming, Snowbird, Sept 2004,
+       pp4-15.](http://research.microsoft.com/en-us/um/people/simonpj/papers/eval-apply/index.htm) 
+     - [Faster laziness using dynamic pointer
+       tagging](http://research.microsoft.com/en-us/um/people/simonpj/papers/ptr-tag/index.htm),
+       Simon Marlow, Alexey Rodriguez Yakushev, and Simon Peyton Jones, ICFP 2007. 
+ - [GHC sources](https://github.com/ghc/ghc):
+   I suggest to download the [most recent source
+   distribution](http://www.haskell.org/ghc/download_ghc_7_6_1#sources) and
+   browse it using our favourite text editor
+ - Stanford Haskell lecture: [handout about memory
+   layout](http://www.scs.stanford.edu/11au-cs240h/notes/memory.html) and
+   the [lecture overview](http://www.scs.stanford.edu/11au-cs240h/)
 
 
 
-Thanks...
-=========
 
-...for listening. Further references,
+Unfinished appendix: memory layout during execution (I)
+=======================================================
 
- - sources for this talk
- - stock hardware
- - fast curry
- - pointer tagging
- - Stanford Haskell lecture
- - GHC commentary
- - GHC sources
+~~~~ {.haskell}
+mapList f Nil        = Nil
+mapList f (One x xs) = One (f x) (mapList f xs)
+
+foo :: Int -> Int
+foo x = x + 0xDeadBeef
+~~~~
+
+Memory layout *before* reducing `mapList foo (One 1 (One 2 Nil))` to WHNF.
+
+TODO: Image
+
+Unfinished appendix: memory layout during execution (II)
+========================================================
+
+~~~~ {.haskell}
+mapList f Nil        = Nil
+mapList f (One x xs) = One (f x) (mapList f xs)
+
+foo :: Int -> Int
+foo x = x + 0xDeadBeef
+~~~~
+
+Memory layout *after* reducing `mapList foo (One 1 (One 2 Nil))` to WHNF.
+
+TODO: Image
+
+Unfinished appendix: common closure types
+=========================================
+
+  - Constructors: `CONSTR`, `CONSTR_p_n`, `CONSTR_STATIC`, ...
+  - Functions: `FUN`, `FUN_p_n`, `FUN_STATIC`, ...
+  - Thunks: `THUNK`, `THUNK_p_n`, `THUNK_SELECTOR`, ...
+  - (Partial) applications: `PAP`, `AP`
+  - Indirections: `IND`, `IND_OLD_GEN`, ...
+  - MVars, Black holes, Byte-code objects, Thread State Objects, ...
 
 
+For more information, see the
+[GHC
+commentary](http://hackage.haskell.org/trac/ghc/wiki/Commentary/Rts/Storage/HeapObjects#Typesofobject).
 
