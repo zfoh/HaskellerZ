@@ -1,5 +1,7 @@
+*Main [HaskellerZ](http://www.meetup.com/HaskellerZ/) meetup page.*
+
 This repository mainly hosts the slides from past meetups.
-This README moreover serves as a drafting document for upcoming meetups.
+The README moreover serves as a drafting document for upcoming meetups.
 
 Slides from past meetups
 ========================
