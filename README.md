@@ -1,3 +1,13 @@
+Slides from past meetups
+========================
+
+TODO: Add more slides.
+
+2013-03-21: 
+  Simon Meier - An Introduction to GHC's Haskell execution model 
+  ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html), 
+   [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
+
 HaskellerZ Scratchpad
 =====================
 
