@@ -67,7 +67,7 @@ ex1 :: List Int
 ex1 = One 1 (One 2 (One 3 Nil))
 ~~~~
 
-TODO: Image
+![](fig/int_list.svg)
 
 
 Example: a list of unboxed Int's
@@ -80,7 +80,7 @@ ex1 :: ListInt
 ex1 = OneI 1 (OneI 2 (OneI 3 NilI))
 ~~~~
 
-TODO: Image
+![](fig/unboxed_int_list.svg)
 
 
 Normal forms

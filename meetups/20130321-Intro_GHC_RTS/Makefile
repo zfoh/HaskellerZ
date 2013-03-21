@@ -5,10 +5,10 @@ GHC=ghc ${GHC_OPTS}
 all: handout.html slides.html
 
 slides.html: intro_ghc_rts-talk.md
-	pandoc -f markdown+lhs -w slidy -s intro_ghc_rts-talk.md -o slides.html
+	pandoc -f markdown+lhs -w slidy -s --self-contained intro_ghc_rts-talk.md -o slides.html
 
 handout.html: intro_ghc_rts-talk.md
-	pandoc -f markdown+lhs -s -S --toc intro_ghc_rts-talk.md -o handout.html
+	pandoc -f markdown+lhs -s -S --toc --self-contained intro_ghc_rts-talk.md -o handout.html
 
 clean:
 	rm -f handout.html
