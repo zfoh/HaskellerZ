@@ -5,6 +5,6 @@
 *.dump-stranal
 *.dump-simpl
 *.log
-handout.html
-slides.html
+/handout.html
+/slides.html
 
