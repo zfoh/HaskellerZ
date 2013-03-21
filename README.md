@@ -1,18 +1,26 @@
+This repository mainly hosts the slides from past meetups.
+This README moreover serves as a drafting document for upcoming meetups.
+
 Slides from past meetups
 ========================
 
-TODO: Add more slides.
+2012-01-19: Simon Meier - The bytestring library ([handout](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20120119-The_bytestring_library/bytestring-talk.md))
+
+2013-01-24: Alexander Bernauer - Advanced API design ([slides](https://docs.google.com/presentation/d/1wLsW5xzFL1A8JPY3BwXpFCnad8Ri3dFomgySP76c75I))
 
 2013-03-21: 
   Simon Meier - An Introduction to GHC's Haskell execution model 
   ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html), 
    [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
 
+Upcoming meetups and the main speakers
+======================================
+
 2013-04-25: Gergely Risko - Template Haskell and hflags.
 
 2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
 
-2013-06-27: Arvin Moezzi - Theorem for free.
+2013-06-27: Arvin Moezzi - Theorems for free.
 
 2013-07-25: Jason Dusek - Taskl: system configuration made easy!
 
@@ -22,15 +30,5 @@ TODO: Add more slides.
 
 2013-10-31: ??
 
-HaskellerZ Scratchpad
-=====================
-
-For now, we just use a chronological directory structure to store the notes,
-slides, code from our HaskellerZ meetups. Once we have some more material, we
-can start to organize it more thoroughly; e.g., using symlinks to group talks
-and other things into separate directories.
-
-Everyone can have commit rights. Just send me a message from your github
-account.
-
-Cheers, Simon.
+In general, we'll have a HaskellerZ meetup every last thursday of January until October every year.
+Note that we welcome guests and will happily adjust our schedule if they would like to give a talk.
