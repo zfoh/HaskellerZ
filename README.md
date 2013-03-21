@@ -8,6 +8,20 @@ TODO: Add more slides.
   ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html), 
    [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
 
+2013-04-25: Gergely Risko - Template Haskell and hflags.
+
+2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
+
+2013-06-27: Arvin Moezzi - Theorem for free.
+
+2013-07-25: Jason Dusek - Taskl: system configuration made easy!
+
+2013-08-29: Thomas Schilling - Lambdachine: a JIT compiler for Haskell
+
+2013-09-26: ??
+
+2013-10-31: ??
+
 HaskellerZ Scratchpad
 =====================
 
