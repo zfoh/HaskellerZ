@@ -15,10 +15,13 @@ Slides from past meetups
   ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html), 
    [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
 
+2013-04-25:
+  Gergely Risko - Cmdline libraries, intro to TemplateHaskell
+  ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags.html),
+   [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags-handout.html))
+
 Upcoming meetups and the main speakers
 ======================================
-
-2013-04-25: Gergely Risko - Template Haskell and hflags.
 
 2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
 

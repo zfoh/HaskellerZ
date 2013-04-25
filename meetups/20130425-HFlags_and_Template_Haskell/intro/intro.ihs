@@ -1,0 +1,55 @@
+:set -XTemplateHaskell
+
+import Language.Haskell.TH
+
+runQ [e| 1 + 2 |]
+
+-- why (VarE +) and not just +, because + is only a name, for the
+-- function call we need an expression, not a name:
+:info VarE
+
+-- e is the default in quotation brackets, so we can simply do this:
+runQ [| \(_, x, _, _) -> x |]
+
+let pprintQ q = putStrLn . pprint =<< runQ q
+
+-- the names are made unambiguous by the brackets
+pprintQ [| \(_, x, _, _) -> (\x -> x) |]
+
+-- what good is creating programs without running them? -> splicing!
+-- (dear CS theory students, this was a rhetorical question, I don't need a real answer)
+$(runQ [| \(_, x, _, _) -> (\x -> x) |])
+$(runQ [| \(_, x, _, _) -> (\x -> x) |]) undefined
+$(runQ [| \(_, x, _, _) -> (\x -> x) |]) undefined 42
+$(runQ [| \(~(_, x, _, _)) -> (\x -> x) |]) undefined 42
+
+-- is splicing and quotation bracket recursive in regards to each other?  YES!
+let generatedFun = [| \x -> x + 2 |]
+let generatedVal = [| 40 |]
+let threeTimes = [| $generatedFun ($generatedFun ($generatedFun $generatedVal)) |]
+runQ threeTimes
+pprintQ threeTimes
+$(threeTimes)
+-- or "simply":
+$([| $generatedFun ($generatedFun ($generatedFun $generatedVal)) |])
+
+-- error handling:
+-- reportError :: String -> Q ()
+-- reportWarning :: String -> Q ()
+
+-- names:
+runQ $ newName "foobar"
+mkName "Nothing"
+runQ [| Nothing |]
+runQ [| map |]
+runQ [t| Maybe |]
+'map
+'Nothing
+''Maybe
+
+$([| $(varE 'map) |]) (+2) [1,2,3]
+pprintQ [|$([| $(varE 'map) |]) (+2) [1,2,3] |]
+
+-- we are ready for our first exercise!
+-- implement a generic fst and snd replacement, namely `get n k'
+get :: Int -> Int -> ExpQ

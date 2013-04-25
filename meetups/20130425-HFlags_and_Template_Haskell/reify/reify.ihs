@@ -1,0 +1,11 @@
+:set -XTemplateHaskell
+import Language.Haskell.TH
+
+-- reify: consulting the compiler's symbol table and type information and return info
+reify :: Name -> Q InfoSource
+
+-- debugging compatible with reify:
+$(stringE . show =<< reify ''Maybe)
+$(stringE . show =<< reify 'map)
+$(stringE . show =<< reify ''Ord)
+-- AHA, we will use this to implement HFlags!  Works through library boundaries!

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Gergely Risko (gergely@risko.hu, errge@google.com)" />
+  <title>Cmdline libraries, intro to TemplateHaskell</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="http://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <script src="http://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js.gz"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">Cmdline libraries, intro to TemplateHaskell</h1>
+  <p class="author">
+Gergely Risko (<script type="text/javascript">
+<!--
+h='&#114;&#x69;&#x73;&#x6b;&#x6f;&#46;&#104;&#x75;';a='&#64;';n='&#x67;&#x65;&#114;&#x67;&#x65;&#108;&#x79;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#x67;&#x65;&#114;&#x67;&#x65;&#108;&#x79;&#32;&#x61;&#116;&#32;&#114;&#x69;&#x73;&#x6b;&#x6f;&#32;&#100;&#x6f;&#116;&#32;&#104;&#x75;</noscript>, <s>errge@google.com</s>)
+  </p>
+  <p class="date">HaskellerZ meetup - April 25th, 2013</p>
+</div>
+<div id="agenda-1" class="slide section level1">
+<h1>Agenda 1</h1>
+<p>Demonstration of some command-line option parsing libraries:</p>
+<ul>
+<li><p>cmdtheline</p></li>
+<li><p>getopt</p></li>
+<li><p>HFlags</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span class="kw">import</span> HFlags
+
+defineFlag <span class="st">&quot;name&quot;</span> <span class="st">&quot;Indiana Jones&quot;</span> <span class="st">&quot;Who to greet&quot;</span>
+defineFlag <span class="st">&quot;repeat&quot;</span> (<span class="dv">3</span> <span class="fu">+</span> <span class="dv">4</span><span class="ot"> ::</span> <span class="dt">Int</span>) <span class="st">&quot;Number of repeats&quot;</span>
+
+main <span class="fu">=</span> <span class="kw">do</span> s <span class="ot">&lt;-</span> <span class="fu">$</span>(initHFlags <span class="st">&quot;Simple program v0.1&quot;</span>)
+          <span class="fu">sequence_</span> <span class="fu">$</span> <span class="fu">replicate</span> flags_repeat <span class="fu">$</span> <span class="fu">putStrLn</span> flags_name</code></pre>
+<p>That's all, after that you have <code>--version</code>, <code>--help</code> and <code>--undefok</code> for free.</p></li>
+</ul>
+</div>
+<div id="agenda-2" class="slide section level1">
+<h1>Agenda 2</h1>
+<p>I'll also show some TemplateHaskell, a macro language to reduce boilerplate.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span class="kw">module</span> <span class="dt">Tup</span> <span class="kw">where</span>
+
+<span class="kw">import</span> Language.Haskell.TH
+
+get n k <span class="fu">=</span> <span class="kw">do</span>
+  name <span class="ot">&lt;-</span> newName <span class="st">&quot;wanted&quot;</span>
+  <span class="kw">let</span> arg <span class="fu">=</span> tupP (<span class="fu">replicate</span> k wildP <span class="fu">++</span>
+                  [varP name] <span class="fu">++</span> <span class="fu">replicate</span> (n <span class="fu">-</span> k <span class="fu">-</span> <span class="dv">1</span>) wildP)
+  <span class="kw">let</span> body <span class="fu">=</span> varE name
+  lamE [arg] body</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span class="kw">import</span> Tup
+
+main <span class="fu">=</span> <span class="fu">print</span> (<span class="fu">$</span>(get <span class="dv">6</span> <span class="dv">3</span>) (<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>))</code></pre>
+</div>
+<div id="cmdtheline" class="slide section level1">
+<h1>cmdtheline</h1>
+<p>CmdTheLine uses applicative functors to provide a declarative, compositional mechanism for defining command-line programs by lifting regular Haskell functions over argument parsers. What's the problem?</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import</span> Control.Applicative
+<span class="kw">import</span> System.Console.CmdTheLine
+
+<span class="ot">name ::</span> <span class="dt">Term</span> <span class="dt">String</span>
+name <span class="fu">=</span> value <span class="fu">$</span> opt <span class="st">&quot;Indiana Jones&quot;</span> <span class="fu">$</span> optInfo [ <span class="st">&quot;name&quot;</span>, <span class="st">&quot;n&quot;</span> ]
+
+<span class="ot">times ::</span> <span class="dt">Term</span> <span class="dt">Int</span>
+times <span class="fu">=</span> value <span class="fu">$</span> opt <span class="dv">4</span> <span class="fu">$</span> optInfo [ <span class="st">&quot;times&quot;</span>, <span class="st">&quot;t&quot;</span> ]
+
+hello name times <span class="fu">=</span> <span class="fu">sequence_</span> <span class="fu">$</span> <span class="fu">replicate</span> times <span class="fu">$</span> <span class="fu">putStrLn</span> name
+
+term <span class="fu">=</span> hello <span class="fu">&lt;$&gt;</span> name <span class="fu">&lt;*&gt;</span> times
+
+termInfo <span class="fu">=</span> defTI { termName <span class="fu">=</span> <span class="st">&quot;Hello&quot;</span>, version <span class="fu">=</span> <span class="st">&quot;1.0&quot;</span> }
+
+main <span class="fu">=</span> run ( term, termInfo )</code></pre>
+</div>
+<div id="monad---applicative---functor" class="slide section level1">
+<h1>Monad -&gt; Applicative -&gt; Functor</h1>
+<p>Every Monad is an Applicative and every Applicative is a Functor, here is why:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">fmap</span><span class="ot">   ::</span> <span class="kw">Functor</span> f     <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b
+<span class="ot">(&gt;&gt;=)  ::</span> <span class="kw">Monad</span> m       <span class="ot">=&gt;</span> m a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> m b
+<span class="ot">(&lt;*&gt;)  ::</span> <span class="kw">Applicative</span> f <span class="ot">=&gt;</span> f (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b
+<span class="fu">return</span><span class="ot"> ::</span> <span class="kw">Monad</span> m       <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> m a
+<span class="ot">pure   ::</span> <span class="kw">Applicative</span> f <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> f a
+
+<span class="ot">fmapFromAp ::</span> <span class="kw">Applicative</span> f <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b
+fmapFromAp pf av <span class="fu">=</span> (pure pf) <span class="fu">&lt;*&gt;</span> av
+
+<span class="ot">fmapFromM ::</span> <span class="kw">Monad</span> m <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> m a <span class="ot">-&gt;</span> m b
+fmapFromM pf mv <span class="fu">=</span> mv <span class="fu">&gt;&gt;=</span> (\x <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> pf x)
+
+<span class="ot">apFromM ::</span> <span class="kw">Monad</span> m <span class="ot">=&gt;</span> m (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> m a <span class="ot">-&gt;</span> m b
+apFromM mf mv <span class="fu">=</span> mv <span class="fu">&gt;&gt;=</span> pvToRet
+  <span class="kw">where</span>
+    pvToRet pv <span class="fu">=</span> mf <span class="fu">&gt;&gt;=</span> pvpfToRet pv
+    pvpfToRet pv pf <span class="fu">=</span> <span class="fu">return</span> (pf pv)
+
+<span class="co">-- of course, fmapFromM was redundant</span>
+fmapFromM2 pf mv <span class="fu">=</span> (<span class="fu">return</span> pf) <span class="ot">`apFromM`</span> mv</code></pre>
+<p>So, Monads are more specific than Applicatives, and in turn Aplicatives are more specific than Functors.</p>
+</div>
+<div id="inside-cmdtheline-why-term-is-an-applicative" class="slide section level1">
+<h1>Inside cmdtheline: why Term is an Applicative?</h1>
+<p>The important data structure inside cmdtheline is the Term.</p>
+<p>Why is that an Applicative? Why not only Fuctor? Why not Monad if already an Applicative?</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Term</span> a <span class="fu">=</span> <span class="dt">Term</span> [<span class="dt">ArgInfo</span>] (<span class="dt">Yield</span> a)
+<span class="kw">type</span> <span class="dt">Yield</span> a <span class="fu">=</span> <span class="dt">EvalInfo</span> <span class="ot">-&gt;</span> <span class="dt">CmdLine</span> <span class="ot">-&gt;</span> <span class="dt">Err</span> a
+
+<span class="kw">instance</span> <span class="kw">Functor</span> <span class="dt">Term</span> <span class="kw">where</span>
+  <span class="fu">fmap</span> <span class="fu">=</span> yield <span class="fu">.</span> result <span class="fu">.</span> result <span class="fu">.</span> <span class="fu">fmap</span>
+    <span class="kw">where</span>
+    yield f (<span class="dt">Term</span> ais y) <span class="fu">=</span> <span class="dt">Term</span> ais (f y)
+    result <span class="fu">=</span> (<span class="fu">.</span>)
+
+<span class="kw">instance</span> <span class="kw">Applicative</span> <span class="dt">Term</span> <span class="kw">where</span>
+  pure v <span class="fu">=</span> <span class="dt">Term</span> [] (\ _ _ <span class="ot">-&gt;</span> <span class="fu">return</span> v)
+
+  (<span class="dt">Term</span> args f) <span class="fu">&lt;*&gt;</span> (<span class="dt">Term</span> args&#39; v) <span class="fu">=</span> <span class="dt">Term</span> (args <span class="fu">++</span> args&#39;) wrapped
+    <span class="kw">where</span>
+    wrapped ei cl <span class="fu">=</span> f ei cl <span class="fu">&lt;*&gt;</span> v ei cl</code></pre>
+<p>It has to be an Applicative, so we can merge different parts of a program that uses different arguments to a bigger program that uses all of the arguments. Functor is not enough, that only ever cares about one context.</p>
+<p>But it can't be a Monad, because Monads are too specific to be able to evaluate a context before the computation. So we won't be able to (++) together all the args as we do in the Applicative instance.</p>
+</div>
+<div id="cmdtheline-summary" class="slide section level1">
+<h1>Cmdtheline summary</h1>
+<p>Pros:</p>
+<ul>
+<li><p>Very clever idea</p></li>
+<li><p>Clean and readable implementation</p></li>
+<li><p>Good documentation with lot of examples</p></li>
+<li><p>Lot of features: e.g. man page generation</p></li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li><p>The approach needed in Main.hs is a bit cryptic for a beginner</p></li>
+<li><p>Tutorial website is down and not included on GitHub</p></li>
+<li><p>Composition with options in libraries is cumbersome</p></li>
+</ul>
+</div>
+<div id="getopt" class="slide section level1">
+<h1>GetOpt</h1>
+<p>Similar to C getopt, included in base.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import</span> System.Console.GetOpt
+<span class="kw">import</span> System.Environment
+
+<span class="kw">data</span> <span class="dt">MyOptions</span> <span class="fu">=</span>
+  <span class="dt">MyOptions</span> {<span class="ot"> name ::</span> <span class="dt">String</span>
+            ,<span class="ot"> times ::</span> <span class="dt">Int</span> }
+
+def <span class="fu">=</span> <span class="dt">MyOptions</span> { name <span class="fu">=</span> <span class="st">&quot;Indiana Jones&quot;</span>, times <span class="fu">=</span> <span class="dv">4</span> }
+
+options <span class="fu">=</span>
+  [ <span class="dt">Option</span> [<span class="ch">&#39;n&#39;</span>] [<span class="st">&quot;name&quot;</span>]
+    (<span class="dt">ReqArg</span> (\name r <span class="ot">-&gt;</span> r { name <span class="fu">=</span> name }) <span class="st">&quot;NAME&quot;</span>) <span class="st">&quot;Who to greet&quot;</span>
+  , <span class="dt">Option</span> [<span class="ch">&#39;t&#39;</span>] [<span class="st">&quot;times&quot;</span>]
+    (<span class="dt">ReqArg</span> (\times r <span class="ot">-&gt;</span> r { times <span class="fu">=</span> <span class="fu">read</span> times}) <span class="st">&quot;INT&quot;</span>) <span class="st">&quot;How many times&quot;</span> ]
+
+run opts <span class="fu">=</span> <span class="fu">sequence_</span> <span class="fu">$</span> <span class="fu">replicate</span> (times opts) <span class="fu">$</span> <span class="fu">putStrLn</span> (name opts)
+
+main <span class="fu">=</span> <span class="kw">do</span>
+  argv <span class="ot">&lt;-</span> getArgs
+  <span class="kw">case</span> getOpt <span class="dt">Permute</span> options argv <span class="kw">of</span>
+    (o,n,[]  ) <span class="ot">-&gt;</span> run (<span class="fu">foldr</span> (<span class="fu">$</span>) def o)
+    (_,_,errs) <span class="ot">-&gt;</span> <span class="fu">ioError</span> (<span class="fu">userError</span> <span class="fu">$</span> <span class="fu">concat</span> errs <span class="fu">++</span> usageInfo <span class="st">&quot;example&quot;</span> options)</code></pre>
+</div>
+<div id="getopt-summary" class="slide section level1">
+<h1>GetOpt summary</h1>
+<p>Pros:</p>
+<ul>
+<li><p>Simple, by the book solution</p></li>
+<li><p>Clean control flow</p></li>
+<li><p>Included in base (so comes with GHC, you don't even need the platform)</p></li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li><p>Even the simple thing is long</p></li>
+<li><p>Had to roll our own foldr ($) def to handle default args and unordered opts</p></li>
+<li><p>Composition with options in libraries gonna be a nightmare</p></li>
+</ul>
+<p>HFlags uses GetOpt for parsing.</p>
+</div>
+<div id="hflags" class="slide section level1">
+<h1>HFlags</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span class="kw">import</span> HFlags
+
+defineFlag <span class="st">&quot;name&quot;</span> <span class="st">&quot;Indiana Jones&quot;</span> <span class="st">&quot;Who to greet&quot;</span>
+defineFlag <span class="st">&quot;repeat&quot;</span> (<span class="dv">3</span> <span class="fu">+</span> <span class="dv">4</span><span class="ot"> ::</span> <span class="dt">Int</span>) <span class="st">&quot;Number of repeats&quot;</span>
+
+main <span class="fu">=</span> <span class="kw">do</span> s <span class="ot">&lt;-</span> <span class="fu">$</span>(initHFlags <span class="st">&quot;Simple program v0.1&quot;</span>)
+          <span class="fu">sequence_</span> <span class="fu">$</span> <span class="fu">replicate</span> flags_repeat <span class="fu">$</span> <span class="fu">putStrLn</span> flags_name</code></pre>
+<p>Pros:</p>
+<ul>
+<li><p>Simple definition of flags and pure access to them</p></li>
+<li><p>Very easy and nice API free of boilerplate</p></li>
+<li><p>Support for <code>--undefok</code> (needed for complex deployments!), <code>--help</code></p></li>
+<li><p>Libraries can introduce flags on their own, no things to pass around</p></li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li><p>Impure, people will yell at me</p></li>
+<li><p>Uses TemplateHaskell to have the nice interface (portability issues)</p></li>
+<li><p>main has to splice in the initialization function with TH</p></li>
+</ul>
+</div>
+<div id="demo-time" class="slide section level1">
+<h1>Demo time!</h1>
+<ul>
+<li><p>SimpleExample</p></li>
+<li><p>ImportExample with collision detection</p></li>
+<li><p>Package example with cabal</p></li>
+<li><p>Complex example</p></li>
+</ul>
+</div>
+<div id="template-haskell-demo-environment" class="slide section level1">
+<h1>Template Haskell Demo Environment</h1>
+<p>Template Haskell is easy experiment with inside GHCi, ideal for learning and tinkering.</p>
+<ul>
+<li><p>:set -XTemplateHaskell</p></li>
+<li><p>useful: pprintQ q = putStrLn . pprint =&lt;&lt; runQ q</p></li>
+<li><p>GHC flag for watching splices getting built: :set -ddump-splices</p></li>
+<li><p>work through intro.ihs</p></li>
+<li><p>work through reify.ihs</p></li>
+<li><p>work through HFlags.hs</p></li>
+</ul>
+</div>
+<div id="thank-you" class="slide section level1">
+<h1>Thank you</h1>
+<p>Questions, remarks?</p>
+<p>Template Haskell in the haskellwiki: <a href="http://www.haskell.org/haskellwiki/Template_Haskell">http://www.haskell.org/haskellwiki/Template_Haskell</a></p>
+<p>Paper on TemplateHaskell: <a href="http://research.microsoft.com/~simonpj/papers/meta-haskell/">http://research.microsoft.com/~simonpj/papers/meta-haskell/</a></p>
+<p>Design notes for V2: <a href="http://research.microsoft.com/en-us/um/people/simonpj/tmp/notes2.ps">http://research.microsoft.com/en-us/um/people/simonpj/tmp/notes2.ps</a></p>
+<p>Reference docs on Hackage: <a href="http://hackage.haskell.org/package/template-haskell">http://hackage.haskell.org/package/template-haskell</a></p>
+<p>HFlags on Hackage: <a href="http://hackage.haskell.org/package/hflags">http://hackage.haskell.org/package/hflags</a></p>
+</div>
+</body>
+</html>
