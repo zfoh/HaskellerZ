@@ -6,12 +6,12 @@ The README moreover serves as a drafting document for upcoming meetups.
 Slides from past meetups
 ========================
 
-2012-01-19: Simon Meier - The bytestring library ([handout](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20120119-The_bytestring_library/bytestring-talk.md))
+2012-01-19: [Simon Meier](https://github.com/meiersi) - The bytestring library ([handout](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20120119-The_bytestring_library/bytestring-talk.md))
 
 2013-01-24: Alexander Bernauer - Advanced API design ([slides](https://docs.google.com/presentation/d/1wLsW5xzFL1A8JPY3BwXpFCnad8Ri3dFomgySP76c75I))
 
 2013-03-21: 
-  Simon Meier - An Introduction to GHC's Haskell execution model 
+  [Simon Meier](https://github.com/meiersi) - An Introduction to GHC's Haskell execution model 
   ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html), 
    [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
 
@@ -31,7 +31,7 @@ Upcoming meetups and the main speakers
 
 2013-08-29: Thomas Schilling - Lambdachine: a JIT compiler for Haskell
 
-2013-09-26: ??
+2013-09-26: [Maximilien Rzepka](https://github.com/maxrzepka), [Bas van Dijk](https://github.com/basvandijk): Clojure / Haskell : how to compute with probabilities. 
 
 2013-10-31: ??
 
