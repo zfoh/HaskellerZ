@@ -34,6 +34,7 @@ $(threeTimes)
 $([| $generatedFun ($generatedFun ($generatedFun $generatedVal)) |])
 
 -- error handling:
+-- fail :: String -> Q ()
 -- reportError :: String -> Q ()
 -- reportWarning :: String -> Q ()
 
