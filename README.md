@@ -20,10 +20,11 @@ Slides from past meetups
   ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags.html),
    [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags-handout.html))
 
+2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
+
+
 Upcoming meetups and the main speakers
 ======================================
-
-2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
 
 2013-06-27: Arvin Moezzi - Theorems for free.
 
