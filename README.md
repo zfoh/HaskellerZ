@@ -27,7 +27,7 @@ Upcoming meetups and the main speakers
 
 2013-06-27: Arvin Moezzi - Theorems for free.
 
-2013-07-25: Jason Dusek - Taskl: system configuration made easy!
+2013-07-25: ??
 
 2013-08-29: Thomas Schilling - Lambdachine: a JIT compiler for Haskell
 
