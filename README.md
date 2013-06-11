@@ -30,7 +30,12 @@ Upcoming meetups and the main speakers
 
 2013-07-25: ??
 
-2013-08-29: Thomas Schilling - Lambdachine: a JIT compiler for Haskell
+**2013-08-29: Zurich FP Afternoon (http://www.haskell.org/haskellwiki/ZuriHac2013)**
+
+  - Simon Marlow     - Keynote for the Zurich FP Afternoon
+  - Thomas Schilling - Lambdachine: a JIT compiler for Haskell 
+
+**2013-08-30 - 2013-09-01: ZuriHac 2013** (Yay, [register here](http://www.haskell.org/haskellwiki/ZuriHac2013))
 
 2013-09-26: [Maximilien Rzepka](https://github.com/maxrzepka), [Bas van Dijk](https://github.com/basvandijk): Clojure / Haskell : how to compute with probabilities. 
 
