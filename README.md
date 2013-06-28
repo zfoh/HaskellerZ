@@ -22,13 +22,19 @@ Slides from past meetups
 
 2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
 
+2013-06-27: 
+  [Thomas Schilling](https://github.com/nominolo) and 
+  [Simon Meier](https://github.com/meiersi) - A hands-on introduction to stream fusion.
+  ([examples](https://github.com/meiersi/HaskellerZ/tree/master/meetups/2013-06-27-Stream_Fusion),
+   papers: [ICFP 2007](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.104.7401) and 
+          [ICFP 2013](http://research.microsoft.com/en-us/um/people/simonpj/papers/ndp/haskell-beats-C.pdf);
+   more [ICFP 2013 papers](https://github.com/gasche/icfp2013-papers)
+  )
 
 Upcoming meetups and the main speakers
 ======================================
 
-2013-06-27: Arvin Moezzi - Theorems for free.
-
-2013-07-25: ??
+2013-07-25: Arvin Moezzi - Theorems for free.
 
 **2013-08-29: Zurich FP Afternoon (http://www.haskell.org/haskellwiki/ZuriHac2013)**
 
