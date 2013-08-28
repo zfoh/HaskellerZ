@@ -155,6 +155,8 @@ The events are organized in name of the Zurich HaskellerZ meetup group by the fo
 For any questions or emergencies, you can always call Bas at +41 791 285 624 or send an email to zurihac@erudify.com
 
 
+HaskellerZ Meetup Group
+=======================
 
 *Main [HaskellerZ](http://www.meetup.com/HaskellerZ/) meetup page.*
 
