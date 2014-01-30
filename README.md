@@ -47,7 +47,7 @@ our office where you can buy converters.
 
 [Google map with important places](https://maps.google.ch/maps/ms?msa=0&msid=215847268401510829939.0004decda4c3d2e76270f)
 
-Local transport links: 
+Local transport links:
 
 http://www.zvv.ch/en/
 
@@ -170,9 +170,9 @@ Slides from past meetups
 
 2013-01-24: Alexander Bernauer - Advanced API design ([slides](https://docs.google.com/presentation/d/1wLsW5xzFL1A8JPY3BwXpFCnad8Ri3dFomgySP76c75I))
 
-2013-03-21: 
-  [Simon Meier](https://github.com/meiersi) - An Introduction to GHC's Haskell execution model 
-  ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html), 
+2013-03-21:
+  [Simon Meier](https://github.com/meiersi) - An Introduction to GHC's Haskell execution model
+  ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html),
    [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
 
 2013-04-25:
@@ -182,11 +182,11 @@ Slides from past meetups
 
 2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
 
-2013-06-27: 
-  [Thomas Schilling](https://github.com/nominolo) and 
+2013-06-27:
+  [Thomas Schilling](https://github.com/nominolo) and
   [Simon Meier](https://github.com/meiersi) - A hands-on introduction to stream fusion.
   ([examples](https://github.com/meiersi/HaskellerZ/tree/master/meetups/2013-06-27-Stream_Fusion),
-   papers: [ICFP 2007](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.104.7401) and 
+   papers: [ICFP 2007](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.104.7401) and
           [ICFP 2013](http://research.microsoft.com/en-us/um/people/simonpj/papers/ndp/haskell-beats-C.pdf);
    more [ICFP 2013 papers](https://github.com/gasche/icfp2013-papers)
   )
@@ -199,13 +199,36 @@ Upcoming meetups and the main speakers
 **2013-08-29: Zurich FP Afternoon (http://www.haskell.org/haskellwiki/ZuriHac2013)**
 
   - Simon Marlow     - Keynote for the Zurich FP Afternoon
-  - Thomas Schilling - Lambdachine: a JIT compiler for Haskell 
+  - Thomas Schilling - Lambdachine: a JIT compiler for Haskell
 
 **2013-08-30 - 2013-09-01: ZuriHac 2013** (Yay, [register here](http://www.haskell.org/haskellwiki/ZuriHac2013))
 
-2013-09-26: [Maximilien Rzepka](https://github.com/maxrzepka), [Bas van Dijk](https://github.com/basvandijk): Clojure / Haskell : how to compute with probabilities. 
+2013-09-26: [Maximilien Rzepka](https://github.com/maxrzepka), [Bas van Dijk](https://github.com/basvandijk): Clojure / Haskell : how to compute with probabilities.
 
 2013-10-31: ??
 
 In general, we'll have a HaskellerZ meetup every last thursday of January until October every year.
 Note that we welcome guests and will happily adjust our schedule if they would like to give a talk.
+
+2014
+----
+
+* 2014-01-30: Francesco Mazolli - What's new in GHC 7.8
+
+* 2014-02-27: -
+
+* 2014-03-27: -
+
+* 2014-04-24: -
+
+* 2014-05-29: -
+
+* 2014-06-26: -
+
+* 2014-07-31: -
+
+* 2014-08-28: -
+* 2014-09-25: -
+* 2014-10-30: -
+* 2014-11-27: -
+* 2014-12-25: -
