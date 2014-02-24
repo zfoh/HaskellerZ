@@ -1,4 +1,3 @@
-
 HaskellerZ Meetup Group
 =======================
 
@@ -26,7 +25,8 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-06-26: **[ZuriHac 2014](http://www.haskell.org/haskellwiki/ZuriHac2014)** with talks by Simon Marlow and Edward Kmett
 
-* 2014-07-31: - free slot -
+* 2014-07-31: possibly: Matthias Körner - High-performance computing in Haskell: the [`repa`](http://hackage.haskell.org/package/repa) and [`accelerate`](http://hackage.haskell.org/package/accelerate) libraries
+
 
 * 2014-08-28: Simon Meier - How to compile Haskell to JavaScript
 
@@ -38,6 +38,11 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-12-25: - free slot -
 
+The following libraries were mentioned in the January meetup as something that people would be interested in. Please feel free to volunteer to present one of them.
+    Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), 
+    defining monads using [`operational`](http://hackage.haskell.org/package/operational)/[`transformers`](http://hackage.haskell.org/package/transformers)/[`mtl`](http://hackage.haskell.org/package/mtl), and computing 
+    [`statistics`](http://hackage.haskell.org/package/statistics).
+    
 
 2013 meetups
 ============
