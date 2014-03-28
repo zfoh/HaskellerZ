@@ -1,0 +1,425 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Mihály Bárász, nilcons.com" />
+  <title>Programming with pipes and some implications of the Free monad-style monadic programming</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">Programming with <code>pipes</code> and some implications of the Free monad-style monadic programming</h1>
+<h2 class="author">Mihály Bárász, nilcons.com</h2>
+<h3 class="date">HaskellerZ meetup - March 27th, 2014</h3>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#outline">Outline</a></li>
+<li><a href="#trivial-example">Trivial example</a></li>
+<li><a href="#trivial-example-with-types">Trivial example (with types)</a></li>
+<li><a href="#trivial-example-with-better-types">Trivial example (with better types)</a></li>
+<li><a href="#examples-from-real-code">Examples from real code</a></li>
+<li><a href="#examples-from-real-code-2">Examples from real code #2</a></li>
+<li><a href="#view-pipes-as-coroutines">View pipes as coroutines</a></li>
+<li><a href="#the-real-proxy-type">The real <code>Proxy</code> type</a></li>
+<li><a href="#the-proxy-type-diagrammatically">The <code>Proxy</code> type diagrammatically</a></li>
+<li><a href="#composing-proxies">Composing Proxies</a></li>
+<li><a href="#proxy-type-aliases"><code>Proxy</code> type aliases</a></li>
+<li><a href="#alternative-ways-to-compose-proxies">Alternative ways to compose Proxies</a></li>
+<li><a href="#understanding-composition">Understanding composition</a></li>
+<li><a href="#understanding-composition-1">Understanding composition</a></li>
+<li><a href="#understanding-composition-2">Understanding composition</a></li>
+<li><a href="#understanding-composition-3">Understanding composition</a></li>
+<li><a href="#the-pipes-ecosystem">The Pipes ecosystem</a></li>
+<li><a href="#leaking-producers">“Leaking” <code>Producer</code>s</a></li>
+<li><a href="#leaking-producer">“Leaking” <code>Producer</code></a></li>
+<li><a href="#leaking-graphically">“Leaking” graphically</a></li>
+<li><a href="#how-to-prevent-this-from-happening">How to prevent this from happening</a></li>
+<li><a href="#how-to-prevent-list-like-leaks">How to prevent list-like leaks</a></li>
+<li><a href="#quadratic-appending">Quadratic “appending”</a></li>
+<li><a href="#explanation-of-quadratic-behavior">Explanation of quadratic behavior</a></li>
+<li><a href="#explanation-graphically">Explanation, graphically</a></li>
+<li><a href="#quadratic-behavior-analysis">Quadratic behavior, analysis</a></li>
+<li><a href="#cps-magic">CPS magic</a></li>
+<li><a href="#thank-you">Thank you!</a></li>
+<li><a href="#monad-morphisms">Monad morphisms</a></li>
+<li><a href="#monad-morphisms-to-rearrangeremove-layers">Monad morphisms to rearrange/remove layers</a></li>
+</ul>
+</div>
+<h1 id="outline">Outline</h1>
+<ul>
+<li><p>Intro to pipes</p></li>
+<li><p>View of pipes: structured continuation passing</p></li>
+<li><p>The <code>Proxy</code> type</p></li>
+<li><p>Brief overview of pipes ecosystem</p></li>
+</ul>
+<!--  - Monad morphisms -->
+
+<ul>
+<li>Analysis of two deep “bugs”</li>
+</ul>
+<h1 id="trivial-example">Trivial example</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">main <span class="fu">=</span> runEffect <span class="fu">$</span> streamList [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">&gt;-&gt;</span> take <span class="dv">10</span> <span class="fu">&gt;-&gt;</span> printAll
+
+streamList xs <span class="fu">=</span> forM_ xs yield
+
+take <span class="dv">0</span> <span class="fu">=</span> return ()
+take n <span class="fu">=</span> <span class="kw">do</span>
+  x <span class="ot">&lt;-</span> await
+  yield x
+  take (n<span class="fu">-</span><span class="dv">1</span>)
+
+printAll <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
+  x <span class="ot">&lt;-</span> await
+  lift <span class="fu">$</span> print x</code></pre>
+<h1 id="trivial-example-with-types">Trivial example (with types)</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Control.Monad</span> (forever, forM_)
+<span class="kw">import </span><span class="dt">Pipes</span>
+<span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (take)
+
+main <span class="fu">=</span> runEffect <span class="fu">$</span> streamList [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">&gt;-&gt;</span> take <span class="dv">10</span> <span class="fu">&gt;-&gt;</span> printAll
+
+<span class="ot">streamList ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Producer</span> a <span class="dt">IO</span> ()
+streamList xs <span class="fu">=</span> forM_ xs yield
+
+take<span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Pipe</span> a a <span class="dt">IO</span> ()
+take <span class="dv">0</span> <span class="fu">=</span> return ()
+take n <span class="fu">=</span> <span class="kw">do</span>
+  x <span class="ot">&lt;-</span> await
+  yield x
+  take (n<span class="fu">-</span><span class="dv">1</span>)
+
+<span class="ot">printAll ::</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">Consumer</span> a <span class="dt">IO</span> ()
+printAll <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
+  x <span class="ot">&lt;-</span> await
+  lift <span class="fu">$</span> print x</code></pre>
+<h1 id="trivial-example-with-better-types">Trivial example (with better types)</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Control.Monad</span> (forever, forM_)
+<span class="kw">import </span><span class="dt">Pipes</span>
+<span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (take)
+
+main <span class="fu">=</span> runEffect <span class="fu">$</span> streamList [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">&gt;-&gt;</span> take <span class="dv">10</span> <span class="fu">&gt;-&gt;</span> printAll
+
+<span class="ot">streamList ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Producer</span> a m ()
+streamList xs <span class="fu">=</span> forM_ xs yield
+
+take<span class="ot"> ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Pipe</span> a a m ()
+take <span class="dv">0</span> <span class="fu">=</span> return ()
+take n <span class="fu">=</span> <span class="kw">do</span>
+  x <span class="ot">&lt;-</span> await
+  yield x
+  take (n<span class="fu">-</span><span class="dv">1</span>)
+
+<span class="ot">printAll ::</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">Consumer</span> a <span class="dt">IO</span> r
+printAll <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
+  x <span class="ot">&lt;-</span> await
+  lift <span class="fu">$</span> print x</code></pre>
+<h1 id="examples-from-real-code">Examples from real code</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">forkIO <span class="fu">$</span> runEffect <span class="fu">$</span>
+  measureCPU <span class="fu">&gt;-&gt;</span> delay <span class="fu">&gt;-&gt;</span> collectN <span class="dv">100</span> <span class="fu">&gt;-&gt;</span> updateIcon cpuIcon blue1 blue2</code></pre>
+<h1 id="examples-from-real-code-2">Examples from real code #2</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">runEffect <span class="fu">$</span> readChanSignalledS (rawTWSInput raw)
+        <span class="fu">&gt;-&gt;</span> useD (\t <span class="ot">-&gt;</span> <span class="fu">$</span>logDebug <span class="fu">$</span> printf <span class="st">&quot;New incoming message: %s&quot;</span> (show <span class="fu">$</span> twsI t))
+        <span class="fu">&gt;-&gt;</span> timePipe
+        <span class="fu">&gt;-&gt;</span> nextIdPipe
+        <span class="fu">&gt;-&gt;</span> managedAccountPipe
+        <span class="fu">&gt;-&gt;</span> errMsgPipe
+        <span class="fu">&gt;-&gt;</span> sanitizeCashOrdersInPipe
+        <span class="fu">&gt;-&gt;</span> filledOrdersInPipe
+        <span class="fu">&gt;-&gt;</span> openOrdersInPipe
+        <span class="fu">&gt;-&gt;</span> writeChanD chanFromTWS_</code></pre>
+<h1 id="view-pipes-as-coroutines">View pipes as coroutines</h1>
+<p>. . .</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Pipe</span> a m r <span class="fu">=</span> <span class="dt">Pipe</span> {<span class="ot"> stepPipe ::</span> m (<span class="dt">Step</span> a m r) }
+
+<span class="kw">data</span> <span class="dt">Step</span> a m r <span class="fu">=</span> <span class="dt">Yield</span> (a, <span class="dt">Pipe</span> a m r)
+                <span class="fu">|</span> <span class="dt">Await</span> (a <span class="ot">-&gt;</span> <span class="dt">Pipe</span> a m r)
+                <span class="fu">|</span> <span class="dt">Done</span> r</code></pre>
+<p>An excellent discussion in <a href="http://themonadreader.files.wordpress.com/2011/10/issue19.pdf">Monad.Reader #19: Mario Blažević, Coroutine Pipelines</a></p>
+<h1 id="the-real-proxy-type">The real <code>Proxy</code> type</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Proxy</span> a' a b' b m r
+    <span class="fu">=</span> <span class="dt">Request</span> a' (a  <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m r )
+    <span class="fu">|</span> <span class="dt">Respond</span> b  (b' <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m r )
+    <span class="fu">|</span> <span class="dt">M</span>          (m    (<span class="dt">Proxy</span> a' a b' b m r))
+    <span class="fu">|</span> <span class="dt">Pure</span>    r</code></pre>
+<p>. . .</p>
+<p>A <code>Proxy</code> is a monad transformer that receives and sends information on both an upstream and downstream interface.</p>
+<p>The type variables signify:</p>
+<ul>
+<li><p><code>a'</code> and <code>a</code> - The upstream interface, where <code>(a')</code>s go out and <code>(a)</code>s come in</p></li>
+<li><p><code>b'</code> and <code>b</code> - The downstream interface, where <code>(b)</code>s go out and <code>(b')</code>s come in</p></li>
+<li><p><code>m</code> - The base monad</p></li>
+<li><p><code>r</code> - The return value</p></li>
+</ul>
+<h1 id="the-proxy-type-diagrammatically">The <code>Proxy</code> type diagrammatically</h1>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSIzLjZpbiIgaGVpZ2h0PSIyLjJpbiIKCXZpZXdCb3g9IjIzNDkgMzI5MSA0Mjc3IDI2MjYiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIzMzA3LDM3NzkKMjM3OSwzNzc5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAzMzA3IDM3NzkgLSAyMzQ2IDM3NzktLT4KPHBvbHlsaW5lIHBvaW50cz0iMjU5OSAzNzE2CjIzNjMgMzc3OQoyNTk5IDM4NDIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iMjM2Miw0NzI0CjMyODksNDcyNAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgMjM2MiA0NzI0IC0gMzMyMiA0NzI0LS0+Cjxwb2x5bGluZSBwb2ludHM9IjMwNjkgNDc4NwozMzA2IDQ3MjQKMzA2OSA0NjYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ0ODgsNTE5Ngo0NDg4LDU4ODcKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDQ0ODggNTE5NiAtIDQ0ODggNTkyMS0tPgo8cG9seWxpbmUgcG9pbnRzPSI0NDI1IDU2NjgKNDQ4OCA1OTA0CjQ1NTEgNTY2OAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lOiBib3ggLS0+CjxyZWN0IHg9IjMzMDciIHk9IjMzMDciIHdpZHRoPSIyMzYyIiBoZWlnaHQ9IjE4ODkiIHJ4PSIwIiAKc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjY2MTQsMzc3OQo1Njg2LDM3NzkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDY2MTQgMzc3OSAtIDU2NTMgMzc3OS0tPgo8cG9seWxpbmUgcG9pbnRzPSI1OTA2IDM3MTYKNTY3MCAzNzc5CjU5MDYgMzg0MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI1NjY5LDQ3MjQKNjU5Niw0NzI0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA1NjY5IDQ3MjQgLSA2NjI5IDQ3MjQtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjM3NiA0Nzg3CjY2MTMgNDcyNAo2Mzc2IDQ2NjEKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iMjgzNCIgeT0iMzU0MyIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5hJzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSIyODM0IiB5PSI0NDg4IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPmE8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNDcyNCIgeT0iNTY2OSIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5yPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjYxNDEiIHk9IjM1NDMiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+Yic8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNjE0MSIgeT0iNDQ4OCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5iPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ0ODgiIHk9IjQyNTEiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Iml0YWxpYyIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiPm08L3RleHQ+CjwvZz4KPC9zdmc+Cg==" /></p>
+<p><br /></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Proxy</span> a' a b' b m r
+    <span class="fu">=</span> <span class="dt">Request</span> a' (a  <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m r )
+    <span class="fu">|</span> <span class="dt">Respond</span> b  (b' <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m r )
+    <span class="fu">|</span> <span class="dt">M</span>          (m    (<span class="dt">Proxy</span> a' a b' b m r))
+    <span class="fu">|</span> <span class="dt">Pure</span>    r</code></pre>
+<h1 id="composing-proxies">Composing Proxies</h1>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSI3LjFpbiIgaGVpZ2h0PSIyLjJpbiIKCXZpZXdCb3g9IjIzNDkgMzI4OCA4NTI5IDI2MjkiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIzMzA3LDM3NzkKMjM3OSwzNzc5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAzMzA3IDM3NzkgLSAyMzQ2IDM3NzktLT4KPHBvbHlsaW5lIHBvaW50cz0iMjU5OSAzNzE2CjIzNjMgMzc3OQoyNTk5IDM4NDIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iMjM2Miw0NzI0CjMyODksNDcyNAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgMjM2MiA0NzI0IC0gMzMyMiA0NzI0LS0+Cjxwb2x5bGluZSBwb2ludHM9IjMwNjkgNDc4NwozMzA2IDQ3MjQKMzA2OSA0NjYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ0ODgsNTE5Ngo0NDg4LDU4ODcKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDQ0ODggNTE5NiAtIDQ0ODggNTkyMS0tPgo8cG9seWxpbmUgcG9pbnRzPSI0NDI1IDU2NjgKNDQ4OCA1OTA0CjQ1NTEgNTY2OAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lOiBib3ggLS0+CjxyZWN0IHg9IjMzMDciIHk9IjMzMDciIHdpZHRoPSIyMzYyIiBoZWlnaHQ9IjE4ODkiIHJ4PSIwIiAKc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjY2MTQsMzc3OQo1Njg2LDM3NzkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDY2MTQgMzc3OSAtIDU2NTMgMzc3OS0tPgo8cG9seWxpbmUgcG9pbnRzPSI1OTA2IDM3MTYKNTY3MCAzNzc5CjU5MDYgMzg0MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI1NjY5LDQ3MjQKNjU5Niw0NzI0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA1NjY5IDQ3MjQgLSA2NjI5IDQ3MjQtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjM3NiA0Nzg3CjY2MTMgNDcyNAo2Mzc2IDQ2NjEKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNzU1OSwzNzc5CjY2MzAsMzc3OQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgNzU1OSAzNzc5IC0gNjU5OCAzNzc5LS0+Cjxwb2x5bGluZSBwb2ludHM9IjY4NTEgMzcxNgo2NjE1IDM3NzkKNjg1MSAzODQyCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjY2MTQsNDcyNAo3NTQxLDQ3MjQKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDY2MTQgNDcyNCAtIDc1NzQgNDcyNC0tPgo8cG9seWxpbmUgcG9pbnRzPSI3MzIxIDQ3ODcKNzU1OCA0NzI0CjczMjEgNDY2MQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI4NzQwLDUxOTYKODc0MCw1ODg3CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA4NzQwIDUxOTYgLSA4NzQwIDU5MjEtLT4KPHBvbHlsaW5lIHBvaW50cz0iODY3NyA1NjY4Cjg3NDAgNTkwNAo4ODAzIDU2NjgKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZTogYm94IC0tPgo8cmVjdCB4PSI3NTU5IiB5PSIzMzA3IiB3aWR0aD0iMjM2MiIgaGVpZ2h0PSIxODg5IiByeD0iMCIgCnN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIxMDg2NiwzNzc5Cjk5MzgsMzc3OQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgMTA4NjYgMzc3OSAtIDk5MDUgMzc3OS0tPgo8cG9seWxpbmUgcG9pbnRzPSIxMDE1OCAzNzE2Cjk5MjIgMzc3OQoxMDE1OCAzODQyCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9Ijk5MjEsNDcyNAoxMDg0OCw0NzI0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA5OTIxIDQ3MjQgLSAxMDg4MSA0NzI0LS0+Cjxwb2x5bGluZSBwb2ludHM9IjEwNjI4IDQ3ODcKMTA4NjUgNDcyNAoxMDYyOCA0NjYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjI4MzQiIHk9IjM1NDMiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+YSc8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iMjgzNCIgeT0iNDQ4OCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5hPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ3MjQiIHk9IjU2NjkiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+cjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI0NDg4IiB5PSI0MjUxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJpdGFsaWMiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5tPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9Ijg5NzYiIHk9IjU2NjkiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+cjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSIxMDM5MyIgeT0iNDQ4OCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5jPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9Ijg3NDAiIHk9IjQyNTEiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Iml0YWxpYyIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiPm08L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iMTAzOTMiIHk9IjM1NDMiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+Yyc8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNjYxNCIgeT0iMzU0MyIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij4oKTwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI2NjE0IiB5PSI0NDg4IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPmI8L3RleHQ+CjwvZz4KPC9zdmc+Cg==" /></p>
+<p><br /></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(&gt;-&gt;) ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Proxy</span> a' a () b m r <span class="ot">-&gt;</span> <span class="dt">Proxy</span> () b c' c m r <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a c' c m r</code></pre>
+<h1 id="proxy-type-aliases"><code>Proxy</code> type aliases</h1>
+<p><code>Producer</code>s can only <code>yield</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Producer</span> b <span class="fu">=</span> <span class="dt">Proxy</span> <span class="dt">X</span> () () b
+<span class="kw">type</span> <span class="dt">Producer'</span> b m r <span class="fu">=</span> forall x' x<span class="fu">.</span> <span class="dt">Proxy</span> x' x () b m r</code></pre>
+<p><code>Consumer</code>s can only <code>await</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Consumer</span> a <span class="fu">=</span> <span class="dt">Proxy</span> () a () <span class="dt">X</span>
+<span class="kw">type</span> <span class="dt">Consumer'</span> a m r <span class="fu">=</span> forall y' y<span class="fu">.</span> <span class="dt">Proxy</span> () a y' y m r</code></pre>
+<p>Here <code>X</code> is an uninhabited type (like <code>Data.Void</code>).</p>
+<h1 id="alternative-ways-to-compose-proxies">Alternative ways to compose Proxies</h1>
+<p>There are 5 predefined ways of composing pipes (or 4, or 7, depends how you look at it). And they can also be intermixed freely. These define the following categories over <code>Proxy</code>:</p>
+<ul>
+<li>The <code>cat</code> or pipes category: <code>(&gt;-&gt;)</code> and <code>cat</code>.</li>
+<li>The <code>pull</code> category: <code>(&gt;+&gt;)</code> and <code>pull</code>.</li>
+<li>The <code>push</code> category: <code>(&gt;~&gt;)</code> and <code>push</code>.</li>
+<li>The <code>request</code> category: <code>(\&gt;\)</code> and <code>request</code>.</li>
+<li>The <code>respond</code> category: <code>(/&gt;/)</code> and <code>respond</code>.</li>
+<li><code>(~&gt;)</code> and <code>yield</code>.</li>
+<li><code>(&gt;~)</code> and <code>await</code>.</li>
+</ul>
+<h1 id="understanding-composition">Understanding composition</h1>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSIzLjZpbiIgaGVpZ2h0PSIyLjhpbiIKCXZpZXdCb3g9IjIzNDkgMjU4NSA0Mjc3IDMzMzIiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIzMzA3LDM3NzkKMjM3OSwzNzc5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAzMzA3IDM3NzkgLSAyMzQ2IDM3NzktLT4KPHBvbHlsaW5lIHBvaW50cz0iMjU5OSAzNzE2CjIzNjMgMzc3OQoyNTk5IDM4NDIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iMjM2Miw0NzI0CjMyODksNDcyNAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgMjM2MiA0NzI0IC0gMzMyMiA0NzI0LS0+Cjxwb2x5bGluZSBwb2ludHM9IjMwNjkgNDc4NwozMzA2IDQ3MjQKMzA2OSA0NjYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ0ODgsNTE5Ngo0NDg4LDU4ODcKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDQ0ODggNTE5NiAtIDQ0ODggNTkyMS0tPgo8cG9seWxpbmUgcG9pbnRzPSI0NDI1IDU2NjgKNDQ4OCA1OTA0CjQ1NTEgNTY2OAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lOiBib3ggLS0+CjxyZWN0IHg9IjMzMDciIHk9IjMzMDciIHdpZHRoPSIyMzYyIiBoZWlnaHQ9IjE4ODkiIHJ4PSIwIiAKc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjY2MTQsMzc3OQo1Njg2LDM3NzkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDY2MTQgMzc3OSAtIDU2NTMgMzc3OS0tPgo8cG9seWxpbmUgcG9pbnRzPSI1OTA2IDM3MTYKNTY3MCAzNzc5CjU5MDYgMzg0MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI1NjY5LDQ3MjQKNjU5Niw0NzI0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA1NjY5IDQ3MjQgLSA2NjI5IDQ3MjQtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjM3NiA0Nzg3CjY2MTMgNDcyNAo2Mzc2IDQ2NjEKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNDQ4OCwyNTk4CjQ0ODgsMzI4OQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgNDQ4OCAyNTk4IC0gNDQ4OCAzMzIyLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ0MjUgMzA2OQo0NDg4IDMzMDYKNDU1MSAzMDY5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjI4MzQiIHk9IjM1NDMiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+YSc8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iMjgzNCIgeT0iNDQ4OCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5hPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ3MjQiIHk9IjU2NjkiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+cjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI2MTQxIiB5PSIzNTQzIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPmInPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjYxNDEiIHk9IjQ0ODgiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+YjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI0NDg4IiB5PSI0MjUxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJpdGFsaWMiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5tPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ3MjQiIHk9IjMwNzAiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+aTwvdGV4dD4KPC9nPgo8L3N2Zz4K" /></p>
+<p><br /></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">i <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m r</code></pre>
+<h1 id="understanding-composition-1">Understanding composition</h1>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSIzLjZpbiIgaGVpZ2h0PSIyLjhpbiIKCXZpZXdCb3g9IjIzNDkgMjU4NSA0Mjc3IDMzMzIiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIzMzA3LDM3NzkKMjM3OSwzNzc5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAzMzA3IDM3NzkgLSAyMzQ2IDM3NzktLT4KPHBvbHlsaW5lIHBvaW50cz0iMjU5OSAzNzE2CjIzNjMgMzc3OQoyNTk5IDM4NDIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iMjM2Miw0NzI0CjMyODksNDcyNAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgMjM2MiA0NzI0IC0gMzMyMiA0NzI0LS0+Cjxwb2x5bGluZSBwb2ludHM9IjMwNjkgNDc4NwozMzA2IDQ3MjQKMzA2OSA0NjYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmU6IGJveCAtLT4KPHJlY3QgeD0iMzMwNyIgeT0iMzMwNyIgd2lkdGg9IjIzNjIiIGhlaWdodD0iMTg4OSIgcng9IjAiIApzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjYxNCwzNzc5CjU2ODYsMzc3OQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgNjYxNCAzNzc5IC0gNTY1MyAzNzc5LS0+Cjxwb2x5bGluZSBwb2ludHM9IjU5MDYgMzcxNgo1NjcwIDM3NzkKNTkwNiAzODQyCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjU2NjksNDcyNAo2NTk2LDQ3MjQKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDU2NjkgNDcyNCAtIDY2MjkgNDcyNC0tPgo8cG9seWxpbmUgcG9pbnRzPSI2Mzc2IDQ3ODcKNjYxMyA0NzI0CjYzNzYgNDY2MQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI0NzI0LDMzMDcKNDcyNCw0NzI0CjU2NTEsNDcyNAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgNDcyNCA0NzI0IC0gNTY4NSA0NzI0LS0+Cjxwb2x5bGluZSBwb2ludHM9IjU0MzIgNDc4Nwo1NjY4IDQ3MjQKNTQzMiA0NjYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ3MjQsMjU5OAo0NzI0LDMyODkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDQ3MjQgMjU5OCAtIDQ3MjQgMzMyMi0tPgo8cG9seWxpbmUgcG9pbnRzPSI0NjYxIDMwNjkKNDcyNCAzMzA2CjQ3ODcgMzA2OQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI0MjUxLDUxOTYKNDI1MSw1ODg3CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA0MjUxIDUxOTYgLSA0MjUxIDU5MjEtLT4KPHBvbHlsaW5lIHBvaW50cz0iNDE4OCA1NjY4CjQyNTEgNTkwNAo0MzE0IDU2NjgKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNTY2OSwzNzc5CjQyNTEsMzc3OQo0MjUxLDUxNzkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDQyNTEgMzc3OSAtIDQyNTEgNTIxMi0tPgo8cG9seWxpbmUgcG9pbnRzPSI0MTg4IDQ5NTkKNDI1MSA1MTk1CjQzMTQgNDk1OQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSIyODM0IiB5PSIzNTQzIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPmEnPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjI4MzQiIHk9IjQ0ODgiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+YTwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI2MTQxIiB5PSIzNTQzIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPmInPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjYxNDEiIHk9IjQ0ODgiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+YjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSIzODI2IiB5PSIzODI2IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJpdGFsaWMiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5tPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ0ODgiIHk9IjU2NjkiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+Yic8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNDk2MCIgeT0iMzA3MCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5iPC90ZXh0Pgo8L2c+Cjwvc3ZnPgo=" /></p>
+<p><br /></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">respond ::</span> b <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m b'</code></pre>
+<h1 id="understanding-composition-2">Understanding composition</h1>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSI3LjNpbiIgaGVpZ2h0PSI0LjdpbiIKCXZpZXdCb3g9IjIzNDkgMjU4NSA4NzY1IDU2OTQiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI2NjE0LDQ3MjQKODUwMyw0NzI0Cjg1MDMsNDk0MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgODUwMyA0NzI0IC0gODUwMyA0OTc2LS0+Cjxwb2x5bGluZSBwb2ludHM9Ijg0NDAgNDcyMwo4NTAzIDQ5NTkKODU2NiA0NzIzCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9Ijg1MDMsODI2NwoxMTEwMiw4MjY3CjExMTAyLDM3NzkKNjYzMCwzNzc5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAxMTEwMiAzNzc5IC0gNjU5OCAzNzc5LS0+Cjxwb2x5bGluZSBwb2ludHM9IjY4NTEgMzcxNgo2NjE1IDM3NzkKNjg1MSAzODQyCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjMzMDcsMzc3OQoyMzc5LDM3NzkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDMzMDcgMzc3OSAtIDIzNDYgMzc3OS0tPgo8cG9seWxpbmUgcG9pbnRzPSIyNTk5IDM3MTYKMjM2MyAzNzc5CjI1OTkgMzg0MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIyMzYyLDQ3MjQKMzI4OSw0NzI0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAyMzYyIDQ3MjQgLSAzMzIyIDQ3MjQtLT4KPHBvbHlsaW5lIHBvaW50cz0iMzA2OSA0Nzg3CjMzMDYgNDcyNAozMDY5IDQ2NjEKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNDQ4OCw1MTk2CjQ0ODgsNTg4NwoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgNDQ4OCA1MTk2IC0gNDQ4OCA1OTIxLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ0MjUgNTY2OAo0NDg4IDU5MDQKNDU1MSA1NjY4CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmU6IGJveCAtLT4KPHJlY3QgeD0iMzMwNyIgeT0iMzMwNyIgd2lkdGg9IjIzNjIiIGhlaWdodD0iMTg4OSIgcng9IjAiIApzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjYxNCwzNzc5CjU2ODYsMzc3OQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgNjYxNCAzNzc5IC0gNTY1MyAzNzc5LS0+Cjxwb2x5bGluZSBwb2ludHM9IjU5MDYgMzcxNgo1NjcwIDM3NzkKNTkwNiAzODQyCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjU2NjksNDcyNAo2NTk2LDQ3MjQKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDU2NjkgNDcyNCAtIDY2MjkgNDcyNC0tPgo8cG9seWxpbmUgcG9pbnRzPSI2Mzc2IDQ3ODcKNjYxMyA0NzI0CjYzNzYgNDY2MQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI0NDg4LDI1OTgKNDQ4OCwzMjg5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA0NDg4IDI1OTggLSA0NDg4IDMzMjItLT4KPHBvbHlsaW5lIHBvaW50cz0iNDQyNSAzMDY5CjQ0ODggMzMwNgo0NTUxIDMwNjkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNzMyMiw2MTQxCjYzOTQsNjE0MQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgNzMyMiA2MTQxIC0gNjM2MiA2MTQxLS0+Cjxwb2x5bGluZSBwb2ludHM9IjY2MTUgNjA3OAo2Mzc5IDYxNDEKNjYxNSA2MjA0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjYzNzcsNzA4Ngo3MzA0LDcwODYKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDYzNzcgNzA4NiAtIDczMzggNzA4Ni0tPgo8cG9seWxpbmUgcG9pbnRzPSI3MDg1IDcxNDkKNzMyMSA3MDg2CjcwODUgNzAyMwoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI4NTAzLDc1NTkKODUwMyw4MjQ5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA4NTAzIDc1NTkgLSA4NTAzIDgyODMtLT4KPHBvbHlsaW5lIHBvaW50cz0iODQ0MCA4MDMwCjg1MDMgODI2Ngo4NTY2IDgwMzAKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZTogYm94IC0tPgo8cmVjdCB4PSI3MzIyIiB5PSI1NjY5IiB3aWR0aD0iMjM2MiIgaGVpZ2h0PSIxODg5IiByeD0iMCIgCnN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIxMDYyOSw2MTQxCjk3MDEsNjE0MQoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgMTA2MjkgNjE0MSAtIDk2NjkgNjE0MS0tPgo8cG9seWxpbmUgcG9pbnRzPSI5OTIyIDYwNzgKOTY4NiA2MTQxCjk5MjIgNjIwNAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI5Njg1LDcwODYKMTA2MTIsNzA4NgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgOTY4NSA3MDg2IC0gMTA2NDUgNzA4Ni0tPgo8cG9seWxpbmUgcG9pbnRzPSIxMDM5MiA3MTQ5CjEwNjI4IDcwODYKMTAzOTIgNzAyMwoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI4NTAzLDQ5NjAKODUwMyw1NjUxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA4NTAzIDQ5NjAgLSA4NTAzIDU2ODUtLT4KPHBvbHlsaW5lIHBvaW50cz0iODQ0MCA1NDMyCjg1MDMgNTY2OAo4NTY2IDU0MzIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iMjgzNCIgeT0iNDQ4OCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij54PC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjYxNDEiIHk9IjM1NDMiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+Yic8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNjE0MSIgeT0iNDQ4OCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5iPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ0ODgiIHk9IjQyNTEiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Iml0YWxpYyIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiPm08L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNDcyNCIgeT0iMzA3MCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5hPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ3MjQiIHk9IjU2NjkiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+YSc8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iMjgzNCIgeT0iMzU0MyIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij54JzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI2ODUwIiB5PSI2ODUwIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPng8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iODc0MCIgeT0iODAzMSIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5iJzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSIxMDE1NyIgeT0iNTkwNSIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5jJzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSIxMDE1NyIgeT0iNjg1MCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5jPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9Ijg1MDMiIHk9IjY2MTQiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Iml0YWxpYyIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiPm08L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNjg1MCIgeT0iNTkwNSIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij54JzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI4NzQwIiB5PSI1NDMzIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPmI8L3RleHQ+CjwvZz4KPC9zdmc+Cg==" /></p>
+<p><br /></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">(/&gt;/) ::</span> <span class="dt">Monad</span> m
+  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Proxy</span> x' x b' b m a')
+  <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> <span class="dt">Proxy</span> x' x c' c m b')
+  <span class="ot">-&gt;</span>  a <span class="ot">-&gt;</span> <span class="dt">Proxy</span> x' x c' c m a'</code></pre>
+<h1 id="understanding-composition-3">Understanding composition</h1>
+<p>Pipes composition is not limited to the ways provided by <code>pipes</code> package. If you are willing to “look inside” (by using the <code>Pipes.Internal</code> module).</p>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSI0LjRpbiIgaGVpZ2h0PSIzLjZpbiIKCXZpZXdCb3g9IjE4NzcgMTY0MCA1MjIyIDQyNzciPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSIzMzA3LDM3NzkKMjM3OSwzNzc5CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAzMzA3IDM3NzkgLSAyMzQ2IDM3NzktLT4KPHBvbHlsaW5lIHBvaW50cz0iMjU5OSAzNzE2CjIzNjMgMzc3OQoyNTk5IDM4NDIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iMjM2Miw0NzI0CjMyODksNDcyNAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBBcnJvd2hlYWQgb24gWFhYcG9pbnQgMjM2MiA0NzI0IC0gMzMyMiA0NzI0LS0+Cjxwb2x5bGluZSBwb2ludHM9IjMwNjkgNDc4NwozMzA2IDQ3MjQKMzA2OSA0NjYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4O3N0cm9rZS1taXRlcmxpbWl0Ojg7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ0ODgsNTE5Ngo0NDg4LDU4ODcKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDQ0ODggNTE5NiAtIDQ0ODggNTkyMS0tPgo8cG9seWxpbmUgcG9pbnRzPSI0NDI1IDU2NjgKNDQ4OCA1OTA0CjQ1NTEgNTY2OAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lOiBib3ggLS0+CjxyZWN0IHg9IjMzMDciIHk9IjMzMDciIHdpZHRoPSIyMzYyIiBoZWlnaHQ9IjE4ODkiIHJ4PSIwIiAKc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjY2MTQsMzc3OQo1Njg2LDM3NzkKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gQXJyb3doZWFkIG9uIFhYWHBvaW50IDY2MTQgMzc3OSAtIDU2NTMgMzc3OS0tPgo8cG9seWxpbmUgcG9pbnRzPSI1OTA2IDM3MTYKNTY3MCAzNzc5CjU5MDYgMzg0MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODtzdHJva2UtbWl0ZXJsaW1pdDo4OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI1NjY5LDQ3MjQKNjU5Niw0NzI0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA1NjY5IDQ3MjQgLSA2NjI5IDQ3MjQtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjM3NiA0Nzg3CjY2MTMgNDcyNAo2Mzc2IDQ2NjEKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iMjM2MiwzNzc5CjIzNjIsMjgzNAo2NjE0LDI4MzQKNjYxNCwzNzYxCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA2NjE0IDI4MzQgLSA2NjE0IDM3OTUtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjU1MSAzNTQyCjY2MTQgMzc3OAo2Njc3IDM1NDIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjYxNCw0NzI0CjcwODYsNDcyNAo3MDg2LDIxMjUKNTIxMywyMTI1CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCA3MDg2IDIxMjUgLSA1MTgxIDIxMjUtLT4KPHBvbHlsaW5lIHBvaW50cz0iNTQzNCAyMDYyCjUxOTcgMjEyNQo1NDM0IDIxODgKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iMzc3OSwyMTI1CjE4ODksMjEyNQoxODg5LDQ3MjQKMjM0NCw0NzI0CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIEFycm93aGVhZCBvbiBYWFhwb2ludCAxODg5IDQ3MjQgLSAyMzc3IDQ3MjQtLT4KPHBvbHlsaW5lIHBvaW50cz0iMjEyNCA0Nzg3CjIzNjEgNDcyNAoyMTI0IDQ2NjEKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7c3Ryb2tlLW1pdGVybGltaXQ6ODsKIi8+CjwhLS0gTGluZTogYm94IC0tPgo8cmVjdCB4PSIzNzc5IiB5PSIxNjUzIiB3aWR0aD0iMTQxNyIgaGVpZ2h0PSI3MDgiIHJ4PSIwIiAKc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjI4MzQiIHk9IjM1NDMiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+KCk8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iMjgzNCIgeT0iNDQ4OCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5hPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQ3MjQiIHk9IjU2NjkiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+cjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI2MTQxIiB5PSIzNTQzIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPigpPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjYxNDEiIHk9IjQ0ODgiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+YTwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI0NDg4IiB5PSI0MjUxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJpdGFsaWMiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5tPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjQwMTUiIHk9IjIxMjUiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyMjciIHRleHQtYW5jaG9yPSJzdGFydCI+TWF5YmUgYTwvdGV4dD4KPC9nPgo8L3N2Zz4K" /></p>
+<p><br /></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">loopPipe ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Proxy</span> () a () a m r <span class="ot">-&gt;</span> <span class="dt">Effect'</span> m r</code></pre>
+<h1 id="the-pipes-ecosystem">The Pipes ecosystem</h1>
+<p>Pipesification of specific libraries, libs with pipes API:</p>
+<ul>
+<li>pipes-bytestring</li>
+<li>pipes-text (not yet)</li>
+<li>pipes-binary</li>
+<li>pipes-aeson</li>
+<li>pipes-attoparsec</li>
+<li>pipes-zlib</li>
+<li>pipes-network, pipes-network-tls</li>
+<li>pipes-http</li>
+<li>pipes-csv</li>
+<li>pipes-postgresql-simple</li>
+<li>pipes-shell</li>
+</ul>
+<p>Not really pipes specific, but designed for pipes</p>
+<ul>
+<li>pipes-concurrency</li>
+<li>pipes-safe</li>
+</ul>
+<p>Extending pipes functionality</p>
+<ul>
+<li>pipes-parse</li>
+<li>pipes-group</li>
+</ul>
+<h1 id="leaking-producers">“Leaking” <code>Producer</code>s</h1>
+<p>In (surprisingly) many ways pipes – especially <code>Producer</code>s – behave like lists.</p>
+<p>Can you spot the problem?</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">numbers ::</span> <span class="dt">Producer</span> <span class="dt">Int</span> <span class="dt">IO</span> r
+numbers <span class="fu">=</span> go <span class="dv">0</span>
+  <span class="kw">where</span>
+    go n <span class="fu">=</span> <span class="kw">do</span> yield n
+              go (n<span class="fu">+</span><span class="dv">1</span>)</code></pre>
+<h1 id="leaking-producer">“Leaking” <code>Producer</code></h1>
+<p>The problem is that you can’t use the <code>numbers</code> twice in your code. The following program leaks:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Pipes</span>
+<span class="kw">import </span><span class="dt">Pipes.Core</span>
+
+<span class="ot">numbers ::</span> <span class="dt">Producer</span> <span class="dt">Int</span> <span class="dt">IO</span> ()
+numbers <span class="fu">=</span> go <span class="dv">0</span>
+  <span class="kw">where</span>
+    go n <span class="fu">=</span> <span class="kw">do</span> yield n
+              go (n<span class="fu">+</span><span class="dv">1</span>)
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  runEffect <span class="fu">$</span> numbers <span class="fu">//&gt;</span> lift <span class="fu">.</span> print
+  runEffect <span class="fu">$</span> numbers <span class="fu">//&gt;</span> lift <span class="fu">.</span> print</code></pre>
+<p>. . .</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Control.Monad</span>
+
+<span class="ot">numbers ::</span> [<span class="dt">Int</span>]
+numbers <span class="fu">=</span> go <span class="dv">0</span>
+  <span class="kw">where</span>
+    go n <span class="fu">=</span> n <span class="fu">:</span> go (n<span class="fu">+</span><span class="dv">1</span>)
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  forM_ numbers print
+  forM_ numbers print</code></pre>
+<h1 id="leaking-graphically">“Leaking” graphically</h1>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSIzLjdpbiIgaGVpZ2h0PSIzLjdpbiIKCXZpZXdCb3g9IjM0ODAgMTM1NCA0NDk3IDQ0MTUiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI0MzQ2LDE3OTUKMzg3NCwyMjY3CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjQ5MTMsMTc5NQo1MjkxLDIyNjcKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNTEwMiwyODM0CjQ2MjksMzMwNwoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI1NjY5LDI4MzQKNjA0NywzMzA3CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjU4NTgsMzg3NAo1Mzg1LDQzNDYKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNjQyNSwzODc0CjY4MDMsNDM0NgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI2NjE0LDQ5MTMKNjE0MSw1Mzg1CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjcxODEsNDkxMwo3NTU5LDUzODUKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNDQ0MCIgeT0iMTU1OSIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij4mIzYyOyYjNjI7PC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjM0OTYiIHk9IjI1NTEiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyMjciIHRleHQtYW5jaG9yPSJzdGFydCI+eWllbGQgMDwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI1MTk2IiB5PSIyNTk4IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPiYjNjI7JiM2Mjs8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNDI1MSIgeT0iMzU5MCIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjIyNyIgdGV4dC1hbmNob3I9InN0YXJ0Ij55aWVsZCAxPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjU5NTIiIHk9IjM2MzciIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+JiM2MjsmIzYyOzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI1MDA3IiB5PSI0NjI5IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjI3IiB0ZXh0LWFuY2hvcj0ic3RhcnQiPnlpZWxkIDI8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNjcwOCIgeT0iNDY3NyIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij4mIzYyOyYjNjI7PC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjU3NjMiIHk9IjU2NjkiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyMjciIHRleHQtYW5jaG9yPSJzdGFydCI+eWllbGQgMzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI3NTU5IiB5PSI1NjY5IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjI3IiB0ZXh0LWFuY2hvcj0ic3RhcnQiPi4gLiAuPC90ZXh0Pgo8L2c+Cjwvc3ZnPgo=" /></p>
+<p><br /></p>
+<p>. . .</p>
+<p>This is a bit misleading, the real question is what thunks are created and what have reference to what. You can visualise this with ghc-vis.</p>
+<h1 id="how-to-prevent-this-from-happening">How to prevent this from happening</h1>
+<p>Sometimes an optimized build might help. Eg. we can produce the same kind of structure simply in <code>IO</code>, no pipes involved:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">printNumbers ::</span> <span class="dt">IO</span> ()
+printNumbers <span class="fu">=</span> go <span class="dv">0</span>
+  <span class="kw">where</span>
+    go n <span class="fu">=</span> <span class="kw">do</span> print n
+              go (n<span class="fu">+</span><span class="dv">1</span>)
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  printNumbers
+  printNumbers</code></pre>
+<p>And it does leak if compiled with <code>-O0</code>. But if compiled with <code>-O</code> it runs in constant space.</p>
+<h1 id="how-to-prevent-list-like-leaks">How to prevent list-like leaks</h1>
+<p>Generally, <em>avoid defining recursive structures that don’t depend on anything (parameters or IO) and using them more than once</em>.</p>
+<p>. . .</p>
+<p>There’s no silver bullet, though. Consider this:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">numbersFrom ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Producer</span> <span class="dt">Int</span> <span class="dt">IO</span> ()
+numbersFrom <span class="fu">=</span> go
+  <span class="kw">where</span>
+    go n <span class="fu">=</span> <span class="kw">do</span> yield n
+              go (n<span class="fu">+</span><span class="dv">1</span>)
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  <span class="kw">let</span> n <span class="fu">=</span> <span class="dv">42</span>
+  runEffect <span class="fu">$</span> numbersFrom n <span class="fu">//&gt;</span> lift <span class="fu">.</span> print
+  runEffect <span class="fu">$</span> numbersFrom n <span class="fu">//&gt;</span> lift <span class="fu">.</span> print</code></pre>
+<p>Solution: <code>-fno-full-laziness</code>.</p>
+<h1 id="quadratic-appending">Quadratic “appending”</h1>
+<p>Can you spot the issue?</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">chunkify ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Pipe</span> a [a] m r
+chunkify n <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
+  xs <span class="ot">&lt;-</span> replicateM n await
+  yield xs
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  runEffect <span class="fu">$</span> numbers <span class="fu">&gt;-&gt;</span> chunkify <span class="dv">10000</span> <span class="fu">&gt;-&gt;</span> P.take <span class="dv">1</span> <span class="fu">//&gt;</span> lift <span class="fu">.</span> print <span class="fu">.</span> last</code></pre>
+<h1 id="explanation-of-quadratic-behavior">Explanation of quadratic behavior</h1>
+<p>To understand the issue we need to know two things:</p>
+<ul>
+<li>The definition of <code>replicateM</code>:</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">replicateM ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m a <span class="ot">-&gt;</span> m [a]
+replicateM n op <span class="fu">=</span> go n
+  <span class="kw">where</span>
+    go <span class="dv">0</span> <span class="fu">=</span> return []
+    go k <span class="fu">=</span> <span class="kw">do</span>
+      x <span class="ot">&lt;-</span> op
+      xs <span class="ot">&lt;-</span> go (k<span class="fu">-</span><span class="dv">1</span>)
+      return (x <span class="fu">:</span> xs)</code></pre>
+<ul>
+<li>Understanding why the following is quadratic:</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">numList ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
+numList <span class="dv">0</span> <span class="fu">=</span> []
+numList n <span class="fu">=</span> numList (n<span class="fu">-</span><span class="dv">1</span>) <span class="fu">++</span> [n]</code></pre>
+<h1 id="explanation-graphically">Explanation, graphically</h1>
+<p><br /></p>
+<p>            <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSIyLjhpbiIgaGVpZ2h0PSIyLjZpbiIKCXZpZXdCb3g9IjU1NTkgMTMyMiAzMzYzIDMxMjgiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI2MzMwLDM1OTAKNTg1OCw0MDYyCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjY3MDgsMzU5MAo3MTgxLDQwNjIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNzA4NiwyNjQ1CjY2MTQsMzExOAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI3NDY0LDI2NDUKNzkzNywzMTE4CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9Ijc4NDIsMTcwMAo3MzcwLDIxNzMKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iODIyMCwxNzAwCjg2OTIsMjE3MwoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI2MzMwIiB5PSIzNDAxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPisrPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjcwODYiIHk9IjI0NTYiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+Kys8L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNzg0MiIgeT0iMTUxMSIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij4rKzwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI4NTAzIiB5PSIyNDU2IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPltuXTwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI1NTc0IiB5PSI0MzQ2IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPi4uLjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI3NjUzIiB5PSIzNDAxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPltuLTFdPC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjY4OTciIHk9IjQzNDYiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+W24tMl08L3RleHQ+CjwvZz4KPC9zdmc+Cg==" />                       <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iCiJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPgo8IS0tIENyZWF0b3I6IGZpZzJkZXYgVmVyc2lvbiAzLjIgUGF0Y2hsZXZlbCA1ZCAtLT4KPCEtLSBDcmVhdGlvbkRhdGU6IEZyaSBNYXIgMjggMTA6NTk6MDcgMjAxNCAtLT4KPCEtLSBNYWduaWZpY2F0aW9uOiAxLjA1MCAtLT4KPHN2Zwl4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCgl4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKCXdpZHRoPSIyLjlpbiIgaGVpZ2h0PSI0LjlpbiIKCXZpZXdCb3g9IjY2OTIgMTMwNyAzNTE2IDU4ODkiPgo8ZyBzdHlsZT0ic3Ryb2tlLXdpZHRoOi4wMjVpbjsgZmlsbDpub25lIj4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI3ODQyLDE2MDYKNzI3NSwyMTczCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9Ijg0MDksMTYwNgo4OTc2LDIxNzMKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iODY5MiwyNTUxCjgxMjUsMzExOAoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI5MjU5LDI1NTEKOTgyNiwzMTE4CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9Ijc2NTMsMzQ5Ngo3MDg2LDQwNjIKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iODIyMCwzNDk2Cjg3ODcsNDA2MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI4NTAzLDQ0NDAKNzkzNyw1MDA3CiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjkwNzAsNDQ0MAo5NjM3LDUwMDcKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iNzQ2NCw1Mzg1CjY4OTcsNTk1MgoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBMaW5lIC0tPgo8cG9seWxpbmUgcG9pbnRzPSI4MDMxLDUzODUKODU5OCw1OTUyCiIgc3R5bGU9InN0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDo4OwpzdHJva2UtbGluZWpvaW46bWl0ZXI7IHN0cm9rZS1saW5lY2FwOmJ1dHQ7CiIvPgo8IS0tIExpbmUgLS0+Cjxwb2x5bGluZSBwb2ludHM9IjgzMTQsNjMzMAo3NzQ4LDY4OTcKIiBzdHlsZT0ic3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjg7CnN0cm9rZS1saW5lam9pbjptaXRlcjsgc3Ryb2tlLWxpbmVjYXA6YnV0dDsKIi8+CjwhLS0gTGluZSAtLT4KPHBvbHlsaW5lIHBvaW50cz0iODg4MSw2MzMwCjk0NDgsNjg5NwoiIHN0eWxlPSJzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6ODsKc3Ryb2tlLWxpbmVqb2luOm1pdGVyOyBzdHJva2UtbGluZWNhcDpidXR0OwoiLz4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI3ODQyIiB5PSIxNTExIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPiYjNjI7JiM2Mjs9PC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9Ijg2OTIiIHk9IjI0NTYiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+JiM2MjsmIzYyOz08L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNzA4NiIgeT0iMjQ1NiIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5vcDwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI5MzU0IiB5PSIzNDAxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPnJldHVybjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI3NjUzIiB5PSIzNDAxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPiYjNjI7JiM2Mjs9PC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9Ijg1MDMiIHk9IjQzNDYiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+JiM2MjsmIzYyOz08L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNjg5NyIgeT0iNDM0NiIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5vcDwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI5MTY1IiB5PSI1MjkxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPnJldHVybjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI3NDY0IiB5PSI1MjkxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPiYjNjI7JiM2Mjs9PC90ZXh0Pgo8IS0tIFRleHQgLS0+Cjx0ZXh0IHhtbDpzcGFjZT0icHJlc2VydmUiIHg9IjgzMTQiIHk9IjYyMzYiIGZpbGw9IiMwMDAwMDAiICBmb250LWZhbWlseT0iVGltZXMiIGZvbnQtc3R5bGU9Im5vcm1hbCIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgZm9udC1zaXplPSIyNTIiIHRleHQtYW5jaG9yPSJzdGFydCI+JiM2MjsmIzYyOz08L3RleHQ+CjwhLS0gVGV4dCAtLT4KPHRleHQgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgeD0iNjcwOCIgeT0iNjIzNiIgZmlsbD0iIzAwMDAwMCIgIGZvbnQtZmFtaWx5PSJUaW1lcyIgZm9udC1zdHlsZT0ibm9ybWFsIiBmb250LXdlaWdodD0ibm9ybWFsIiBmb250LXNpemU9IjI1MiIgdGV4dC1hbmNob3I9InN0YXJ0Ij5vcDwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI4OTc2IiB5PSI3MTgxIiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPnJldHVybjwvdGV4dD4KPCEtLSBUZXh0IC0tPgo8dGV4dCB4bWw6c3BhY2U9InByZXNlcnZlIiB4PSI3NTU5IiB5PSI3MDg2IiBmaWxsPSIjMDAwMDAwIiAgZm9udC1mYW1pbHk9IlRpbWVzIiBmb250LXN0eWxlPSJub3JtYWwiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIGZvbnQtc2l6ZT0iMjUyIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPi4uLjwvdGV4dD4KPC9nPgo8L3N2Zz4K" /></p>
+<p><br /></p>
+<h1 id="quadratic-behavior-analysis">Quadratic behavior, analysis</h1>
+<p>This doesn’t happen with most commonly used monads, like <code>IO</code>, <code>StateT</code>, <code>ReaderT</code>. How come?</p>
+<p>But, this always happens with monads that represent structure of computation explicitly, like <code>Proxy</code>, <code>ConduitT</code>, <code>Free</code>, <code>operational</code> <code>Program</code> etc.</p>
+<!-- Consider: to evaluate an expression is
+ such a monad, you need to find the left-most element in the bind tree;
+ combine this with that bind have to explicitly traverse the structure,
+ and you get that if the bind tree is not right-leaning then you are in
+ trouble. -->
+
+<p>Solutions?</p>
+<ul>
+<li>You can use an accumulator based <code>replicateM</code>, which is right-leaning:</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">accReplicateM ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> m a <span class="ot">-&gt;</span> m [a]
+accReplicateM n op <span class="fu">=</span> go n []
+  <span class="kw">where</span>
+    go <span class="dv">0</span> acc <span class="fu">=</span> return <span class="fu">$</span> reverse acc
+    go k acc <span class="fu">=</span> <span class="kw">do</span>
+      x <span class="ot">&lt;-</span> op
+      go (k<span class="fu">-</span><span class="dv">1</span>) (x <span class="fu">:</span> acc)</code></pre>
+<ul>
+<li>You can use <code>Data.Sequence</code>’s <code>replicateM</code>. (And get a <span class="math"><em>O</em>(<em>l</em><em>o</em><em>g</em><sup>2</sup><em>n</em>)</span> behavior, instead of <span class="math"><em>O</em>(<em>n</em><sup>2</sup>)</span> one.)</li>
+</ul>
+<p>. . .</p>
+<ul>
+<li>Or, you can use magic.</li>
+</ul>
+<h1 id="cps-magic">CPS magic</h1>
+<p>The magic is the same as for the list case: continuations.</p>
+<p>The big gun: <code>Codensity</code> monad from <code>kan-extensions</code>.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">chunkify ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Pipe</span> a [a] m r
+chunkify n <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span>
+  xs <span class="ot">&lt;-</span> lowerCodensity <span class="fu">$</span> replicateM n (lift await)
+  yield xs</code></pre>
+<p>The universal solution: Church-encoding your data structure.</p>
+<h1 id="thank-you">Thank you!</h1>
+<p>Off topic: if you work a lot with date-time values in Haskell and are annoyed with the <code>time</code> library, I’d like to hear from you!</p>
+<p>For correct and efficient (and pure) handling of time zones check out <a href="https://github.com/nilcons/haskell-tz">github.com/nilcons/haskell-tz</a> (will release it to Hackage in the next few days).</p>
+<h1 id="monad-morphisms">Monad morphisms</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">hoist ::</span> (<span class="dt">MFuctor</span> t, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> m a <span class="ot">-&gt;</span> n a) <span class="ot">-&gt;</span> t m b <span class="ot">-&gt;</span> t n b</code></pre>
+<p>With this you can use a rigidly typed pipe in a different pipeline.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Control.Monad.Trans.State</span>
+<span class="kw">import </span><span class="dt">Pipes.Lift</span>
+
+<span class="ot">pipeInIO ::</span> <span class="dt">Pipe</span> a a <span class="dt">IO</span> ()
+
+<span class="ot">pipeInStateIO ::</span> <span class="dt">Pipe</span> a a (<span class="dt">StateT</span> s <span class="dt">IO</span>) ()
+pipeInStateIO <span class="fu">=</span> hoist lift pipeInIO</code></pre>
+<h1 id="monad-morphisms-to-rearrangeremove-layers">Monad morphisms to rearrange/remove layers</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">evalStateP ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> s <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b (<span class="dt">StateT</span> s m) r <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m r</code></pre>
+<p>. . .</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">distribute ::</span> (<span class="dt">Monad</span> m, <span class="dt">MonadTrans</span> t, <span class="dt">MFunctor</span> t, <span class="dt">Monad</span> (t m), <span class="dt">Monad</span> (t (<span class="dt">Proxy</span> a' a b' b m)))
+  <span class="ot">=&gt;</span> <span class="dt">Proxy</span> a' a b' b (t m) r
+  <span class="ot">-&gt;</span> t (<span class="dt">Proxy</span> a' a b' b m) r
+distribute p <span class="fu">=</span>  runEffect <span class="fu">$</span> request' <span class="fu">&gt;</span>\\ hoist (hoist lift) p <span class="fu">//&gt;</span> respond'
+  <span class="kw">where</span>
+    request' <span class="fu">=</span> lift <span class="fu">.</span> lift <span class="fu">.</span> request
+    respond' <span class="fu">=</span> lift <span class="fu">.</span> lift <span class="fu">.</span> respond
+
+<span class="ot">runStateP ::</span> <span class="dt">Monad</span> m
+    <span class="ot">=&gt;</span> s
+    <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b (<span class="dt">S.StateT</span> s m) r
+    <span class="ot">-&gt;</span> <span class="dt">Proxy</span> a' a b' b m (r, s)
+runStateP s p <span class="fu">=</span> (<span class="ot">`S.runStateT`</span> s) <span class="fu">$</span> distribute p</code></pre>
+</body>
+</html>
