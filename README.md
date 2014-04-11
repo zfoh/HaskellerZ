@@ -21,7 +21,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-04-24: Gergely Risko - Hacking GHC made simple
 
-* 2014-05-29: Bas van Dijk - An overview of concurrent programming in Haskell
+* 2014-05-29: Ivan Jovanovic - Monad Transformer Libraries ([`operational`](http://hackage.haskell.org/package/operational)/[`transformers`](http://hackage.haskell.org/package/transformers)/[`mtl`](http://hackage.haskell.org/package/mtl))
 
 * 2014-06-26: **[ZuriHac 2014](http://www.haskell.org/haskellwiki/ZuriHac2014)** with talks by Simon Marlow and Edward Kmett
 
@@ -30,7 +30,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-08-28: Simon Meier - How to compile Haskell to JavaScript
 
-* 2014-09-25: - free slot -
+* 2014-09-25: Bas van Dijk - An overview of concurrent programming in Haskell
 
 * 2014-10-30: - free slot -
 
@@ -39,8 +39,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 * 2014-12-25: - free slot -
 
 The following libraries were mentioned in the January meetup as something that people would be interested in. Please feel free to volunteer to present one of them.
-    Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), 
-    defining monads using [`operational`](http://hackage.haskell.org/package/operational)/[`transformers`](http://hackage.haskell.org/package/transformers)/[`mtl`](http://hackage.haskell.org/package/mtl), and computing 
+    Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), and computing 
     [`statistics`](http://hackage.haskell.org/package/statistics).
     
 
