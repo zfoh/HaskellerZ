@@ -21,7 +21,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-04-24: Gergely Risko - Hacking GHC made simple
 
-* 2014-05-29: Ivan Jovanovic - Monad Transformer Libraries ([`operational`](http://hackage.haskell.org/package/operational)/[`transformers`](http://hackage.haskell.org/package/transformers)/[`mtl`](http://hackage.haskell.org/package/mtl))
+* 2014-05-29: Ivan Jovanovic - Monad Transformers and the standard transformer libraries (operational/transformers/mtl) ([`operational`](http://hackage.haskell.org/package/operational)/[`transformers`](http://hackage.haskell.org/package/transformers)/[`mtl`](http://hackage.haskell.org/package/mtl))
 
 * 2014-06-26: **[ZuriHac 2014](http://www.haskell.org/haskellwiki/ZuriHac2014)** with talks by Simon Marlow and Edward Kmett
 
