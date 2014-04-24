@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Gergely Risko &lt;errge@nilcons.com&gt;" />
+  <title>GHC hacking made simple</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">GHC hacking made simple</h1>
+<h2 class="author">Gergely Risko &lt;<script type="text/javascript">
+<!--
+h='&#110;&#x69;&#108;&#x63;&#x6f;&#110;&#x73;&#46;&#x63;&#x6f;&#x6d;';a='&#64;';n='&#x65;&#114;&#114;&#x67;&#x65;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>errge at nilcons dot com</noscript>&gt;</h2>
+<h3 class="date">HaskellerZ meetup - April 24th, 2014</h3>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#outline">Outline</a></li>
+<li><a href="#getting-the-source-and-build-instructions">Getting the source and build instructions</a></li>
+<li><a href="#installation-and-use">Installation and use</a></li>
+<li><a href="#edit-compile-run-quickly">Edit — compile — run quickly</a></li>
+<li><a href="#ffull-laziness">-ffull-laziness</a></li>
+<li><a href="#test-suite">Test suite</a></li>
+<li><a href="#links">Links</a></li>
+</ul>
+</div>
+<h1 id="outline">Outline</h1>
+<ul>
+<li><p>How to fetch and build the sources (both for i386 and amd64)</p></li>
+<li><p>Installing and using the newly baked compiler</p></li>
+<li><p>How to save on edit — compile — run time</p></li>
+<li><p>Getting rid of <code>-ffull-laziness</code> (also called <code>-fmake-my-program-leak</code>)</p></li>
+<li><p>Adding a test to the testsuite</p></li>
+<li><p>Looking into #8488</p></li>
+<li><p>(optionally) Fixing the bug that we found</p></li>
+</ul>
+<h1 id="getting-the-source-and-build-instructions">Getting the source and build instructions</h1>
+<p>We will use <a href="https://github.com/nilcons/ceh">github.com/nilcons/ceh</a> to provide as the stage 0 GHC compiler.</p>
+<p>So just follow <a href="https://github.com/nilcons/ceh/blob/master/README.compile-ghc-with-ceh">github.com/nilcons/ceh/blob/master/README.compile-ghc-with-ceh</a></p>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">git</span> clone http://git.haskell.org/ghc src
+<span class="kw">cd</span> src
+<span class="kw">./sync-all</span> get
+<span class="kw">/opt/ceh/scripts/ghc-build-shell.pl</span>
+  <span class="kw">cp</span> mk/build.mk.sample mk/build.mk
+  <span class="kw">vi</span> mk/build.mk
+
+  <span class="kw">cd</span> .. <span class="kw">;</span> <span class="kw">mkdir</span> build <span class="kw">;</span> <span class="kw">cd</span> build
+  <span class="kw">lndir</span> ../src<span class="kw">;</span> <span class="kw">ln</span> -s ../src/.git .)
+
+  <span class="kw">perl</span> boot<span class="kw">;</span> <span class="kw">./configure</span> --prefix=<span class="ot">$HOME</span>/wherever-i-want
+  <span class="kw">make</span> -j 4
+
+<span class="kw">inplace/bin/ghc-stage2</span> --version
+<span class="kw">inplace/bin/ghc-stage2</span> --interactive</code></pre>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/Building/Using">https://ghc.haskell.org/trac/ghc/wiki/Building/Using</a></p>
+<h1 id="installation-and-use">Installation and use</h1>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">make</span> install
+<span class="kw">export</span> <span class="ot">PATH=</span>...
+<span class="kw">cabal</span> ...
+<span class="kw">ghc</span> ...</code></pre>
+<p>Note that the user compiled binaries are all Nix based too!</p>
+<h1 id="edit-compile-run-quickly">Edit — compile — run quickly</h1>
+<pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">vi</span> mk/build.mk (and add stage=2)
+<span class="kw">make</span> -C compiler fast
+<span class="kw">make</span> -C ghc 2
+<span class="kw">inplace/bin/ghc-stage2</span> ...
+<span class="kw">make</span> install (still quite fast)</code></pre>
+<h1 id="ffull-laziness">-ffull-laziness</h1>
+<p><a href="https://ghc.haskell.org/trac/ghc/ticket/8457">trac/ghc/ticket/8457</a></p>
+<p>Let’s quickly implement the obvious solution: disable ffull-laziness when -O, but leave it on when -O2.</p>
+<h1 id="test-suite">Test suite</h1>
+<p>Let’s add a new test to the test suite for the “Annotations from TemplateHaskell” feature (new in 7.8).</p>
+<p>And afterwards look into <a href="https://ghc.haskell.org/trac/ghc/ticket/8488">trac/ghc/ticket/8488</a>.</p>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/Building/RunningTests">https://ghc.haskell.org/trac/ghc/wiki/Building/RunningTests</a></p>
+<p>Optional: fix “Annotations from TemplateHaskell”</p>
+<h1 id="links">Links</h1>
+<p>Questions? Concerns? Consulting contracts?</p>
+<p><a href="http://nilcons.com/">http://nilcons.com/</a></p>
+<p><a href="https://github.com/nilcons/ceh">https://github.com/nilcons/ceh</a></p>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/Building">https://ghc.haskell.org/trac/ghc/wiki/Building</a></p>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/Building/Hacking">https://ghc.haskell.org/trac/ghc/wiki/Building/Hacking</a></p>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/Building/Using">https://ghc.haskell.org/trac/ghc/wiki/Building/Using</a></p>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/Building/RunningTests">https://ghc.haskell.org/trac/ghc/wiki/Building/RunningTests</a></p>
+<p><a href="https://ghc.haskell.org/trac/ghc/wiki/Building/StandardTargets">https://ghc.haskell.org/trac/ghc/wiki/Building/StandardTargets</a></p>
+</body>
+</html>
