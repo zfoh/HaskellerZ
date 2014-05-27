@@ -12,7 +12,7 @@ numbers = go 0
 
 printSome :: IO ()
 printSome =
-  runEffect $ numbers >-> P.take 6 //> lift . print
+  runEffect $ numbers >-> P.take 4 //> lift . print
 
 main :: IO ()
 main = do
