@@ -13,9 +13,9 @@ Outline
 
   - Brief overview of pipes ecosystem
 
-<!--  - Monad morphisms -->
-
   - Analysis of two deep "bugs"
+
+<!--  - Monad morphisms -->
 
 
 Trivial example
@@ -471,6 +471,23 @@ Explanation, graphically
 
 <br/>
 
+Explanation, details
+====================
+
+~~~ haskell
+(++) :: [a] -> [a] -> [a]
+[] ++ l = l
+(x : xs) ++ l = x : (xs ++ l)
+~~~
+
+~~~ haskell
+(>>=) :: Monad m => Proxy a a' b b' m x
+                 -> (x -> Proxy a a' b b' m r)
+                 -> Proxy a a' b b' m r
+Pure x        >>= p  = p x
+Request a ca' >>= p  = Request a (\a' -> ca' a' >>= p)
+~~~
+
 Quadratic behavior, analysis
 ============================
 
@@ -501,7 +518,7 @@ accReplicateM n op = go n []
       go (k-1) (x : acc)
 ~~~
 
- * You can use `Data.Sequence`'s `replicateM`. (And get a $O(log^2 n)$
+ * You can use `Data.Sequence`'s `replicateM`. (And get a $O(n\ \log\ n)$
    behavior, instead of $O(n^2)$ one.)
 
 . . .
@@ -531,8 +548,7 @@ Off topic: if you work a lot with date-time values in Haskell and are
 annoyed with the `time` library, I'd like to hear from you!
 
 For correct and efficient (and pure) handling of time zones check out
-[github.com/nilcons/haskell-tz](https://github.com/nilcons/haskell-tz) (will release it to Hackage in
-the next few days).
+[hackage.haskell.org/package/tz](http://hackage.haskell.org/package/tz)
 
 Monad morphisms
 ===============

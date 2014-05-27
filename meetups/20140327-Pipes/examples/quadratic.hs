@@ -10,6 +10,7 @@ chunkify n = forever $ do
 
 main :: IO ()
 main = do
+  putStrLn "hello"
   -- print $ numList 10000
   runEffect $ numbers >-> chunkify 10000 >-> P.take 1 //> lift . print . last
 
