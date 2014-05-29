@@ -1,0 +1,563 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Ivan Jovanovic ivan.jovanovic@gmail.com" />
+  <title>Make you a Monad with your favorite monad transformer library</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">Make you a Monad with your favorite monad transformer library</h1>
+<h2 class="author">Ivan Jovanovic <script type="text/javascript">
+<!--
+h='&#x67;&#x6d;&#x61;&#x69;&#108;&#46;&#x63;&#x6f;&#x6d;';a='&#64;';n='&#x69;&#118;&#x61;&#110;&#46;&#106;&#x6f;&#118;&#x61;&#110;&#x6f;&#118;&#x69;&#x63;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>ivan.jovanovic at gmail dot com</noscript></h2>
+<h3 class="date">HaskellerZ meetup - 29.05.2014</h3>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#outline">Outline</a></li>
+<li><a href="#the-thousand-and-first-monad-tutorial">The thousand-and-first Monad tutorial</a></li>
+<li><a href="#monadic-composition">Monadic composition</a></li>
+<li><a href="#monadic-effects">Monadic effects</a></li>
+<li><a href="#combination-of-effects">Combination of effects</a></li>
+<li><a href="#challenges-of-the-composition">Challenges of the composition</a></li>
+<li><a href="#haskell-libraries-for-monad-stack-management">Haskell libraries for monad stack management</a></li>
+<li><a href="#transformers">transformers</a></li>
+<li><a href="#transformers---example-using-the-writert-transformer-type">transformers - example using the WriterT transformer type</a></li>
+<li><a href="#transformers---transformer-types">transformers - transformer types</a></li>
+<li><a href="#transformers---monadio-type-class-io-monad">transformers - MonadIO type class, IO monad</a></li>
+<li><a href="#transformers---identity">transformers - Identity</a></li>
+<li><a href="#transformers-1">transformers</a></li>
+<li><a href="#transformers---monad-stack">transformers - monad stack</a></li>
+<li><a href="#mtl-monad-transformer-library">mtl (monad transformer library)</a></li>
+<li><a href="#mtl---package-contents">mtl - package contents</a></li>
+<li><a href="#mtl---type-classes">mtl - type classes</a></li>
+<li><a href="#mtl---pre-implemented-instances">mtl - pre-implemented instances</a></li>
+<li><a href="#mtl---monad-stack-example">mtl - monad stack example</a></li>
+<li><a href="#mtl---positives-negatives">mtl - positives / negatives</a></li>
+<li><a href="#x-monad">X monad</a></li>
+<li><a href="#operational">operational</a></li>
+<li><a href="#operationalunimo---monad-definition">operational/unimo - monad definition</a></li>
+<li><a href="#operationalunimo---general-monad-definition">operational/unimo - general monad definition</a></li>
+<li><a href="#operational---going-further">operational - going further</a></li>
+<li><a href="#resources">Resources</a></li>
+</ul>
+</div>
+<h1 id="outline">Outline</h1>
+<ul>
+<li>Monads and additional effects of computations</li>
+<li>Combination of multiple effects into one monad</li>
+<li>Libraries to assemble and manage your monad stack</li>
+<li>transformers</li>
+<li>mtl</li>
+<li>Real world example (X a)</li>
+<li>operational</li>
+</ul>
+<h1 id="the-thousand-and-first-monad-tutorial">The thousand-and-first Monad tutorial</h1>
+<ul>
+<li>Programmable “;”.</li>
+<li>Allows us to control what happens between the two computations.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span>  <span class="dt">Monad</span> m  <span class="kw">where</span>
+    <span class="co">-- | Inject a value into the monadic type.</span>
+<span class="ot">    return      ::</span> a <span class="ot">-&gt;</span> m a
+    <span class="co">-- | Sequentially compose two actions, passing any value produced</span>
+    <span class="co">-- by the first as an argument to the second.</span>
+<span class="ot">    (&gt;&gt;=)       ::</span> m a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> m b</code></pre>
+<ul>
+<li>Monadic laws.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">    return a <span class="fu">&gt;&gt;=</span> k  <span class="fu">==</span>  k a
+    m <span class="fu">&gt;&gt;=</span> return  <span class="fu">==</span>  m
+    m <span class="fu">&gt;&gt;=</span> (\x <span class="ot">-&gt;</span> k x <span class="fu">&gt;&gt;=</span> h)  <span class="fu">==</span>  (m <span class="fu">&gt;&gt;=</span> k) <span class="fu">&gt;&gt;=</span> h</code></pre>
+<ul>
+<li>composition</li>
+<li>additional effects</li>
+</ul>
+<h1 id="monadic-composition">Monadic composition</h1>
+<ul>
+<li>Chaining two computations.</li>
+<li>Explicitly naming the intermediate result.</li>
+<li>Rest of the computation can use the intermediate result.</li>
+</ul>
+<h1 id="monadic-effects">Monadic effects</h1>
+<ul>
+<li>Possibility of failure.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Error</span> e) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Either</span> e) <span class="kw">where</span>
+    return        <span class="fu">=</span> <span class="dt">Right</span>
+    <span class="dt">Left</span>  l <span class="fu">&gt;&gt;=</span> _ <span class="fu">=</span> <span class="dt">Left</span> l
+    <span class="dt">Right</span> r <span class="fu">&gt;&gt;=</span> k <span class="fu">=</span> k r</code></pre>
+<ul>
+<li>State threading.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">State</span> s) <span class="kw">where</span>
+    return a <span class="fu">=</span> <span class="dt">State</span> <span class="fu">$</span> \s <span class="ot">-&gt;</span> (a, s)
+    m <span class="fu">&gt;&gt;=</span> k  <span class="fu">=</span> <span class="dt">State</span> <span class="fu">$</span> \s <span class="ot">-&gt;</span> <span class="kw">do</span>
+        (a, s') <span class="ot">&lt;-</span> (runState m) s
+        runState (k a) s'</code></pre>
+<ul>
+<li>Read-only context.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">Reader</span> r) <span class="kw">where</span>
+    return   <span class="fu">=</span> lift <span class="fu">.</span> return
+    m <span class="fu">&gt;&gt;=</span> k  <span class="fu">=</span> <span class="dt">Reader</span> <span class="fu">$</span> \ r <span class="ot">-&gt;</span> <span class="kw">do</span>
+        a <span class="ot">&lt;-</span> (runReader m) r
+        runReader (k a) r</code></pre>
+<ul>
+<li>Write-only log.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Monoid</span> w) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Writer</span> w) <span class="kw">where</span>
+    return a <span class="fu">=</span> <span class="dt">Writer</span> (a, mempty)
+    m <span class="fu">&gt;&gt;=</span> k  <span class="fu">=</span> <span class="dt">Writer</span> <span class="fu">$</span> <span class="kw">do</span>
+        (a, w)  <span class="ot">&lt;-</span> runWriter m
+        (b, w') <span class="ot">&lt;-</span> runWriter (k a)
+        return (b, w <span class="ot">`mappend`</span> w')</code></pre>
+<h1 id="combination-of-effects">Combination of effects</h1>
+<ul>
+<li>Threading state with the possibility of failure.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">StateWithError</span> s e) <span class="kw">where</span>
+
+    return a <span class="fu">=</span> <span class="dt">StateWithError</span> <span class="fu">$</span> \s <span class="ot">-&gt;</span> <span class="dt">Right</span> (a, s)
+
+    (<span class="dt">StateWithError</span> p) <span class="fu">&gt;&gt;=</span> k <span class="fu">=</span>
+            <span class="dt">StateWithError</span> <span class="fu">$</span> \s0 <span class="ot">-&gt;</span>
+              <span class="kw">case</span> p s0 <span class="kw">of</span>
+                <span class="dt">Right</span> (val, s1) <span class="ot">-&gt;</span>
+                  <span class="kw">let</span> (<span class="dt">StateWithError</span> q) <span class="fu">=</span> k val
+                  <span class="kw">in</span> q s1
+                <span class="dt">Left</span> e <span class="ot">-&gt;</span> <span class="dt">Left</span> e</code></pre>
+<h1 id="challenges-of-the-composition">Challenges of the composition</h1>
+<ul>
+<li>Monads are not straightforwardly compositional, we have to manage this composition.</li>
+<li>“Functional Programming with Overloading and Higher-Order Polymorphism” - <a href="http://web.cecs.pdx.edu/~mpj/pubs/springschool.html">http://web.cecs.pdx.edu/~mpj/pubs/springschool.html</a></li>
+<li>If we want to stay compositional we have to produce a monad.</li>
+</ul>
+<h1 id="haskell-libraries-for-monad-stack-management">Haskell libraries for monad stack management</h1>
+<ul>
+<li>Some history embedded into the current state.</li>
+<li>Several ideas and approaches.</li>
+<li>Separation proposal: <a href="http://www.haskell.org/pipermail/libraries/2010-September/014281.html">http://www.haskell.org/pipermail/libraries/2010-September/014281.html</a></li>
+</ul>
+<pre><code>* transformers is a Haskell 98 package containing
+    * base functors (Data.Functor.Constant and Data.Functor.Identity),
+    * operations on functors (Data.Functor.Compose and Data.Functor.Product),
+    * transformer classes (Control.Monad.Trans.Class and
+      Control.Monad.IO.Class) and
+    * concrete monad transformers with code to lift operators
+      (Control.Monad.Trans.*).
+  The package can be used on its own (see the Control.Monad.Trans.Class
+  documentation for examples), or with packages adding type classes.
+
+* mtl-2 (the current monads-fd) depends on transformers and adds type
+  classes using functional dependencies.  It has the same modules as
+  mtl-1 and usage is very close, except for the differences listed below.</code></pre>
+<ul>
+<li>Two use cases
+<ul>
+<li>Using existing monads.</li>
+<li>Defining your own monadic type.</li>
+</ul></li>
+</ul>
+<h1 id="transformers">transformers</h1>
+<ul>
+<li>lets start with a simple example of a computation in IO monad.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Counts number of entries in each folder as it traverses the folder tree.</span>
+<span class="co">--   Stores the results in a list.</span>
+<span class="ot">countEntries ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [(<span class="dt">FilePath</span>, <span class="dt">Int</span>)]
+countEntries path <span class="fu">=</span> <span class="kw">do</span>
+  contents <span class="ot">&lt;-</span> listDirectory path
+  rest <span class="ot">&lt;-</span> forM contents <span class="fu">$</span> \name <span class="ot">-&gt;</span> <span class="kw">do</span>
+    <span class="kw">let</span> newName <span class="fu">=</span> path <span class="fu">&lt;/&gt;</span> name
+    isDir <span class="ot">&lt;-</span> doesDirectoryExist newName
+    <span class="kw">if</span> isDir
+      <span class="kw">then</span> countEntries newName
+      <span class="kw">else</span> return []
+  return <span class="fu">$</span> (path, length contents) <span class="fu">:</span> concat rest</code></pre>
+<h1 id="transformers---example-using-the-writert-transformer-type">transformers - example using the WriterT transformer type</h1>
+<ul>
+<li>Transformer types (WriterT, runWriterT)</li>
+<li>Effect basis functions (tell)</li>
+<li>Specific treatment of IO actions, liftIO</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Traverses the folder tree and counts number of entries.</span>
+<span class="co">--   Writes results into a writer log along the way (tell).</span>
+<span class="ot">countEntries ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">WriterT</span> [(<span class="dt">FilePath</span>, <span class="dt">Int</span>)] <span class="dt">IO</span> ()
+countEntries path <span class="fu">=</span> <span class="kw">do</span>
+    contents <span class="ot">&lt;-</span> liftIO <span class="fu">.</span> listDirectory <span class="fu">$</span> path
+    <span class="co">-- store the value in the log</span>
+    tell [(path, length contents)]
+    forM_ contents <span class="fu">$</span> \name <span class="ot">-&gt;</span> <span class="kw">do</span>
+      <span class="kw">let</span> newName <span class="fu">=</span> path <span class="fu">&lt;/&gt;</span> name
+      isDir <span class="ot">&lt;-</span> liftIO <span class="fu">.</span> doesDirectoryExist <span class="fu">$</span> newName
+      when isDir <span class="fu">$</span> countEntries newName</code></pre>
+<h1 id="transformers---transformer-types">transformers - transformer types</h1>
+<ul>
+<li>Type definition</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- ---------------------------------------------------------------------------</span>
+<span class="co">-- | A writer monad parameterized by:</span>
+<span class="fu">--</span>
+<span class="co">--   * @w@ - the output to accumulate.</span>
+<span class="fu">--</span>
+<span class="co">--   * @m@ - The inner monad.</span>
+<span class="fu">--</span>
+<span class="co">-- The 'return' function produces the output 'mempty', while @&gt;&gt;=@</span>
+<span class="co">-- combines the outputs of the subcomputations using 'mappend'.</span>
+<span class="kw">newtype</span> <span class="dt">WriterT</span> w m a <span class="fu">=</span> <span class="dt">WriterT</span> {<span class="ot"> runWriterT ::</span> m (a, w) }</code></pre>
+<ul>
+<li>It is still a monad.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Monoid</span> w, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">WriterT</span> w m) <span class="kw">where</span>
+    return a <span class="fu">=</span> writer (a, mempty)
+    m <span class="fu">&gt;&gt;=</span> k  <span class="fu">=</span> <span class="dt">WriterT</span> <span class="fu">$</span> <span class="kw">do</span>
+        (a, w)  <span class="ot">&lt;-</span> runWriterT m
+        (b, w') <span class="ot">&lt;-</span> runWriterT (k a)
+        return (b, w <span class="ot">`mappend`</span> w')</code></pre>
+<ul>
+<li>Being a transformer means that it implements how underlying monads are lifted.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Monoid</span> w) <span class="ot">=&gt;</span> <span class="dt">MonadTrans</span> (<span class="dt">WriterT</span> w) <span class="kw">where</span>
+    lift m <span class="fu">=</span> <span class="dt">WriterT</span> <span class="fu">$</span> <span class="kw">do</span>
+        a <span class="ot">&lt;-</span> m
+        return (a, mempty)</code></pre>
+<h1 id="transformers---monadio-type-class-io-monad">transformers - MonadIO type class, IO monad</h1>
+<ul>
+<li>MonadIO type class</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadIO</span> m <span class="kw">where</span>
+    <span class="co">-- | Lift a computation from the 'IO' monad.</span>
+<span class="ot">    liftIO ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> m a
+
+<span class="kw">instance</span> <span class="dt">MonadIO</span> <span class="dt">IO</span> <span class="kw">where</span>
+    liftIO <span class="fu">=</span> id</code></pre>
+<ul>
+<li>And the WriterT instance</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Underlying monad has to implement the MonadIO instance</span>
+<span class="kw">instance</span> (<span class="dt">Monoid</span> w, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadIO</span> (<span class="dt">WriterT</span> w m) <span class="kw">where</span>
+    liftIO <span class="fu">=</span> lift <span class="fu">.</span> liftIO</code></pre>
+<ul>
+<li>IO is special since we can not “deconstruct” its values.
+<ul>
+<li>It has to be always on the bottom of the stack.</li>
+</ul></li>
+</ul>
+<h1 id="transformers---identity">transformers - Identity</h1>
+<ul>
+<li>Used to produce the final, non-transformer type.</li>
+<li>Error, State, Reader, Writer.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Writer</span> w <span class="fu">=</span> <span class="dt">WriterT</span> w <span class="dt">Identity</span></code></pre>
+<h1 id="transformers-1">transformers</h1>
+<pre><code>Monad
+  IO
+    Control.Monad.IO.Class
+  Trans
+    Control.Monad.Trans.Class
+    Control.Monad.Trans.Cont
+    Control.Monad.Trans.Error
+    Control.Monad.Trans.Except
+    Control.Monad.Trans.Identity
+    Control.Monad.Trans.List
+    Control.Monad.Trans.Maybe
+    Control.Monad.Trans.RWS
+      Control.Monad.Trans.RWS.Lazy
+      Control.Monad.Trans.RWS.Strict
+    Control.Monad.Trans.Reader
+    Control.Monad.Trans.State
+      Control.Monad.Trans.State.Lazy
+      Control.Monad.Trans.State.Strict
+    Control.Monad.Trans.Writer
+      Control.Monad.Trans.Writer.Lazy
+      Control.Monad.Trans.Writer.Strict
+
+Data
+  Functor
+    Identity</code></pre>
+<h1 id="transformers---monad-stack">transformers - monad stack</h1>
+<ul>
+<li>back to our example</li>
+<li>adding more functionality to the computation.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Counter monad stack.</span>
+<span class="kw">type</span> <span class="dt">Counter</span> a <span class="fu">=</span> <span class="dt">ReaderT</span> <span class="dt">CounterConfig</span> (<span class="dt">StateT</span> <span class="dt">CounterState</span> (<span class="dt">WriterT</span> <span class="dt">CounterLog</span> <span class="dt">IO</span>)) a
+
+<span class="co">-- | Runner of the monad with provided configuration.</span>
+<span class="ot">runCounter ::</span> <span class="dt">Counter</span> a <span class="ot">-&gt;</span> <span class="dt">CounterConfig</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ((a, <span class="dt">CounterState</span>), <span class="dt">CounterLog</span>)
+runCounter m config <span class="fu">=</span>
+  <span class="kw">let</span> initialState <span class="fu">=</span> <span class="dt">CounterState</span> <span class="dv">0</span>
+  <span class="kw">in</span>
+   runWriterT <span class="fu">$</span> runStateT (runReaderT m config) initialState
+
+<span class="co">-- | Lift writer operation.</span>
+<span class="ot">counterTell ::</span> <span class="dt">CounterLog</span> <span class="ot">-&gt;</span> <span class="dt">Counter</span> ()
+counterTell <span class="fu">=</span> lift <span class="fu">.</span> lift <span class="fu">.</span> tell
+
+<span class="co">-- | Lift state get operation.</span>
+<span class="ot">counterGet ::</span> <span class="dt">Counter</span> <span class="dt">CounterState</span>
+counterGet <span class="fu">=</span> lift get
+
+<span class="co">-- | lift state put operation.</span>
+<span class="ot">counterPut ::</span> <span class="dt">CounterState</span> <span class="ot">-&gt;</span> <span class="dt">Counter</span> ()
+counterPut <span class="fu">=</span> lift <span class="fu">.</span> put</code></pre>
+<ul>
+<li>Reordering of the stack.</li>
+</ul>
+<h1 id="mtl-monad-transformer-library">mtl (monad transformer library)</h1>
+<ul>
+<li>Extends transformers package.</li>
+<li>Adding type classes which define the “effect basis” of the standard monads.</li>
+<li>MonadState, MonadReader, MonadWriter, MonadError.</li>
+<li>Different way of looking into the underlying monads.</li>
+<li>For a CustomT we have to implement instances of all possible underlying monads.</li>
+<li>Luckily, there are no that many useful basic monads. :)</li>
+</ul>
+<h1 id="mtl---package-contents">mtl - package contents</h1>
+<pre><code>Control
+  Monad
+    Control.Monad.Cont
+      Control.Monad.Cont.Class
+    Control.Monad.Error
+      Control.Monad.Error.Class
+    Control.Monad.Identity
+    Control.Monad.List
+    Control.Monad.RWS
+      Control.Monad.RWS.Class
+      Control.Monad.RWS.Lazy
+      Control.Monad.RWS.Strict
+    Control.Monad.Reader
+      Control.Monad.Reader.Class
+    Control.Monad.State
+      Control.Monad.State.Class
+      Control.Monad.State.Lazy
+      Control.Monad.State.Strict
+    Control.Monad.Trans
+    Control.Monad.Writer
+      Control.Monad.Writer.Class
+      Control.Monad.Writer.Lazy
+      Control.Monad.Writer.Strict</code></pre>
+<h1 id="mtl---type-classes">mtl - type classes</h1>
+<ul>
+<li>used to bring the “effect basis” functions of a monad to the “surface”</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="dt">Monoid</span> w, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w m <span class="fu">|</span> m <span class="ot">-&gt;</span> w <span class="kw">where</span>
+    <span class="co">-- | @'tell' w@ is an action that produces the output @w@.</span>
+<span class="ot">    tell ::</span> w <span class="ot">-&gt;</span> m ()
+
+<span class="kw">instance</span> <span class="dt">MonadWriter</span> w m <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">ReaderT</span> r m) <span class="kw">where</span>
+    tell <span class="fu">=</span> lift <span class="fu">.</span> tell</code></pre>
+<h1 id="mtl---pre-implemented-instances">mtl - pre-implemented instances</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Monoid</span> w, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">WriterT</span> w m) <span class="kw">where</span>
+    tell <span class="fu">=</span> id
+
+<span class="kw">instance</span> <span class="dt">MonadWriter</span> w m <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">StateT</span> s m) <span class="kw">where</span>
+    tell <span class="fu">=</span> lift <span class="fu">.</span> tell
+
+<span class="kw">instance</span> <span class="dt">MonadWriter</span> w m <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">ReaderT</span> r m) <span class="kw">where</span>
+    tell <span class="fu">=</span> lift <span class="fu">.</span> tell
+
+<span class="kw">instance</span> (<span class="dt">Error</span> e, <span class="dt">MonadWriter</span> w m) <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">ErrorT</span> e m) <span class="kw">where</span>
+    tell <span class="fu">=</span> lift <span class="fu">.</span> tell
+
+<span class="kw">instance</span> <span class="dt">MonadWriter</span> w m <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">ExceptT</span> e m) <span class="kw">where</span>
+    tell <span class="fu">=</span> lift <span class="fu">.</span> tell
+
+<span class="kw">instance</span> <span class="dt">MonadWriter</span> w m <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">IdentityT</span> m) <span class="kw">where</span>
+    tell <span class="fu">=</span> lift <span class="fu">.</span> tell
+
+<span class="kw">instance</span> <span class="dt">MonadWriter</span> w m <span class="ot">=&gt;</span> <span class="dt">MonadWriter</span> w (<span class="dt">MaybeT</span> m) <span class="kw">where</span>
+    tell <span class="fu">=</span> lift <span class="fu">.</span> tell</code></pre>
+<h1 id="mtl---monad-stack-example">mtl - monad stack example</h1>
+<ul>
+<li>same monad stack using mtl package</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Our monad stack.</span>
+<span class="kw">newtype</span> <span class="dt">Counter</span> a <span class="fu">=</span> <span class="dt">Counter</span> {
+<span class="ot">  runCounter ::</span> <span class="dt">ReaderT</span> <span class="dt">CounterConfig</span> (<span class="dt">StateT</span> <span class="dt">CounterState</span> (<span class="dt">WriterT</span> <span class="dt">CounterLog</span> <span class="dt">IO</span>)) a
+  } <span class="kw">deriving</span> ( <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadReader</span> <span class="dt">CounterConfig</span>
+             , <span class="dt">MonadState</span> <span class="dt">CounterState</span>, <span class="dt">MonadWriter</span> <span class="dt">CounterLog</span>)
+
+<span class="co">-- | Traverses the folder tree and counts number of entries.</span>
+<span class="co">--   Writes results into a writer log along the way.</span>
+<span class="ot">countEntries ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Counter</span> ()
+countEntries path <span class="fu">=</span> <span class="kw">do</span>
+    contents <span class="ot">&lt;-</span> liftIO <span class="fu">.</span> listDirectory <span class="fu">$</span> path
+    <span class="co">-- gets the configuration</span>
+    cfg <span class="ot">&lt;-</span> ask
+    <span class="co">-- gets the current state</span>
+    st <span class="ot">&lt;-</span> get
+    <span class="co">-- records the log</span>
+    tell [(path, length contents)]
+    forM_ contents <span class="fu">$</span> \name <span class="ot">-&gt;</span> <span class="kw">do</span>
+      <span class="kw">let</span> newPath <span class="fu">=</span> path <span class="fu">&lt;/&gt;</span> name
+          depth <span class="fu">=</span> currentDepth st
+      isDir <span class="ot">&lt;-</span> liftIO <span class="fu">.</span> doesDirectoryExist <span class="fu">$</span> newPath
+      when (isDir <span class="fu">&amp;&amp;</span> depth <span class="fu">&lt;</span> maxDepth cfg) <span class="fu">$</span> <span class="kw">do</span>
+        <span class="co">-- updates the state</span>
+        put st {currentDepth <span class="fu">=</span> depth <span class="fu">+</span> <span class="dv">1</span>}
+        countEntries newPath</code></pre>
+<h1 id="mtl---positives-negatives">mtl - positives / negatives</h1>
+<ul>
+<li>Positive: for standard monads convenient instance implementations.</li>
+<li>Positive: standard API, no need for custom names.</li>
+<li>Negative: declaring new transformer FooT requires O(N^2) implementations of type class instances of MonadFoo.</li>
+</ul>
+<h1 id="x-monad">X monad</h1>
+<ul>
+<li>X monad is quite standard composition of monads.</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | The X monad, 'ReaderT' and 'StateT' transformers over 'IO'</span>
+<span class="co">-- encapsulating the window manager configuration and state,</span>
+<span class="co">-- respectively.</span>
+<span class="fu">--</span>
+<span class="co">-- Dynamic components may be retrieved with 'get', static components</span>
+<span class="co">-- with 'ask'. With newtype deriving we get readers and state monads</span>
+<span class="co">-- instantiated on 'XConf' and 'XState' automatically.</span>
+<span class="fu">--</span>
+<span class="kw">newtype</span> <span class="dt">X</span> a <span class="fu">=</span> <span class="dt">X</span> (<span class="dt">ReaderT</span> <span class="dt">XConf</span> (<span class="dt">StateT</span> <span class="dt">XState</span> <span class="dt">IO</span>) a)
+    <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadState</span> <span class="dt">XState</span>, <span class="dt">MonadReader</span> <span class="dt">XConf</span>, <span class="dt">Typeable</span>)</code></pre>
+<h1 id="operational">operational</h1>
+<ul>
+<li>Operational semantics approach to monads based on the <a href="https://5900f98f-a-62cb3a1a-s-sites.googlegroups.com/site/chklin/research/unimo-icfp06.pdf?attachauth=ANoY7crFqU6lXTEUGdLMl_qxx_bymK_SXDajvp1E5Lzk_pGME24G8bdrSjN9ThKRc7RJXAffUFW4o2A-7-qzlEoXaARdGJVWceEdG-pROACDWi_2YGRM-eVOlfXseD8NVbIACWkP_NtPUwWS5c9n2xo9J2WNPWG8ZKpxMUiRIcRyyk8aQfAA1R8VV8o9sk18cA2LAFMOBpJ0sSi4SEchyOnJMG8JBPPqOeUAe9flskO05Nj3k9yrY08%3D&amp;attredirects=0">Unimo framework</a>.</li>
+<li>In comparison to the denotational definition, enforces monadic laws.</li>
+<li>Generic for all monadic effects through the “observer” function.</li>
+<li>View monads as a sequence of instructions to be executed by a machine.</li>
+<li>Avoids building every monad from scratch.</li>
+</ul>
+<h1 id="operationalunimo---monad-definition">operational/unimo - monad definition</h1>
+<ul>
+<li>denotational list definition</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Monad</span> [] <span class="kw">where</span>
+  return x     <span class="fu">=</span> [x]
+  [] <span class="fu">&gt;&gt;=</span> _     <span class="fu">=</span> []
+  (x<span class="fu">:</span>xs) <span class="fu">&gt;&gt;=</span> k <span class="fu">=</span> k x <span class="fu">++</span> (xs <span class="fu">&gt;&gt;=</span> k)
+
+<span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadPlus</span> m <span class="kw">where</span>
+<span class="ot">  mzero ::</span> m a
+<span class="ot">  mplus ::</span> m a <span class="ot">-&gt;</span> m a <span class="ot">-&gt;</span> m a
+
+<span class="kw">instance</span> <span class="dt">MonadPlus</span> [] <span class="kw">where</span>
+  mzero <span class="fu">=</span> []
+  mplus u v <span class="fu">=</span> u <span class="fu">++</span> v</code></pre>
+<ul>
+<li>operational definition</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Definition of the monadic data structure</span>
+<span class="kw">data</span> <span class="dt">Plus</span> a
+  <span class="co">-- basic structure</span>
+  <span class="fu">=</span> <span class="dt">Unit</span> a
+  <span class="fu">|</span> forall b<span class="fu">.</span> <span class="dt">Bind</span> (<span class="dt">Plus</span> b) (b <span class="ot">-&gt;</span> <span class="dt">Plus</span> a)
+  <span class="co">-- effects</span>
+  <span class="fu">|</span> <span class="dt">Zero</span>
+  <span class="fu">|</span> <span class="dt">Plus</span> (<span class="dt">Plus</span> a) (<span class="dt">Plus</span> a)
+
+<span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Plus</span> <span class="kw">where</span>
+  return <span class="fu">=</span> <span class="dt">Unit</span>
+  (<span class="fu">&gt;&gt;=</span>) <span class="fu">=</span> <span class="dt">Bind</span>
+
+<span class="kw">instance</span> <span class="dt">MonadPlus</span> <span class="dt">Plus</span> <span class="kw">where</span>
+  mzero <span class="fu">=</span> <span class="dt">Zero</span>
+  mplus <span class="fu">=</span> <span class="dt">Plus</span>
+
+<span class="co">-- evaluator of the monadic data structure</span>
+<span class="ot">run_list ::</span> <span class="dt">Plus</span> a <span class="ot">-&gt;</span> [a]
+run_list (<span class="dt">Unit</span> a)              <span class="fu">=</span> [a]
+run_list m<span class="fu">@</span><span class="dt">Zero</span>                <span class="fu">=</span> run_list (<span class="dt">Bind</span> m <span class="dt">Unit</span>)
+run list m<span class="fu">@</span>(<span class="dt">Plus</span> _ _)          <span class="fu">=</span> run_list (<span class="dt">Bind</span> m <span class="dt">Unit</span>)
+run_list (<span class="dt">Bind</span> (<span class="dt">Unit</span> v) k)     <span class="fu">=</span> run_list (k v)
+run_list (<span class="dt">Bind</span> (<span class="dt">Bind</span> m k) g)   <span class="fu">=</span> run_list (<span class="dt">Bind</span> m cont)
+  <span class="kw">where</span> cont v <span class="fu">=</span> <span class="dt">Bind</span> (k v) g
+run_list (<span class="dt">Bind</span> <span class="dt">Zero</span> _)         <span class="fu">=</span> [ ]
+run_list (<span class="dt">Bind</span> (<span class="dt">Plus</span> m n) k)   <span class="fu">=</span> ms <span class="fu">++</span> ns
+  <span class="kw">where</span> ms <span class="fu">=</span> run_list (<span class="dt">Bind</span> m k)
+        ns <span class="fu">=</span> run_list (<span class="dt">Bind</span> n k)</code></pre>
+<h1 id="operationalunimo---general-monad-definition">operational/unimo - general monad definition</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Unimo</span> r a
+  <span class="fu">=</span> <span class="dt">Unit</span> a
+  <span class="fu">|</span> <span class="dt">Effect</span> (r (<span class="dt">Unimo</span> r) a)
+  <span class="fu">|</span> forall b<span class="fu">.</span> <span class="dt">Bind</span> (<span class="dt">Unimo</span> r b) (b <span class="ot">-&gt;</span> <span class="dt">Unimo</span> r a)
+
+<span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">Unimo</span> r) <span class="kw">where</span>
+  return <span class="fu">=</span> <span class="dt">Unit</span>
+  (<span class="fu">&gt;&gt;=</span>) <span class="fu">=</span> <span class="dt">Bind</span>
+
+<span class="kw">type</span> <span class="dt">BindOp</span> r a v <span class="fu">=</span> forall b<span class="fu">.</span>
+  r (<span class="dt">Unimo</span> r) b <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> <span class="dt">Unimo</span> r a) <span class="ot">-&gt;</span> v
+
+<span class="kw">type</span> <span class="dt">Observer</span> r a v <span class="fu">=</span>
+  (a <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> <span class="dt">BindOp</span> r a v <span class="ot">-&gt;</span> <span class="dt">Unimo</span> r a <span class="ot">-&gt;</span> v
+
+<span class="co">-- | Monad observer function</span>
+<span class="ot">observe_monad ::</span> <span class="dt">Observer</span> r a v
+observe_monad unit_op bind_op <span class="fu">=</span> eval <span class="kw">where</span>
+  eval (<span class="dt">Unit</span> v)               <span class="fu">=</span> unit_op v
+  eval (<span class="dt">Effect</span> e)             <span class="fu">=</span> e <span class="ot">`bind_op`</span> <span class="dt">Unit</span>
+  eval (<span class="dt">Bind</span> (<span class="dt">Effect</span> e) k)    <span class="fu">=</span> e <span class="ot">`bind_op`</span> k
+  eval (<span class="dt">Bind</span> (<span class="dt">Unit</span> v) k)      <span class="fu">=</span> eval (k v)
+  eval (<span class="dt">Bind</span> (<span class="dt">Bind</span> m k) g)    <span class="fu">=</span> eval (<span class="dt">Bind</span> m cont)
+    <span class="kw">where</span> cont v <span class="fu">=</span> <span class="dt">Bind</span> (k v) g</code></pre>
+<ul>
+<li>operational - compact List definition</li>
+</ul>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- | Expressing just effect part of the monad</span>
+<span class="kw">data</span> <span class="dt">PlusE</span> m a
+  <span class="fu">=</span> <span class="dt">Zero</span>
+  <span class="fu">|</span> <span class="dt">Plus</span> (m a) (m a)
+
+<span class="co">-- | Full monadic value.</span>
+<span class="kw">type</span> <span class="dt">Plus</span> <span class="fu">=</span> <span class="dt">Unimo</span> <span class="dt">PlusE</span>
+
+<span class="ot">run_list ::</span> <span class="dt">Plus</span> a <span class="ot">-&gt;</span> [a]
+run_list <span class="fu">=</span> observe monad unit_op bind_op <span class="kw">where</span>
+  unit_op v <span class="fu">=</span> [v]
+  bind_op <span class="dt">Zero</span> <span class="fu">=</span> [ ]
+  bind_op (<span class="dt">Plus</span> m n) k <span class="fu">=</span>
+    <span class="kw">let</span> ms <span class="fu">=</span> run_list (<span class="dt">Bind</span> m k)
+        ns <span class="fu">=</span> run_list (<span class="dt">Bind</span> n k)
+    <span class="kw">in</span> ms <span class="fu">++</span> ns</code></pre>
+<h1 id="operational---going-further">operational - going further</h1>
+<ul>
+<li><a href="https://5900f98f-a-62cb3a1a-s-sites.googlegroups.com/site/chklin/research/unimo-icfp06.pdf?attachauth=ANoY7crFqU6lXTEUGdLMl_qxx_bymK_SXDajvp1E5Lzk_pGME24G8bdrSjN9ThKRc7RJXAffUFW4o2A-7-qzlEoXaARdGJVWceEdG-pROACDWi_2YGRM-eVOlfXseD8NVbIACWkP_NtPUwWS5c9n2xo9J2WNPWG8ZKpxMUiRIcRyyk8aQfAA1R8VV8o9sk18cA2LAFMOBpJ0sSi4SEchyOnJMG8JBPPqOeUAe9flskO05Nj3k9yrY08%3D&amp;attredirects=0">Unimo framework</a></li>
+<li><a href="http://apfelmus.nfshost.com/articles/operational-monad.html">The Operational Monad Tutorial</a></li>
+<li><a href="https://github.com/HeinrichApfelmus/operational">Operational package</a></li>
+<li><a href="https://github.com/HeinrichApfelmus/operational/tree/master/doc/examples">Examples</a></li>
+</ul>
+<h1 id="resources">Resources</h1>
+<ul>
+<li><a href="http://www.haskell.org/haskellwiki/All_About_Monads">All about monads</a></li>
+<li><a href="http://book.realworldhaskell.org/read/monad-transformers.html">Real World Haskell</a></li>
+<li><a href="http://www.haskell.org/haskellwiki/Typeclassopedia#Laws_3">Typeclassopedia</a></li>
+<li><a href="http://www.haskell.org/pipermail/libraries/2010-September/014281.html">Haskell mailing list archive</a></li>
+<li><a href="http://carlo-hamalainen.net/blog/2014/1/2/applicatives-compose-monads-do-not">Applicatives compose, monads do not</a></li>
+</ul>
+</body>
+</html>
