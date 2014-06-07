@@ -8,8 +8,18 @@ runQ [e| 1 + 2 |]
 -- function call we need an expression, not a name:
 :info VarE
 
+-- the same for 1:
+:info IntegerL
+:info LitE
+
 -- e is the default in quotation brackets, so we can simply do this:
 runQ [| \(_, x, _, _) -> x |]
+
+-- two other (more flexible) ways to build expressions
+let sameThing = infixE (Just $ litE $ integerL 1)
+                       (varE '(+))
+                       (Just $ litE $ integerL 2)
+let thirdWay = InfixE (Just (LitE (IntegerL 1))) (VarE '(+)) (Just (LitE (IntegerL 2)))
 
 let pprintQ q = putStrLn . pprint =<< runQ q
 
@@ -17,7 +27,6 @@ let pprintQ q = putStrLn . pprint =<< runQ q
 pprintQ [| \(_, x, _, _) -> (\x -> x) |]
 
 -- what good is creating programs without running them? -> splicing!
--- (dear CS theory students, this was a rhetorical question, I don't need a real answer)
 $(runQ [| \(_, x, _, _) -> (\x -> x) |])
 $(runQ [| \(_, x, _, _) -> (\x -> x) |]) undefined
 $(runQ [| \(_, x, _, _) -> (\x -> x) |]) undefined 42
@@ -26,12 +35,10 @@ $(runQ [| \(~(_, x, _, _)) -> (\x -> x) |]) undefined 42
 -- is splicing and quotation bracket recursive in regards to each other?  YES!
 let generatedFun = [| \x -> x + 2 |]
 let generatedVal = [| 40 |]
-let threeTimes = [| $generatedFun ($generatedFun ($generatedFun $generatedVal)) |]
+let threeTimes = [| $generatedFun $([| $generatedFun $([| $generatedFun $generatedVal |]) |]) |]
+$threeTimes
 runQ threeTimes
 pprintQ threeTimes
-$(threeTimes)
--- or "simply":
-$([| $generatedFun ($generatedFun ($generatedFun $generatedVal)) |])
 
 -- error handling:
 -- fail :: String -> Q ()
