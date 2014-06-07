@@ -1,0 +1,15 @@
+To make profiled builds when using libraries, those libraries have to
+be built with profiling enabled:
+  cabal install --enable-library-profiling
+
+Or add this to ~/.cabal/config to make it the default:
+  library-profiling: True
+
+https://www.haskell.org/ghc/docs/latest/html/users_guide/profiling.html
+
+Briefly:
+  ghc -prof -fprof-auto -rtsopts --make main.hs
+
+For performance tweaking your next step is to learn about core:
+  http://alpmestan.com/2013/06/27/ghc-core-by-example-episode-1/
+  and other blog posts, just use Google! 
