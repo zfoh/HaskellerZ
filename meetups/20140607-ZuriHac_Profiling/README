@@ -6,6 +6,7 @@ Or add this to ~/.cabal/config to make it the default:
   library-profiling: True
 
 https://www.haskell.org/ghc/docs/latest/html/users_guide/profiling.html
+http://book.realworldhaskell.org/read/profiling-and-optimization.html
 
 Briefly:
   ghc -prof -fprof-auto -rtsopts --make main.hs
