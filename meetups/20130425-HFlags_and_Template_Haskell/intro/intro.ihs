@@ -1,5 +1,7 @@
 :set -XTemplateHaskell
 
+{-# LANGUAGE TemplateHaskell #-}
+
 import Language.Haskell.TH
 
 runQ [e| 1 + 2 |]
