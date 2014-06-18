@@ -18,8 +18,12 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 * 2014-02-27: Francesco Mazzoli - An introduction to Agda
 
 * 2014-03-27: Mihaly Barasz - An introduction to the `pipes` library
+              ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140327-Pipes/final/pipes.html),
+               [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140327-Pipes/final/pipes-handout.html))
 
 * 2014-04-24: Gergely Risko - Hacking GHC made simple
+              ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140423-GHC_Hacking/final/ghchack.html),
+               [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140423-GHC_Hacking/final/ghchack-handout.html))
 
 * 2014-05-29: Ivan Jovanovic - Monad Transformers and the standard transformer libraries (operational/transformers/mtl) ([`operational`](http://hackage.haskell.org/package/operational)/[`transformers`](http://hackage.haskell.org/package/transformers)/[`mtl`](http://hackage.haskell.org/package/mtl))
 
@@ -76,6 +80,7 @@ The following libraries were mentioned in the January meetup as something that p
 
   - Simon Marlow     - Keynote for the Zurich FP Afternoon
   - Thomas Schilling - Lambdachine: a JIT compiler for Haskell
+  - Gergely Risko    - Ceh - power user environments to share ([slides](http://htmlpreview.github.io/?https://github.com/errge/ceh/blob/master/doc/fpafternoon-zurich-20130829/final/ceh.html))
 
 **2013-08-30 - 2013-09-01: ZuriHac 2013** (Yay, [register here](http://www.haskell.org/haskellwiki/ZuriHac2013))
 
