@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Accelerate Introduction</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="http://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <script src="http://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">Accelerate Introduction</h1>
+  <p class="author">
+
+  </p>
+</div>
+<div id="gpu-computing-with-accelerate" class="slide section level2">
+<h1>GPU Computing with Accelerate</h1>
+<ul>
+<li><p>GPU with many cores.</p></li>
+<li><p>Restricted or expensive control flow.</p></li>
+<li><p>Only limited number of instruction decoders.</p></li>
+<li><p>Restricted GPU memory size when compared to CPU memory.</p></li>
+<li><p>Limited bandwidth for transfer of data from CPU to GPU and back.</p></li>
+</ul>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE TypeOperators #-}</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array.Accelerate</span> <span class="kw">as</span> <span class="dt">A</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array.Accelerate.Interpreter</span> <span class="kw">as</span> <span class="dt">I</span></code></pre>
+</div>
+<div id="using-accelerate" class="slide section level2">
+<h1>Using Accelerate</h1>
+<p>The basic array type in Accelerate is given by</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Array</span> sh e</code></pre>
+<ul>
+<li><p>In contrast to the design of Repa 3 there is not tag for the representation.</p></li>
+<li><p>Same data type as for Repa 1</p></li>
+<li><p><code>Shapes</code> are constructed using the same data types as for Repa (<code>Z</code>, ...).</p></li>
+</ul>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; n ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> n <span class="fu">=</span> <span class="dv">2</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; shape ::</span> <span class="dt">DIM1</span>
+<span class="ot">&gt;</span> shape <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">:.</span> n
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; x ::</span> <span class="dt">Array</span> <span class="dt">DIM1</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> x <span class="fu">=</span> fromList (<span class="dt">Z</span> <span class="fu">:.</span> n) [<span class="dv">1</span><span class="fu">..</span>]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; y ::</span> <span class="dt">Array</span> <span class="dt">DIM1</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> y <span class="fu">=</span> fromList (<span class="dt">Z</span> <span class="fu">:.</span> n) [<span class="dv">2</span><span class="fu">..</span>]</code></pre>
+</div>
+<div id="using-arrays-on-the-gpu" class="slide section level2">
+<h1>Using arrays on the GPU</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">use ::</span> <span class="dt">Arrays</span> arrays <span class="ot">=&gt;</span> arrays <span class="ot">-&gt;</span> <span class="dt">Acc</span> arrays <span class="co">-- &quot;CPU to GPU&quot;</span>
+<span class="ot">run ::</span> <span class="dt">Arrays</span> arrays <span class="ot">=&gt;</span> <span class="dt">Acc</span> arrays <span class="ot">-&gt;</span> arrays <span class="co">-- &quot;GPU to CPU&quot;</span></code></pre>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> tmp <span class="fu">=</span> I.run <span class="fu">$</span> A.zipWith (<span class="fu">*</span>) (use x) (use y)</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">unit ::</span> <span class="dt">Elt</span> e <span class="ot">=&gt;</span> <span class="dt">Exp</span> e <span class="ot">-&gt;</span> <span class="dt">Acc</span> (<span class="dt">Scalar</span> e)
+<span class="ot">the  ::</span> <span class="dt">Elt</span> e <span class="ot">=&gt;</span> <span class="dt">Acc</span> (<span class="dt">Scalar</span> e) <span class="ot">-&gt;</span> <span class="dt">Exp</span> e
+
+<span class="ot">constant ::</span> <span class="dt">Elt</span> t <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Exp</span> t</code></pre>
+</div>
+<div id="creating-arrays-in-accelerate" class="slide section level2">
+<h1>Creating Arrays in Accelerate</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">fill ::</span> (<span class="dt">Elt</span> e, <span class="dt">Shape</span> sh) <span class="ot">=&gt;</span> <span class="dt">Exp</span> sh <span class="ot">-&gt;</span> <span class="dt">Exp</span> e <span class="ot">-&gt;</span> <span class="dt">Acc</span> (<span class="dt">Array</span> sh e)
+<span class="ot">enumFromN ::</span> (<span class="dt">Elt</span> e, <span class="dt">Shape</span> sh, <span class="dt">IsNum</span> e) <span class="ot">=&gt;</span> <span class="dt">Exp</span> sh <span class="ot">-&gt;</span> <span class="dt">Exp</span> e <span class="ot">-&gt;</span> <span class="dt">Acc</span> (<span class="dt">Array</span> sh e)
+<span class="ot">enumFromStepN ::</span> (<span class="dt">Elt</span> e, <span class="dt">Shape</span> sh, <span class="dt">IsNum</span> e) <span class="ot">=&gt;</span> <span class="dt">Exp</span> sh <span class="ot">-&gt;</span> <span class="dt">Exp</span> e <span class="ot">-&gt;</span> <span class="dt">Exp</span> e <span class="ot">-&gt;</span> <span class="dt">Acc</span> (<span class="dt">Array</span> sh e)
+<span class="ot">generate ::</span> (<span class="dt">Elt</span> a, <span class="dt">Shape</span> ix) <span class="ot">=&gt;</span> <span class="dt">Exp</span> ix <span class="ot">-&gt;</span> (<span class="dt">Exp</span> ix <span class="ot">-&gt;</span> <span class="dt">Exp</span> a) <span class="ot">-&gt;</span> <span class="dt">Acc</span> (<span class="dt">Array</span> ix a)</code></pre>
+<p>Working with <code>Exp</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lift ::</span> <span class="dt">Lift</span> c e <span class="ot">=&gt;</span> e <span class="ot">-&gt;</span> c (<span class="dt">Plain</span> e)
+<span class="ot">unlift ::</span> <span class="dt">Unlift</span> c e <span class="ot">=&gt;</span> c (<span class="dt">Plain</span> e) <span class="ot">-&gt;</span> e</code></pre>
+<p><code>unlift</code> can be used to take apart structures values inside an <code>Exp</code>, i.e.</p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> f <span class="fu">=</span><span class="ot"> unlift ::</span> <span class="dt">Exp</span> (<span class="dt">Int</span>,<span class="dt">Int</span>) <span class="ot">-&gt;</span> (<span class="dt">Exp</span> <span class="dt">Int</span>,<span class="dt">Exp</span> <span class="dt">Int</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> tmp&#39; <span class="fu">=</span> lift (constant <span class="dv">1</span>, constant <span class="dv">1</span>)<span class="ot"> ::</span> <span class="dt">Exp</span> (<span class="dt">Int</span>,<span class="dt">Int</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> scalarProd x y <span class="fu">=</span> A.sum <span class="fu">$</span> A.zipWith (<span class="fu">*</span>) x y</code></pre>
+</div>
+</body>
+</html>

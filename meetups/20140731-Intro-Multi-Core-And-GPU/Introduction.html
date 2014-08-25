@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Mathias Körner, mkoerner@gmail.com" />
+  <title>Writing Multi-Core and GPU Programs using Haskell</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="http://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <script src="http://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">Writing Multi-Core and GPU Programs using Haskell</h1>
+  <p class="author">
+Mathias Körner, mkoerner@gmail.com
+  </p>
+  <p class="date">HaskellerZ, 31. July 2014</p>
+</div>
+<div id="introduction" class="slide section level2">
+<h1>Introduction</h1>
+<ul>
+<li><p>Introduction to 2 libraries for parallel computing:</p>
+<ul>
+<li><a href="https://github.com/DDCSF/repa">Repa</a> for matrix/array based multi-core operations.</li>
+<li><a href="https://github.com/AccelerateHS/accelerate">Accelerate</a> for GPU computations.</li>
+</ul></li>
+<li><p>Good introduction to Repa and Accelerate can be found in <a href="http://chimera.labs.oreilly.com/books/1230000000929/index.html">&quot;Parallel and Concurrent Programming in Haskell&quot;</a> by Simon Marlow.</p></li>
+<li><p>If you have questions, ask!</p></li>
+<li><p>Ok?</p></li>
+</ul>
+</div>
+<div id="setup" class="slide section level2">
+<h1>Setup</h1>
+<ul>
+<li>Strong recommendation: use <code>ghc-7.6.3</code> to experiment with Repa and Accelerate.</li>
+<li>Therefore samples will be run on AWS GPU (g2.2xlarge) instance (8 CPUs, NVIDIA GPU with 1536 CUDA cores).
+<ul>
+<li>Does not come with Haskell support out of the box, but NVIDIA CUDA development tools are installed out of the box.</li>
+</ul></li>
+<li>Installation steps at <a href="https://gist.github.com/mkoerner/189d446554a89196216a">https://gist.github.com/mkoerner/189d446554a89196216a</a></li>
+<li>My laptop is unfortunately far too old to work with the <code>accelerate-cuda</code> backend.</li>
+<li>With <code>ghc-7.8.2</code> the installation involved some manual intervention.</li>
+</ul>
+</div>
+<div id="next" class="slide section level2">
+<h1>Next</h1>
+<p><a href="repa/RepaIntro.html">Repa</a></p>
+</div>
+</body>
+</html>

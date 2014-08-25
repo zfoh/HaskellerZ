@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>Repa Introduction</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="http://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+  <script src="http://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">Repa Introduction</h1>
+  <p class="author">
+
+  </p>
+</div>
+<div id="repa" class="slide section level2">
+<h1>Repa</h1>
+<ul>
+<li><p>Library for parallel array computations on multi-core machines.</p></li>
+<li><p>For shared memory.</p></li>
+<li><p>Multidimensional unboxed (and boxed) arrays.</p></li>
+</ul>
+</div>
+<div id="using-repa" class="slide section level2">
+<h1>Using Repa</h1>
+<p>The basic array type in Repa is given by</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Array</span> rep sh e</code></pre>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE TypeOperators #-}</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array.Repa</span> <span class="kw">as</span> <span class="dt">R</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array.Repa.Index</span> <span class="kw">as</span> <span class="dt">I</span>
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Array.Repa.Repr.Vector</span> <span class="kw">as</span> <span class="dt">V</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array.Repa.Repr.Unboxed</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array.Repa.Eval</span></code></pre>
+<p>The type tag <code>rep</code> is a type hint for the array type that is present. The two most important types are <code>U</code> for unboxed data and <code>D</code> for delayed data, i.e. data that has to be calculated (<code>V</code> for boxed values).</p>
+<p>We can create a <code>Shape sh</code> with the constructor <code>Z</code></p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; shape&#39; ::</span> (<span class="dt">Z</span> <span class="fu">:.</span> <span class="dt">Int</span>) <span class="fu">:.</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> shape&#39; <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">:.</span> <span class="dv">2</span> <span class="fu">:.</span> <span class="dv">3</span></code></pre>
+<p>We can also abbreviate this with</p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; shape ::</span> <span class="dt">DIM2</span>
+<span class="ot">&gt;</span> shape <span class="fu">=</span> ix2 <span class="dv">2</span> <span class="dv">3</span></code></pre>
+</div>
+<div id="using-repa-1" class="slide section level2">
+<h1>Using Repa</h1>
+<p>We create an array from a list with</p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; m ::</span> <span class="dt">Array</span> <span class="dt">U</span> <span class="dt">DIM2</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> m <span class="fu">=</span> fromListUnboxed shape [<span class="dv">0</span><span class="fu">..</span><span class="dv">5</span>]</code></pre>
+<p>The <code>Shape</code> typeclass is not only used to determine the bounds of the arrays but also to access the elements.</p>
+<ul>
+<li>Elements are indexed from <code>0</code> :-)</li>
+<li>Elements are in row major order :-/</li>
+</ul>
+<p>Element access can be performed with the <code>(!)</code> operator.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">m <span class="fu">!</span> ((<span class="dt">Z</span> <span class="fu">:.</span> <span class="dv">0</span>) <span class="fu">:.</span> <span class="dv">0</span>)</code></pre>
+</div>
+<div id="using-repa-2" class="slide section level2">
+<h1>Using Repa</h1>
+<p>The extent of the matrix can be obtained with</p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> tmp   <span class="fu">=</span> extent m</code></pre>
+<p>The number of dimensions with</p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> tmp&#39;  <span class="fu">=</span> rank tmp</code></pre>
+<p>And the size (number of elements) with</p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> tmp&#39;&#39; <span class="fu">=</span> size tmp</code></pre>
+<p>Conversion from and to unboxed <code>Vector</code>s with <code>toUnboxed</code> and <code>fromUnboxed</code>.</p>
+</div>
+<div id="using-repa-3" class="slide section level2">
+<h1>Using Repa</h1>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; m&#39; ::</span> <span class="dt">Array</span> <span class="dt">D</span> <span class="dt">DIM2</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> m&#39; <span class="fu">=</span> R.zipWith (<span class="fu">+</span>) (R.map (<span class="fu">^</span><span class="dv">2</span>) m) m</code></pre>
+<p><code>m'</code> cannot be shown as it is a delayed array. We can turn it into a concrete array using <code>computeS</code>.</p>
+<pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; m&#39;&#39; ::</span> <span class="dt">Array</span> <span class="dt">U</span> <span class="dt">DIM2</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> m&#39;&#39; <span class="fu">=</span> computeS m&#39;</code></pre>
+<p>Commands to create a represented array from a calculation</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">computeS ::</span> (<span class="dt">Load</span> r1 sh e, <span class="dt">Target</span> r2 e) <span class="ot">=&gt;</span> <span class="dt">Array</span> r1 sh e <span class="ot">-&gt;</span> <span class="dt">Array</span> r2 sh e
+<span class="ot">computeP ::</span> (<span class="dt">Load</span> r1 sh e, <span class="dt">Target</span> r2 e, <span class="dt">Source</span> r2 e, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Array</span> r1 sh e <span class="ot">-&gt;</span> m (<span class="dt">Array</span> r2 sh e)</code></pre>
+</div>
+<div id="slices" class="slide section level2">
+<h1>Slices</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">slice m (<span class="dt">Any</span> <span class="fu">:.</span> (<span class="dv">1</span><span class="ot">::</span><span class="dt">Int</span>) <span class="fu">:.</span> <span class="dt">All</span>)
+slice m (<span class="dt">Any</span> <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> (<span class="dv">1</span><span class="ot">::</span><span class="dt">Int</span>))</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">slice m (<span class="dt">Any</span> <span class="fu">:.</span> (<span class="dv">1</span><span class="ot">::</span><span class="dt">Int</span>))</code></pre>
+<p>is equivalent to</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">slice m (<span class="dt">Any</span> <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> (<span class="dv">1</span><span class="ot">::</span><span class="dt">Int</span>))</code></pre>
+<p><code>Any</code> cannot be omitted.</p>
+</div>
+<div id="extending" class="slide section level2">
+<h1>Extending</h1>
+<p>A matrix can be extended along multiple dimensions:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">extend (<span class="dt">Any</span> <span class="fu">:.</span> (<span class="dv">4</span><span class="ot">::</span><span class="dt">Int</span>) <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> <span class="dt">All</span>) m
+extend (<span class="dt">Any</span> <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> (<span class="dv">4</span><span class="ot">::</span><span class="dt">Int</span>) <span class="fu">:.</span> <span class="dt">All</span>) m
+extend (<span class="dt">Any</span> <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> (<span class="dv">4</span><span class="ot">::</span><span class="dt">Int</span>)) m</code></pre>
+</div>
+<div id="example-matrix-matrix-multiplication" class="slide section level2">
+<h1>Example: Matrix Matrix Multiplication</h1>
+<p><span class="math">\[ z_{ik} = \sum_{j} x_{ij} \, y_{jk} \]</span></p>
+<p><span class="math">\[ z_{ik} = \sum_{j} \hat{x}_{ikj} \, \hat{y}_{ikj} \]</span></p>
+<p>where <span class="math">\(\hat{x}_{ikj} = x_{ij}\)</span> and <span class="math">\(\hat{y}_{ikj} = y_{jk}\)</span></p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mmult ::</span> <span class="dt">Array</span> <span class="dt">U</span> <span class="dt">DIM2</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Array</span> <span class="dt">U</span> <span class="dt">DIM2</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Array</span> <span class="dt">U</span> <span class="dt">DIM2</span> <span class="dt">Double</span>
+mmult a b <span class="fu">=</span> R.sumS <span class="fu">$</span> R.zipWith (<span class="fu">*</span>) a&#39; b&#39;&#39;
+  <span class="kw">where</span>
+    a&#39;  <span class="fu">=</span> extend (<span class="dt">Any</span> <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> n <span class="fu">:.</span> <span class="dt">All</span>) a
+    b&#39;  <span class="fu">=</span> transpose b
+    b&#39;&#39; <span class="fu">=</span> extend (<span class="dt">Any</span> <span class="fu">:.</span> m <span class="fu">:.</span> <span class="dt">All</span> <span class="fu">:.</span> <span class="dt">All</span>) b&#39;</code></pre>
+</div>
+<div id="traverse" class="slide section level2">
+<h1>Traverse</h1>
+<p>Generic array traversal with</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">traverse ::</span> (<span class="dt">Source</span> r a, <span class="dt">Shape</span> sh&#39;, <span class="dt">Shape</span> sh) <span class="ot">=&gt;</span> 
+    <span class="dt">Array</span> r sh a             <span class="co">-- input array </span>
+ <span class="ot">-&gt;</span> (sh <span class="ot">-&gt;</span> sh&#39;)              <span class="co">-- calculation of new extent</span>
+ <span class="ot">-&gt;</span> ((sh <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> sh&#39; <span class="ot">-&gt;</span> b)  <span class="co">-- function that given a reader of the original array and</span>
+                             <span class="co">-- a position in the new array calculates a value</span>
+ <span class="ot">-&gt;</span> <span class="dt">Array</span> <span class="dt">D</span> sh&#39; b            <span class="co">-- new array :-)</span></code></pre>
+</div>
+</body>
+</html>
