@@ -18,25 +18,25 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 * 2014-02-27: Francesco Mazzoli - An introduction to Agda
 
 * 2014-03-27: Mihaly Barasz - An introduction to the `pipes` library
-              ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140327-Pipes/final/pipes.html),
-               [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140327-Pipes/final/pipes-handout.html))
+              ([slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140327-Pipes/final/pipes.html),
+               [handout](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140327-Pipes/final/pipes-handout.html))
 
 * 2014-04-24: Gergely Risko - Hacking GHC made simple
-              ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140423-GHC_Hacking/final/ghchack.html),
-               [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140423-GHC_Hacking/final/ghchack-handout.html))
+              ([slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140423-GHC_Hacking/final/ghchack.html),
+               [handout](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140423-GHC_Hacking/final/ghchack-handout.html))
 
 * 2014-05-29: Ivan Jovanovic - Monad Transformers and the standard transformer libraries (operational/transformers/mtl)
               ([`operational`](http://hackage.haskell.org/package/operational),
                [`transformers`](http://hackage.haskell.org/package/transformers),
                [`mtl`](http://hackage.haskell.org/package/mtl),
-               [slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140529-make-you-a-monad/final/make-you-a-monad.html),
-               [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140529-make-you-a-monad/final/make-you-a-monad-handout.html))
+               [slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140529-make-you-a-monad/final/make-you-a-monad.html),
+               [handout](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140529-make-you-a-monad/final/make-you-a-monad-handout.html))
 
 * 2014-06-06: **[ZuriHac 2014](http://www.haskell.org/haskellwiki/ZuriHac2014)** with talks by Simon Marlow and Edward Kmett
               ([paper](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140606-ZuriHac_Edward_Kmett-Functionally_Oblivious/Functionally_Oblivious.pdf?raw=true))
 
 * 2014-07-31: possibly: Matthias Körner - High-performance computing in Haskell: the [`repa`](http://hackage.haskell.org/package/repa) and [`accelerate`](http://hackage.haskell.org/package/accelerate) libraries
-              ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140731-Intro-Multi-Core-And-GPU/Introduction.html))
+              ([slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140731-Intro-Multi-Core-And-GPU/Introduction.html))
 
 * 2014-08-28: Simon Meier - How to compile Haskell to JavaScript
 
@@ -60,13 +60,13 @@ The following libraries were mentioned in the January meetup as something that p
 
 2013-03-21:
   [Simon Meier](https://github.com/meiersi) - An Introduction to GHC's Haskell execution model
-  ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html),
-   [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
+  ([slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20130321-Intro_GHC_RTS/finished_talk/slides.html),
+   [handout](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20130321-Intro_GHC_RTS/finished_talk/handout.html))
 
 2013-04-25:
   Gergely Risko - Cmdline libraries, intro to TemplateHaskell
-  ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags.html),
-   [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags-handout.html))
+  ([slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags.html),
+   [handout](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20130425-HFlags_and_Template_Haskell/final/hflags-handout.html))
 
 2013-05-30: Mihaly Barasz - Intro to the [`lens`](http://hackage.haskell.org/package/lens) package.
 
@@ -86,7 +86,7 @@ The following libraries were mentioned in the January meetup as something that p
 
   - Simon Marlow     - Keynote for the Zurich FP Afternoon
   - Thomas Schilling - Lambdachine: a JIT compiler for Haskell
-  - Gergely Risko    - Ceh - power user environments to share ([slides](http://htmlpreview.github.io/?https://github.com/errge/ceh/blob/master/doc/fpafternoon-zurich-20130829/final/ceh.html))
+  - Gergely Risko    - Ceh - power user environments to share ([slides](http://rawgit.com/errge/ceh/master/doc/fpafternoon-zurich-20130829/final/ceh.html))
 
 **2013-08-30 - 2013-09-01: ZuriHac 2013** (Yay, [register here](http://www.haskell.org/haskellwiki/ZuriHac2013))
 
