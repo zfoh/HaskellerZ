@@ -25,12 +25,18 @@ Note that we welcome guests and will happily adjust our schedule if they would l
               ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140423-GHC_Hacking/final/ghchack.html),
                [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140423-GHC_Hacking/final/ghchack-handout.html))
 
-* 2014-05-29: Ivan Jovanovic - Monad Transformers and the standard transformer libraries (operational/transformers/mtl) ([`operational`](http://hackage.haskell.org/package/operational)/[`transformers`](http://hackage.haskell.org/package/transformers)/[`mtl`](http://hackage.haskell.org/package/mtl))
+* 2014-05-29: Ivan Jovanovic - Monad Transformers and the standard transformer libraries (operational/transformers/mtl)
+              ([`operational`](http://hackage.haskell.org/package/operational),
+               [`transformers`](http://hackage.haskell.org/package/transformers),
+               [`mtl`](http://hackage.haskell.org/package/mtl),
+               [slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140529-make-you-a-monad/final/make-you-a-monad.html),
+               [handout](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140529-make-you-a-monad/final/make-you-a-monad-handout.html))
 
 * 2014-06-06: **[ZuriHac 2014](http://www.haskell.org/haskellwiki/ZuriHac2014)** with talks by Simon Marlow and Edward Kmett
+              ([paper](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140606-ZuriHac_Edward_Kmett-Functionally_Oblivious/Functionally_Oblivious.pdf?raw=true))
 
 * 2014-07-31: possibly: Matthias Körner - High-performance computing in Haskell: the [`repa`](http://hackage.haskell.org/package/repa) and [`accelerate`](http://hackage.haskell.org/package/accelerate) libraries
-
+              ([slides](http://htmlpreview.github.com/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140731-Intro-Multi-Core-And-GPU/Introduction.html))
 
 * 2014-08-28: Simon Meier - How to compile Haskell to JavaScript
 
