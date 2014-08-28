@@ -42,12 +42,8 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-09-25: Bas van Dijk - An overview of concurrent programming in Haskell
 
-* 2014-10-30: - free slot -
-
-* 2014-11-27: - free slot -
-
-* 2014-12-25: - free slot -
-
+* 2014-10-30: Emilie Balland - Testing in Haskell
+ 
 The following libraries were mentioned in the January meetup as something that people would be interested in. Please feel free to volunteer to present one of them.
     Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), and computing 
     [`statistics`](http://hackage.haskell.org/package/statistics).
