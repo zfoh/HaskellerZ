@@ -1,10 +1,10 @@
 module SumN_Example where
 
-{-
+
 sumN :: Int -> Int
 sumN 0 = 0
 sumN n = n + sumN (n - 1)
--}
+
 sumNAcc :: Int -> Int
 sumNAcc =
     go 0
