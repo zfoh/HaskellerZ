@@ -12,7 +12,7 @@ module Main (main) where
 
 import           Control.Monad                (forM_)
 
-import qualified Data.Text.ByteString         as B
+import qualified Data.ByteString              as B
 import qualified Data.Text                    as T
 import qualified Data.Text.Encoding           as TE
 
@@ -21,16 +21,16 @@ import           System.Environment           (getArgs)
 
 main :: IO ()
 main = do
-    -- Poor man's argument parsing. Use 'optparse-applicative' for proper
+    -- Poor-man's argument parsing. Use 'optparse-applicative' for proper
     -- command line parsing, with help message etc.
     args0 <- getArgs
     case args0 of
-      []            -> putStdErr "wc: no arguments given"
-      ("-c" : args) -> use (B.length)
-      ("-m" : args) -> use (T.length . TE.decodeUtf8)
-      ("-l" : args) -> use (length . T.lines . TE.decodeUtf8)
-      ("-w" : args) -> use (length . T.words . TE.decodeUtf8)
-      (flag : args) -> putStdErr $ "unsupported flag: " ++ flag
+      []            -> putStrLn "wc: no arguments given"
+      ("-c" : args) -> use (B.length)                         args
+      ("-m" : args) -> use (T.length . TE.decodeUtf8)         args
+      ("-l" : args) -> use (length . T.lines . TE.decodeUtf8) args
+      ("-w" : args) -> use (length . T.words . TE.decodeUtf8) args
+      (flag : _   ) -> putStrLn $ "unsupported flag: " ++ flag
 
 
 use :: Show a => (B.ByteString -> a) -> [FilePath] -> IO ()
@@ -48,4 +48,4 @@ use summarizeBytes fileNames =
         -- use lazy IO except you really know what you are doing!
         --
         content <- B.readFile fileName
-        return (f content)
+        return (summarizeBytes content)
