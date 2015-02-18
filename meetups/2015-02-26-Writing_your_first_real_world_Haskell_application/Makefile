@@ -1,4 +1,3 @@
-# TODO: Make slides and handout --self-contained
 all: handout.html slides.html
 
 slides.html: real_world_haskell_intro.markdown fig/*
