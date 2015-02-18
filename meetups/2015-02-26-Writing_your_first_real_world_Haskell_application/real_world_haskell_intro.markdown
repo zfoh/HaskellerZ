@@ -209,10 +209,7 @@ Hint: type `:?` in `ghci` to get a list of all available commands.
 The structure of Haskell applications
 =====================================
 
-- IO actions: threads, files manipulation, network communication
-- Pure functions: thread-safe by default, referentially transparent
-- Pure and total functions: the gold standard
-
+![](fig/io_layer.svg)
 
 
 Implementing `wc -w`
