@@ -1,30 +1,30 @@
 % An introduction to writing real world Haskell applications
 % Simon Meier, IBM Research Zurich
-% HaskellerZ meetup - February 26th, 2015
+% February 17th, 2015
 
 Goal of this talk
 =================
 
-- provide a blueprint for writing your real-wrold Haskell applications.
+- provide a blueprint for writing your own Haskell applications
 - explain how to navigate Haskell libraries and documentation
-- not a Haskell syntax and types introduction -- but ask whenever you stumble!
+- assumes some knowledge of Haskell syntax: ask if something is unclear!
 
-We'll do this by implementing our own `wc` utility.
+We'll do this by implementing a clone of the Unix word-count `wc` utility.
 
 
 Setting up our development environment
 ======================================
 
-- `ghc --version`: should be >= 7.6.1, ideally >= 7.8.4
+- `ghc --version`: should be ≥ 7.6.1, ideally ≥ 7.8.4
     - install from [Haskell platform](https://www.haskell.org/platform/) or
       [GHC binary distribution](https://www.haskell.org/ghc/download)
-    - install libraries using `cabal` into sandboxes
+    - install libraries using `cabal` (into sandboxes)
 
-- `cabal --version`: (should be >= 1.22)
+- `cabal --version`: should be ≥ 1.22
     - by default install some `cabal` from distro
     - make sure that your have `$HOME/.cabal/bin/`
       (`$HOME/Library/Haskell/bin` on OS X) in your $PATH
-    - then upgrade to the most recent version `cabal install cabal-install`
+    - upgrade to the most recent version: `cabal install cabal-install`
     - set `documentation: False` in `$HOME/.cabal/config` to improve build
       times
 
@@ -37,21 +37,26 @@ Setting up our development environment
 
 - search engine shortcuts (`ha` for Hackage, `ho` for Hoogle)
 
-  ![Search engine shortcuts in Chrome](fig/hackage_and_hoogle.png)
+  ![](fig/hackage_and_hoogle.png)
 
 
 Setting up our  project environment
 ===================================
 
-Create the initial project directory. I typically use a BSD-3 licence and
+Create the initial project directory for our `wc` clone,
 
 ~~~~
 mkdir wc
 cd wc
+~~~~
+
+and populate it.
+
+~~~~
 cabal init
 ~~~~
 
-Resulting directory layout
+Resulting directory layout:
 
 ~~~~
 wc/
@@ -74,7 +79,7 @@ Adapting the initial cabal file
 ~~~~
 name:                wc
 version:             0.1.0
-synopsis:            Demo word-count appliation
+synopsis:            Demo word-count application
 -- description:
 license:             BSD3
 license-file:        LICENSE
@@ -101,8 +106,8 @@ executable wc
   main-is: Main.hs
 
   -- ** -Wall is crucial! **
-  -- Your program should always be -Wall clean, as the warnings help you avoid
-  -- many stupid mistakes.
+  -- Your program should always be -Wall clean, as the warnings
+  -- help you avoid many stupid mistakes.
   ghc-options:         -Wall
 ~~~~
 
@@ -115,15 +120,16 @@ main :: IO ()
 main = error "wc - main: not yet implemented"
 ~~~~
 
-- `IO ()` is the type of IO-actions that return a zero-tuple `()` (called
-  unit) when run; similar to `void main()` in Java.
+- `IO ()`{.haskell} is the type of IO-actions that return a zero-tuple; called
+  unit and written as `()`.
+
 - use the `error` function with an *unambiguous* error message to report
   implementation errors
 
-  ~~~~{.haskell}
-  -- | Report an implementation error.
-  error :: String -> a
-  ~~~~
+~~~~{.haskell}
+-- | Report an implementation error.
+error :: String -> a
+~~~~
 
 
 Compiling and running our stub
@@ -131,7 +137,7 @@ Compiling and running our stub
 
 All `cabal` commands are to be executed in the top-level project directory.
 
-Create a cabal sandbox in the `wc` directory. Pro tip: use most recent version
+Create a cabal sandbox in the `wc` directory. Hint: use most recent version
 of `cabal` and use `cabal --help` to explore options.
 
 ~~~~
@@ -143,8 +149,8 @@ Creating a new sandbox at
 ~~~~
 
 Install library dependencies into sandbox, build and install our application
-into sandbox. We use `-j1` to build with one core and get more detailed output
-on `stdout`.
+into sandbox. We use `-j1` to build with one core and get more detailed build
+output on `stdout`.
 
 ~~~~
 > cabal install -j1
@@ -170,7 +176,8 @@ wc: wc - main: not yet implemented
 Using the REPL to run our stub
 ==============================
 
-Load project into REPL with dependencies as specified in .cabal file and installed in
+Load project into REPL with dependencies as specified in .cabal file and
+installed in `.cabal-sandbox/`.
 
 ~~~~
 > cabal repl
@@ -196,15 +203,15 @@ Run the programin with command-line arguments.
 Exception: wc - main: not yet implemented
 ~~~
 
-Tip: type `:?` in `ghci` to get a list of all available commands.
+Hint: type `:?` in `ghci` to get a list of all available commands.
 
 
 The structure of Haskell applications
 =====================================
 
-- IO: threads, file reading and writing
-- Pure: thread-safe by default, referentially transparent
-- Pure total: the gold standard
+- IO actions: threads, files manipulation, network communication
+- Pure functions: thread-safe by default, referentially transparent
+- Pure and total functions: the gold standard
 
 
 
@@ -213,28 +220,33 @@ Implementing `wc -w`
 
 Know your libraries.
 
-- [`base`]() `Int`, `Bool`, lists, control structures, `IO`
-- [`bytestring`]() sequences of bytes
-- [`text]() sequences of Unicode characters
+- [`base`](https://hackage.haskell.org/package/base):
+  `Int`{.haskell}, `Bool`{.haskell}, lists, control structures, `IO`{.haskell}
+- [bytestring](https://hackage.haskell.org/package/bytestring):
+  sequences of bytes
+- [text](https://hackage.haskell.org/package/text):
+  sequences of Unicode characters
 
-Really just read/skim their documentation and build a map in your head!
+*Great investment: read/skim their documentation and build a mental map.*
 
 Some useful functions.
 
-~~~~
-Prelude.(.)                :: (b -> c) -> (a -> b) -> (a -> c)
-Prelude.length             :: [a] -> Int
-Prelude.putStrLn           :: String -> IO ()
+~~~~{.haskell}
+(.)                        :: (b -> c) -> (a -> b) -> (a -> c)
+length                     :: [a] -> Int
+putStrLn                   :: String -> IO ()
 Data.Text.words            :: Text -> [Text]
 System.Environment.getArgs :: IO [String]
 ~~~~
 
 Adding dependencies: see the
 [package  versioning policy](https://wiki.haskell.org/Package_versioning_policy)
-  - constraint dependencies to 'x.y.*' for four-digit versions, and
-    'x.*' for three digit versions
 
-(Check the demo source code.)
+  - constrain dependencies to `x.y.*` for four-digit versions, and
+    `x.*` for three digit versions
+
+(Check the [demo source
+code](https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/wc/src/Main.hs).)
 
 
 
@@ -252,7 +264,7 @@ wc [-clmw] [file ...]
 
 (Check the demo source code.)
 
-Pro tip: to simplify code-recompile loop: use split-screen layout and
+Hint: to simplify code-recompile loop: use split-screen layout and
 [`ghcid`](https://hackage.haskell.org/package/ghcid).
 
 
@@ -262,7 +274,8 @@ How to proceed from here
 - [Learn You a Haskell](http://learnyouahaskell.com/) for the basics
 - lots of structure in type-classes read/skim the
   [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia?)
-- lots of information in GHC manual, read/skim it
+- lots of information in
+  [GHC's user's guide](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/)
 - libraries to know by heart:
   [safe](https://hackage.haskell.org/package/safe),
   [bytestring](https://hackage.haskell.org/package/bytestring),
@@ -272,9 +285,15 @@ How to proceed from here
   [transformers](https://hackage.haskell.org/package/transformers),
   [either](https://hackage.haskell.org/package/either),
   [mtl](https://hackage.haskell.org/package/mtl),
-- libraries to know about:
-  lens, aeson, attoparsec, parsec, snap, blaze-html, conduit,
-  opt-parse-applicative
+- some libraries to know about:
+  [lens](https://hackage.haskell.org/package/lens),
+  [aeson](https://hackage.haskell.org/package/aeson),
+  [attoparsec](https://hackage.haskell.org/package/attoparsec),
+  [parsec](https://hackage.haskell.org/package/parsec),
+  [snap](https://hackage.haskell.org/package/snap),
+  [blaze-html](https://hackage.haskell.org/package/blaze-html),
+  [conduit](https://hackage.haskell.org/package/conduit),
+  [optparse-applicative](https://hackage.haskell.org/package/optparse-applicative)
 - choose a project to work on and ask about problems at our meetups
 - use Johan Tibell's
   [styleguide](https://github.com/tibbe/haskell-style-guide/blob/master/haskell-style.md)
