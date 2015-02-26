@@ -51,7 +51,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 * 2014-07-31: possibly: Matthias Körner - High-performance computing in Haskell: the [`repa`](http://hackage.haskell.org/package/repa) and [`accelerate`](http://hackage.haskell.org/package/accelerate) libraries
               ([slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140731-Intro-Multi-Core-And-GPU/Introduction.html))
 
-* 2014-08-28: Simon Meier - How to compile Haskell to JavaScript
+* 2014-08-28: Simon Meier - How to compile Haskell to JavaScript ([screencast](https://www.youtube.com/watch?v=4nTnC0t7pzY), [blaze-react](https://github.com/meiersi/blaze-react))
 
 * 2014-09-25: Bas van Dijk - An overview of concurrent programming in Haskell
 
