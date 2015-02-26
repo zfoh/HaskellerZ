@@ -9,6 +9,19 @@ The README moreover serves as a drafting document for upcoming meetups.
 In general, we'll have a HaskellerZ meetup every last thursday of January until October every year.
 Note that we welcome guests and will happily adjust our schedule if they would like to give a talk.
 
+2015 meetups
+============
+
+* 2015-01-30: Emilie Balland - [Testing in Haskell](http://htmlpreview.github.io/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015_01-29-Property_Based_Testing/slides.html)
+
+* 2015-02-26: Simon Meier - [Writing your first real-world Haskell program](https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/real_world_haskell_intro.markdown)
+
+* 2015-03-26: Mihaly Barasz - An introduction to game programming in Haskell
+
+* 2015-04-30: topic and speaker to be determined
+
+* 2015-05-29: *[ZuriHac 2015](https://wiki.haskell.org/ZuriHac2015)*
+
 
 2014 meetups
 ============
@@ -42,7 +55,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-09-25: Bas van Dijk - An overview of concurrent programming in Haskell
 
-* 2014-10-30: Emilie Balland - Testing in Haskell
+* 2015-10-30: Simon Meier - [An introduction to the GHC Runtime System](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/intro_ghc_rts-talk.md)
  
 The following libraries were mentioned in the January meetup as something that people would be interested in. Please feel free to volunteer to present one of them.
     Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), and computing 
