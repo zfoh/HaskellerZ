@@ -1,6 +1,6 @@
 % An introduction to writing real world Haskell applications
 % Simon Meier, IBM Research Zurich
-% February 17th, 2015
+% February 26th, 2015
 
 Goal of this talk
 =================
@@ -196,7 +196,7 @@ src/Main.hs:1:1: Warning:
     Ok, modules loaded: Main.
 ~~~~
 
-Run the programin with command-line arguments.
+Run the program with command-line arguments.
 
 ~~~
 > :main src/Main.hs
@@ -274,6 +274,7 @@ How to proceed from here
 - lots of information in
   [GHC's user's guide](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/)
 - libraries to know by heart:
+  [base](https://hackage.haskell.org/package/base),
   [safe](https://hackage.haskell.org/package/safe),
   [bytestring](https://hackage.haskell.org/package/bytestring),
   [text](https://hackage.haskell.org/package/text),
