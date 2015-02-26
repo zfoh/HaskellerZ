@@ -1,4 +1,4 @@
-GHC_OPTS=-O2 -dsuppress-all -ddump-prep -fforce-recomp -ddump-to-file -ddump-stg -ddump-asm -ddump-cmm -ddump-simpl -ddump-stranal -ddump-inlinings
+GHC_OPTS=-O2 -ddump-prep -fforce-recomp -ddump-to-file -ddump-stg -ddump-asm -ddump-cmm -ddump-simpl -ddump-stranal -ddump-inlinings
 GHC=ghc ${GHC_OPTS}
 
 # TODO: Make slides and handout --self-contained
@@ -25,3 +25,6 @@ sumN-example:
 
 average-example:
 	${GHC} Average.hs
+
+default-example:
+	${GHC} Default.hs

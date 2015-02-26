@@ -1,6 +1,6 @@
 % An introduction to GHC's Haskell execution model
-% Simon Meier, Erudify AG
-% HaskellerZ meetup - March 21st, 2013
+% Simon Meier
+% HaskellerZ meetup - October 30th, 2014
 
 Goal of this talk
 =================
@@ -463,7 +463,7 @@ The end...
        Simon Marlow, Alexey Rodriguez Yakushev, and Simon Peyton Jones, ICFP 2007. 
  - [GHC sources](https://github.com/ghc/ghc):
    I suggest to download the [most recent source
-   distribution](http://www.haskell.org/ghc/download_ghc_7_6_1#sources) and
+   distribution](http://www.haskell.org/ghc/download_ghc_7_8_3#sources) and
    browse it using our favourite text editor
  - Stanford Haskell lecture: [handout about memory
    layout](http://www.scs.stanford.edu/11au-cs240h/notes/memory.html) and
