@@ -18,7 +18,7 @@ executable wc
   -- other-modules:
   -- other-extensions:
   build-depends:
-      base          >=4.7      && <4.8
+      base          >= 4.6     && <4.8
     , bytestring    >= 0.10.4  && < 0.11
     , directory     == 1.2.*
     , text          == 1.2.*
