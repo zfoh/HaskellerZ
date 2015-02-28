@@ -218,7 +218,7 @@ import qualified YourModulePrefix.Service1 as Service1
 ...
 import qualified YourModulePrefix.ServiceN as ServiceN
 
--- Import specification that we are implementating.
+-- Import specification that we are implementing.
 import qualified YourModulePrefix.X        as X
 
 
@@ -243,7 +243,7 @@ withHandle
 withHandle config reqService1H ... reqServiceNH = do
     -- allocate implementation resources (e.g., a mutex)
     -- construct 'X.Handle'
-    -- run inner action while making sure that we deallocate our ressources
+    -- run inner action while making sure that we deallocate our resources
     --   both on exceptions and normal termination
 
 
@@ -392,10 +392,10 @@ The long answer is the following.
 
 As described above,
   we found monad stacks on top of `IO` to introduce a lot of friction.
-This means that a type-class based service spefication would result in
+This means that a type-class based service specification would result in
   functions of the form
   `fun1 :: X.Handle h => h -> param1 -> ... -> paramN -> IO result`.
-Comparse this to
+Compare this to
   `fun1 :: X.Handle -> param1 -> ... -> paramN -> IO result`.
 So type-classes will not improve our type-signatures.
 Moreover,
