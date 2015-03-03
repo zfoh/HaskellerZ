@@ -1,5 +1,5 @@
-% Author: Simon Meier <iridcode@gmail>
-% Date: 2015-02-28
+- Author: Simon Meier <iridcode@gmail>
+- Date: 2015-02-28
 
 # The Service Pattern
 
@@ -10,9 +10,12 @@ It explains how to structure
   [Service-oriented architecture](http://en.wikipedia.org/wiki/Service-oriented_architecture).
 By `IO`-layer,
   I mean the set of all functions that can execute `IO` actions.
-At [Better](www.better.com),
+At Better,
   we used this pattern extensively
   to modularize the `IO`-layer of our application.
+
+Acknowledgements: thanks to Jasper Van der Jeugt for proof reading.
+
 
 ## When to use the service pattern
 
