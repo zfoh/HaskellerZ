@@ -4,7 +4,7 @@
 # The Service Pattern
 
 This tutorial describes a design pattern
-  that I discovered when working at [Better](www.better.com).
+  that I discovered when working at Better.
 It explains how to structure
   the `IO`-layer of a Haskell application as a
   [Service-oriented architecture](http://en.wikipedia.org/wiki/Service-oriented_architecture).
@@ -80,7 +80,6 @@ module Acme.System.Logger
   ) where
 
 import qualified Data.Text as T
-
 
 data Priority
     = Debug    -- ^ Debug messages
@@ -171,7 +170,7 @@ withHandle io = do
 ### Formal definition of the service pattern
 
 The service pattern is built around the two concepts of
-  service specification and service implementations.
+  service specifications and service implementations.
 A *service specification* for a service `X` is a module of the following form.
 ``` haskell
 -- | Specification of the X service. This module is intended to be imported
@@ -185,14 +184,14 @@ module YourModulePrefix.X
     Handle(..)
 
     -- * Pure types
-    ... here you export types that are necessary to interact with service X,
-    ... but are too specific to fit into their own module, e.g., the priorities
-    ... above in the logger service.
+    -- Here you export types that are necessary to interact with service X,
+    -- but are too specific to fit into their own module, e.g., the priorities
+    -- above in the logger service.
 
     -- * Derived functions
-    ... here you export derived functions that work for any implementation of
-    ... service X
-    ... They are typically of the shape `fun :: Handle -> params -> IO result`
+    -- Here you export derived functions that work for any implementation of
+    -- service X.
+    -- They are typically of the shape `fun :: Handle -> params -> IO result`
 
   ) where
 
@@ -207,7 +206,6 @@ Note that this is analogous to manually constructing type-class
 See the Section "Discussion of the service pattern"
   for a discussion on why we
   prefer this formulation to one based on type-classes.
-
 
 A *service implementation* for a service `X`
   is a module of the following form.
@@ -238,8 +236,7 @@ data Config = Config
     }
     deriving (Eq, Show)
 
--- | Run an 'IO' action with access to an 'X.Handle' that works by ...
---
+-- | Run an 'IO' action with access to an 'X.Handle'.
 withHandle
     :: Config             -- ^ Configuration
     -> Service1.Handle    -- ^ Service dependency 1 (e.g. a logger)
@@ -252,7 +249,6 @@ withHandle config reqService1H ... reqServiceNH = do
     -- construct 'X.Handle'
     -- run inner action while making sure that we deallocate our resources
     --   both on exceptions and normal termination
-
 
 -- For complicated services it often helps to define an implementation handle
 -- as follows. It might even be that you have whole module structure below
@@ -271,13 +267,14 @@ data IHandle = IHandle
 -- | Implementation of 'X.Handle.function1'.
 function1 :: IHandle -> param1_1 -> ... -> param1_N -> IO result1
 
-... remaining service function implementations ...
-
+-- ... remaining service function implementations ...
 ```
-This definition is quite a mouthful,
-  but it should become more clear when comparing the
-  structure to the two logging implementations above.
-
+These two definitions are quite long.
+To understand the definitions,
+  it helps to compare them to the logger example given earlier.
+I also invite you to ponder how you could apply this pattern in your codebase.
+Sadly, I cannot point to the two codebases where I used this pattern,
+  as both of them are closed-source.
 
 
 ## Discussion of the service pattern
@@ -307,7 +304,7 @@ import Better.System.LRUCache            as LRUCache
 -- right-indent drift from the 'withXXX' functions.
 import Control.Monad.Managed (runManaged, managed)
 
-
+-- | Start the Better web-service.
 main :: IO ()
 main = do
     -- get name of config file from arguments
@@ -317,7 +314,7 @@ main = do
     monitorC  <- parseMonitorC configFile
     loggerC   <- parseLoggerC  configFile
     postgresC <- parsePostresC configFile
-    ... more config parsing
+    -- ... more config parsing
 
     -- construct service handles and run until the process is killed
     runManged $ do
@@ -331,8 +328,8 @@ main = do
         -- of this service uses PostgreSQL.
         storageH  <- managed $ Storage.Impl.Postgres storageC lruCacheC loggerH postgresH
 
-        ... more services for implementing our business logic and in the end
-        ... our snap handlers
+        -- ... more services for implementing our business logic and in the end
+        -- ... our snap handlers
 
         snapH <- managed $ Http.Impl.Snap.withHandle snapC monitorH loggerH handlers
 
@@ -349,30 +346,28 @@ Moreover,
     which enables us to mock them appropriately during testing.
 It also means that more of our code becomes platform independent,
   as we can switch dependencies easily.
-In the codebase at Better,
-  the service pattern was applicable to *all* our subsystems and made working
-  with them a bliss.
 
 In my opinion,
-  there are non-obvious design decisions in the above definition of
+  there are two non-obvious design decisions in the above definition of
   the service pattern.
 First,
-  it does not abstract over the concrete monad, but uses 'IO' pervasively.
+  it does not abstract over the concrete monad, but uses `IO` pervasively.
 Second,
   it does not use type-classes to specify abstract `Handle`s.
-We discuss the rationale for these two decision in the following section.
+We discuss the rationale for these two decision in the following two sections.
 
 
 ### Relying on just IO
 
 The main reason why the functions in a service specification just use
-  'IO result' instead of custom monad stacks is that this composes better.
+  `IO result` instead of custom monad stacks is that this composes better.
 Monad stacks fix the order of arguments and produce friction
-  at abstraction boundaries due to the necessary transformations.
+  at abstraction boundaries due to the necessary transformations between
+  different monad stacks.
 We found it to be more pleasant to just pass around the handles to the
   necessary services as parameters (possibly grouped in a record).
-All dependencies are explicit
-  and we can use the great function application syntax to pass around handles.
+This way all dependencies are explicit
+  and function application is all we need pass around handles.
 
 On a related note,
   we found at Better that adding effects to `IO` is often unnecessary,
@@ -381,9 +376,9 @@ The typical use was just a `MaybeT` or `EitherT` to track exceptions
   explicitly in the types.
 On service boundaries,
   we typically translated these exceptions to a descriptive log-message and
-  a simple 'Nothing'.
+  a simple `Nothing`.
 
-There can be made a case for abstracting 'Handle's over the the monad used to
+There can be made a case for abstracting `Handle`s over the the monad used to
   compute results, i.e., as
   `data Handle m = Handle { fun1 :: ... -> m result }`.
 This can be useful for building pure models of an application for testing.
@@ -394,7 +389,8 @@ We found that is often sufficient to build semi-pure implementations
 ### Why not use type classes to define handles?
 
 The short answer is that we do not use type classes because
-  we would neither gain further functionality nor shorter code.
+  we would neither gain further functionality nor code that is easier to
+  reason about.
 The long answer is the following.
 
 We see two options on how one can use type classes to manage service
@@ -429,12 +425,18 @@ The main problem that we see with this approach is that it strongly
   favors the situation where all service dependencies are satisfied by a
   single instance.
 This situation is however rather seldom,
-  as for example configuring different log-levels (i.e., using different
-  loggers) for different service instances is not uncommon.
-One can handle this case using mtl-style transformer stacks.
-However,
-  this requires unnecessary effort compared to just passing the handles
+  as for example configuring using different
+  loggers for different service instances is common (e.g., to set different
+  verbosity levels).
+One can handle this case using mtl-style transformer stacks,
+  but this requires more effort compared to just passing the handles
   explicitly.
+Moreover,
+  the explicit handles also work in the case where we need to
+  abstract over some pure functions,
+  e.g., how to render a link to an HTTP API call on the backend.
+In this case,
+  the monad typeclasses introduce unnecessary sequencing.
 
 The second option to use type classes is to use
   functions of the form
@@ -449,14 +451,33 @@ In general,
   we found that being explicit about dependencies simplified reasoning about
   our service implementations and did not negatively impact refactoring.
 
+### How does this relate to object-oriented programming?
+
+The implementation strategy used in the service pattern corresponds closely to
+  how interfaces and classes work in OOP.
+Our service specifications declare both an interface at the type level,
+  and a value representation for the interface at runtime.
+In terms of memory consumption,
+  our interfaces are heavier than typical class instances in an OOP language,
+    as we store at least one pointer to the instance-data per closure.
+In OOP languages,
+  each class instance typically stores a single pointer to the [virtual method
+  table](http://en.wikipedia.org/wiki/Virtual_method_table) together with the
+  other instance-data.
+In terms of call overhead,
+  we pay the cost of an
+  [unknown function call](https://ghc.haskell.org/trac/ghc/wiki/Commentary/Rts/HaskellExecution/FunctionCalls#Genericapply).
+If this becomes a performance bottle-neck,
+  we will have to avoid the abstraction and specialize at compile time.
+[Backpack](https://ghc.haskell.org/trac/ghc/wiki/Backpack)
+  will allow us to do this in a principled fashion without losing modularity.
+
 
 ## Conclusion
 
-This writeup documents a pattern that I found
+This tutorial documents a pattern that I found
   to apply pervasively in the codebases I worked on.
-I wrote it because I hope that other people can also use it profitably.
-Once the Haskell community has more experience with this pattern,
-  we can also consider whether we should use it in general to design libraries
-  that provide multiple backends for stateful services.
+The description of the pattern is a bit long,
+  but I invite you to give it a shot in your codebase.
+I am looking forward to hearing how it worked out.
 Happy coding :-)
-
