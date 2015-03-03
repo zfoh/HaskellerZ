@@ -22,8 +22,10 @@ The service pattern allows you to modularize the use of subsystems
 Typical examples of such subsystems are
   logging and monitoring support,
   database access,
-  caches, and
-  HTTP connection pools.
+  caches,
+  authentication and authorization support,
+  or
+  connection pools.
 We found that it is easier to refer to these sub-systems as *services*,
   which is what we are going to use in the remainder of this tutorial.
 
@@ -120,7 +122,7 @@ import qualified System.IO
 -- | Create a new 'Logger.Handle' that logs to a 'System.IO.Handle'.
 newHandle :: System.IO.Handle -> IO Logger.Handle
 newHandle fileH = do
-    -- We use a mutex to avoid garbling our output.
+    -- We use a mutex to make our logger thread-safe.
     -- (Note that we should take this mutex as an argument for maximal
     -- compositionality.)
     mutex <- newMVar ()
@@ -223,11 +225,13 @@ import qualified YourModulePrefix.X        as X
 
 
 -- | Pure representation of the configuration of your service implementation.
--- This type is typically exported
+-- This type provides both named parameters for the 'withHandle' function and
+-- a representation that can be easily serialized or parsed from an external
+-- config file.
 data Config = Config
-    { cParam1 :: t1
+    { cParam1 :: !t1
       ...
-    , cParamM :: tM
+    , cParamM :: !tM
     }
     deriving (Eq, Show)
 
@@ -373,7 +377,7 @@ On a related note,
 The typical use was just a `MaybeT` or `EitherT` to track exceptions
   explicitly in the types.
 On service boundaries,
-  these exceptions get typically translated to a descriptive log-message and
+  we typically translated these exceptions to a descriptive log-message and
   a simple 'Nothing'.
 
 There can be made a case for abstracting 'Handle's over the the monad used to
@@ -384,28 +388,63 @@ We found that is often sufficient to build semi-pure implementations
   that are based on hidden `IORef`s.
 
 
-### Why not use type-classes to define handles?
+### Why not use type classes to define handles?
 
-The short answer is that we do not use type-classes because
+The short answer is that we do not use type classes because
   we would neither gain further functionality nor shorter code.
 The long answer is the following.
 
-As described above,
-  we found monad stacks on top of `IO` to introduce a lot of friction.
-This means that a type-class based service specification would result in
+We see two options on how one can use type classes to manage service
+  dependencies.
+The first one is to attach service specifications to the monad
+  in which we compute the results.
+For example,
+  we could define the following two type classes to model monads
+  that support logging and database access.
+``` haskell
+class MonadLogger m where
+    log :: Priority -> T.Text -> m ()
+
+class MonadDB m  where
+    runTransaction :: Transaction a -> m a
+```
+The service dependencies of any function are then captured by corresponding
+  type class constraints, as shown in the following example.
+``` haskell
+someBusinessLogic
+    :: (MonadLogger m, MonadDB m)
+    => param1 -> ... -> paramN -> m result
+someBusinessLogic ... = do
+    mbResult <- runTransaction someTransaction
+    case mbResult of
+      Just result -> return result
+      Nothing     -> do
+        log Warning "falling back to default"
+        return defaultResult
+```
+The main problem that we see with this approach is that it strongly
+  favors the situation where all service dependencies are satisfied by a
+  single instance.
+This situation is however rather seldom,
+  as for example configuring different log-levels (i.e., using different
+  loggers) for different service instances is not uncommon.
+One can handle this case using mtl-style transformer stacks.
+However,
+  this requires unnecessary effort compared to just passing the handles
+  explicitly.
+
+The second option to use type classes is to use
   functions of the form
   `fun1 :: X.Handle h => h -> param1 -> ... -> paramN -> IO result`.
-Compare this to
-  `fun1 :: X.Handle -> param1 -> ... -> paramN -> IO result`.
-So type-classes will not improve our type-signatures.
-Moreover,
-  every type-class makes the implicit assumption that there is at most one
-  instance for any type.
-We are not exploiting this assumption in our code.
-So we should not make it to make our code usable in more contexts.
-Obviously,
-  one can mix-and-match type-class-based and explicit service definitions.
-We leave that choice to the reader.
+This would allow a single handle to implement multiple services.
+However,
+  we are not sure where this would be beneficial.
+A service's dependencies should always be kept private;
+  and in a service implementation we can just store the handles of service
+  dependencies as fields in the implementation handle.
+In general,
+  we found that being explicit about dependencies simplified reasoning about
+  our service implementations and did not negatively impact refactoring.
 
 
 ## Conclusion
