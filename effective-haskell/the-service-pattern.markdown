@@ -458,19 +458,26 @@ The implementation strategy used in the service pattern corresponds closely to
 Our service specifications declare both an interface at the type level,
   and a value representation for the interface at runtime.
 In terms of memory consumption,
-  our interfaces are heavier than typical class instances in an OOP language,
-    as we store at least one pointer to the instance-data per closure.
-In OOP languages,
-  each class instance typically stores a single pointer to the [virtual method
-  table](http://en.wikipedia.org/wiki/Virtual_method_table) together with the
-  other instance-data.
+  our interfaces are heavier than typical class instances in an OOP language.
+We store at least one pointer to the instance-data per closure,
+  whereas OOP implementations
+  typically store a single pointer to the
+  [virtual method table](http://en.wikipedia.org/wiki/Virtual_method_table)
+  together with the other instance-data.
 In terms of call overhead,
   we pay the cost of an
-  [unknown function call](https://ghc.haskell.org/trac/ghc/wiki/Commentary/Rts/HaskellExecution/FunctionCalls#Genericapply).
-If this becomes a performance bottle-neck,
+  [unknown function call](https://ghc.haskell.org/trac/ghc/wiki/Commentary/Rts/HaskellExecution/FunctionCalls#Genericapply),
+    which is probably a bit slower than a virtual method invocation in an OOP
+    langauge like Java.
+If this becomes a performance bottleneck,
   we will have to avoid the abstraction and specialize at compile time.
 [Backpack](https://ghc.haskell.org/trac/ghc/wiki/Backpack)
   will allow us to do this in a principled fashion without losing modularity.
+Compared to OOP languages,
+  our interfaces are more powerful,
+    as they have a first order representation.
+Their functions can be mixed and matched freely,
+  and we are not constrained to explain extension via inheritance.
 
 
 ## Conclusion
