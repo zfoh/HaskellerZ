@@ -1,6 +1,3 @@
-- Author: Simon Meier <iridcode@gmail>
-- Date: 2015-02-28
-
 # The Service Pattern
 
 This tutorial describes a design pattern
@@ -64,19 +61,16 @@ We first introduce an abstract interface for a logger.
 -- > import qualified Acme.System.Logger as Logger
 --
 module Acme.System.Logger
-  (
-    -- * Abstract handles
+  ( -- * Abstract handles
     Handle(..)
 
     -- * Priorities and convenience functions
   , Priority(..)
-
     -- | The following functions simplify logging at a fixed priority level.
   , logDebug
   , logInfo
   , logWarning
   , logError
-
   ) where
 
 import qualified Data.Text as T
