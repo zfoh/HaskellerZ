@@ -1,0 +1,5 @@
+#!/bin/sh
+cd $(dirname $(readlink -f $0))
+exec ghci -isrc -idist/build/autogen -optP-include -optPdist/build/autogen/cabal_macros.h "$@"
+
+# (setq haskell-program-name (buffer-file-name))

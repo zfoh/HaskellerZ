@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Mihály Bárász, nilcons.com" />
+  <title>Writing Games in Haskell – Beginner friendly intro</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">Writing Games in Haskell – Beginner friendly intro</h1>
+<h2 class="author">Mihály Bárász, nilcons.com</h2>
+<h3 class="date">HaskellerZ meetup - March 26th, 2015</h3>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#outline">Outline</a></li>
+<li><a href="#extremely-brief-intro-to-lens">Extremely brief intro to <code>lens</code></a></li>
+<li><a href="#brief-intro-to-gloss">Brief intro to <code>gloss</code></a></li>
+<li><a href="#the-picture-type">The <code>Picture</code> type</a></li>
+<li><a href="#lets-write-us-a-game">Let’s write us a game!</a></li>
+<li><a href="#the-end">The End</a></li>
+<li><a href="#building-the-code">Building the code</a></li>
+<li><a href="#basic-packages">Basic packages</a></li>
+<li><a href="#random-thoughts">Random thoughts</a></li>
+<li><a href="#what-i-didnt-talk-about-frp">What I didn’t talk about – FRP</a></li>
+<li><a href="#what-i-didnt-talk-about-3d">What I didn’t talk about – 3D</a></li>
+<li><a href="#what-i-didnt-talk-about-sound">What I didn’t talk about – Sound</a></li>
+<li><a href="#what-i-didnt-talk-about-portability">What I didn’t talk about – Portability</a></li>
+<li><a href="#what-i-didnt-talk-about-assets">What I didn’t talk about – Assets</a></li>
+<li><a href="#thank-you">Thank you!</a></li>
+</ul>
+</div>
+<h1 id="outline">Outline</h1>
+<ul>
+<li><p>Lens recap</p></li>
+<li><p>Intro to <code>gloss</code></p></li>
+<li><p>Actually writing the game</p></li>
+<li><p>Graphical and Game related libraries on Hackage</p></li>
+<li><p>Miscellaneous</p></li>
+</ul>
+<h1 id="extremely-brief-intro-to-lens">Extremely brief intro to <code>lens</code></h1>
+<p>See: <code>lens-recap.hs</code></p>
+<h1 id="brief-intro-to-gloss">Brief intro to <code>gloss</code></h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">play ::</span> <span class="dt">Display</span>                    <span class="co">-- ^ Window parameters</span>
+     <span class="ot">-&gt;</span> <span class="dt">Color</span>                      <span class="co">-- ^ Background color</span>
+     <span class="ot">-&gt;</span> <span class="dt">Int</span>                        <span class="co">-- ^ Simulation steps per secons</span>
+     <span class="ot">-&gt;</span> world                      <span class="co">-- ^ The initial world</span>
+     <span class="ot">-&gt;</span> (world <span class="ot">-&gt;</span> <span class="dt">Picture</span>)         <span class="co">-- ^ “Rendering” function</span>
+     <span class="ot">-&gt;</span> (<span class="dt">Event</span> <span class="ot">-&gt;</span> world <span class="ot">-&gt;</span> world)  <span class="co">-- ^ Event handler</span>
+     <span class="ot">-&gt;</span> (<span class="dt">Float</span> <span class="ot">-&gt;</span> world <span class="ot">-&gt;</span> world)  <span class="co">-- ^ Simulation step function</span>
+     <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</code></pre>
+<h1 id="the-picture-type">The <code>Picture</code> type</h1>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Picture</span>
+    <span class="fu">=</span> <span class="dt">Blank</span>
+    <span class="fu">|</span> <span class="dt">Polygon</span>   <span class="dt">Path</span>
+    <span class="fu">|</span> <span class="dt">Line</span>      <span class="dt">Path</span>
+    <span class="fu">|</span> <span class="dt">Circle</span>    <span class="dt">Float</span>
+    <span class="fu">|</span> <span class="dt">ThickCircle</span>   <span class="dt">Float</span> <span class="dt">Float</span>
+    <span class="fu">|</span> <span class="dt">Arc</span>       <span class="dt">Float</span> <span class="dt">Float</span> <span class="dt">Float</span>
+    <span class="fu">|</span> <span class="dt">ThickArc</span>  <span class="dt">Float</span> <span class="dt">Float</span> <span class="dt">Float</span> <span class="dt">Float</span>
+
+    <span class="fu">|</span> <span class="dt">Text</span>      <span class="dt">String</span>
+    <span class="fu">|</span> <span class="dt">Bitmap</span>    <span class="dt">Int</span> <span class="dt">Int</span>     <span class="dt">BitmapData</span> <span class="dt">Bool</span>
+
+    <span class="fu">|</span> <span class="dt">Color</span>     <span class="dt">Color</span>       <span class="dt">Picture</span>
+    <span class="fu">|</span> <span class="dt">Translate</span> <span class="dt">Float</span> <span class="dt">Float</span> <span class="dt">Picture</span>
+    <span class="fu">|</span> <span class="dt">Rotate</span>    <span class="dt">Float</span>       <span class="dt">Picture</span>
+    <span class="fu">|</span> <span class="dt">Scale</span>     <span class="dt">Float</span> <span class="dt">Float</span> <span class="dt">Picture</span>
+
+    <span class="fu">|</span> <span class="dt">Pictures</span>  [<span class="dt">Picture</span>]</code></pre>
+<h1 id="lets-write-us-a-game">Let’s write us a game!</h1>
+<p>See the <code>demo-game</code> subdirectory.</p>
+<h1 id="the-end">The End</h1>
+<p>The actual presentation only got to this point. :)</p>
+<h1 id="building-the-code">Building the code</h1>
+<p>Three ways to avoid recompiling <code>lens</code> over and over again and steer clear of “Cabal hell”.</p>
+<ul>
+<li><p>Nix – Ceh (<a href="https://github.com/nilcons/ceh">shameless plug</a>)</p></li>
+<li><p>Nix – Ollie’s way: http://wiki.ocharles.org.uk/Nix</p></li>
+<li><p>Stackage snapshot in the global config</p></li>
+</ul>
+<h1 id="basic-packages">Basic packages</h1>
+<ul>
+<li><p>OpenGL: <code>OpenGL</code>, <code>gl</code></p></li>
+<li><p>GLUT: <code>GLUT</code></p></li>
+<li><p>GLFW: <code>GLFW-b</code></p></li>
+<li><p>SDL 1.2: <code>SDL</code>, <code>SDL-{gfx,image,mixer,ttf}</code> (relatively complete)</p></li>
+<li><p>SDL 2.0: <code>sdl2</code> WIP</p></li>
+<li><p>sound: <code>OpenAL</code>, <code>ALUT</code></p></li>
+<li><p>Engines: <code>helm</code>, <code>fwgl</code>, <code>HGamer3D</code></p></li>
+</ul>
+<h1 id="random-thoughts">Random thoughts</h1>
+<ul>
+<li><p>Temporal aliasing</p></li>
+<li><p><code>gl</code> vs <code>OpenGL</code> (Check out <code>quine</code>!)</p></li>
+</ul>
+<h1 id="what-i-didnt-talk-about-frp">What I didn’t talk about – FRP</h1>
+<ul>
+<li><strong>elerea</strong></li>
+<li>grapefruit</li>
+<li><strong>netwire</strong></li>
+<li>reactive</li>
+<li>reactive-banana</li>
+<li>sodium</li>
+<li><strong>yampa</strong></li>
+</ul>
+<h1 id="what-i-didnt-talk-about-3d">What I didn’t talk about – 3D</h1>
+<ul>
+<li><p>Modern OpenGL &amp; GLSL</p></li>
+<li><p>Fun reading: <a href="https://www.adriancourreges.com/blog/2015/03/10/deus-ex-human-revolution-graphics-study/">Deus Ex – Rendering study</a></p></li>
+<li><p>Bindings to “big” engines (Unreal4 or Unity)?</p></li>
+</ul>
+<h1 id="what-i-didnt-talk-about-sound">What I didn’t talk about – Sound</h1>
+<ul>
+<li><p><code>SDL_mixer</code> bindings for <code>sdl2</code></p></li>
+<li><p>OpenAL</p></li>
+<li><p>Generating sound effects (netwire; see O’Charles’ asteroids game)</p></li>
+</ul>
+<h1 id="what-i-didnt-talk-about-portability">What I didn’t talk about – Portability</h1>
+<p>Painless (relatively) building on Windows: <a href="https://github.com/fpco/minghc">MinGHC</a></p>
+<p>Also see Haskell installation instructions on Stackage: http://www.stackage.org/install</p>
+<h1 id="what-i-didnt-talk-about-assets">What I didn’t talk about – Assets</h1>
+<h1 id="thank-you">Thank you!</h1>
+<p>Off topic: if you work a lot with date-time values in Haskell and are annoyed with the <code>time</code> library, I’d like to hear from you!</p>
+<p>For correct and efficient (and pure) handling of time zones check out <a href="http://hackage.haskell.org/package/tz">hackage.haskell.org/package/tz</a></p>
+</body>
+</html>
