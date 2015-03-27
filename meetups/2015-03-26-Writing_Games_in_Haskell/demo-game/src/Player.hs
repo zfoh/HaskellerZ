@@ -62,3 +62,12 @@ updatePlayerByKeys (ActiveKeys l r d) = pRot .~ rot >>> pFire .~ not d
       (True, False) -> 1
       (False, True) -> -1
       _ -> 0
+
+bounceOffBorder :: (Float,Float) -> Player -> Player
+bounceOffBorder arenaSize p@Player{..} = p & horiz & vert
+  where
+    (w,h) = arenaSize & both %~ (/2) & both -~ playerR
+    (x,y) = _pPos
+    (vx, vy) = _pSpd
+    horiz = if abs x > w && signum x == signum vx then pSpd._1 %~ negate else id
+    vert  = if abs y > h && signum y == signum vy then pSpd._2 %~ negate else id
