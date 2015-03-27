@@ -27,4 +27,5 @@ executable demo-game
     lens,
     containers,
     vector-space,
+    random,
     data-default

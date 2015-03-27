@@ -25,11 +25,13 @@ data Player
     , _pRot :: !Float
     , _pColor :: !Color
     , _pFire :: !Bool
+    , _pName :: !String
+    , _pScore :: !Float
     } deriving (Show)
 makeLenses ''Player
 
 instance Default Player where
-  def = Player (0,0) (0,0) 0 0 black False
+  def = Player (0,0) (0,0) 0 0 black False "" 0
 
 drawPlayer :: Player -> Picture
 drawPlayer Player{..} = translateP _pPos $ rotate (-radToDeg _pAng) $
@@ -41,7 +43,6 @@ drawPlayer Player{..} = translateP _pPos $ rotate (-radToDeg _pAng) $
     flamePath' = tail $ reverse $ tail $ map (second negate) flamePath
     flame = if not _pFire then Blank
             else color red $ polygon $ flamePath ++ flamePath'
-
 
 translateP :: Point -> Picture -> Picture
 translateP (x,y) = translate x y
@@ -71,3 +72,14 @@ bounceOffBorder arenaSize p@Player{..} = p & horiz & vert
     (vx, vy) = _pSpd
     horiz = if abs x > w && signum x == signum vx then pSpd._1 %~ negate else id
     vert  = if abs y > h && signum y == signum vy then pSpd._2 %~ negate else id
+
+drawScore :: (Float,Float) -> Int -> Player -> Picture
+drawScore sz k Player{..} = translate x y $ color c $ Pictures [ name, score ]
+  where
+    (w,h) = sz & both %~ (/2)
+    x = w - 150
+    y = h - 50 - 30 * fromIntegral k
+    c = dark $ dim _pColor
+    sc = scale 0.18 0.18
+    name = sc $ Text _pName
+    score = translate 80 0 $ sc $ Text (show $ (floor _pScore :: Int))
