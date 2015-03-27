@@ -3,26 +3,38 @@
 
 module Main (main) where
 
+import Control.Arrow
 import Control.Lens
 import Data.Default
-import Graphics.Gloss
-import Graphics.Gloss.Interface.Pure.Game
-import Control.Arrow
+import Data.Foldable
 import Data.Monoid
+import Graphics.Gloss
+import Graphics.Gloss.Geometry.Angle
+import Graphics.Gloss.Interface.Pure.Game
 
 import Player
 import Keys
 
 data World
   = World
-    { _wPlayer :: !Player
+    { _wPlayers :: ![Player]
     , _wKeys :: !KeySet
     , _wSize :: !(Float,Float)
     } deriving (Show)
 makeLenses ''World
 
 iniWorld :: World
-iniWorld = World def mempty iniSize
+iniWorld = World [player0, player1, player2] mempty iniSize
+
+player0 :: Player
+player0 = def & pColor .~ blue & pPos .~ (300,300) & pAng .~ degToRad 225
+
+player1 :: Player
+player1 = def & pColor .~ red & pPos .~ (-300,-300) & pAng .~ degToRad 45
+
+player2 :: Player
+player2 = def & pColor .~ green & pPos .~ (300,-300) & pAng .~ degToRad 135
+
 
 iniSize :: Num a => (a,a)
 iniSize = (1200,800)
@@ -34,7 +46,7 @@ arenaSize :: World -> (Float,Float)
 arenaSize = view wSize >>> both -~ (2*borderWidth)
 
 drawWorld :: World -> Picture
-drawWorld World{..} = drawBorder _wSize <> drawPlayer _wPlayer
+drawWorld World{..} = drawBorder _wSize <> foldMap drawPlayer _wPlayers
   where
     drawBorder (w,h) = color (dark $ dark violet) $ Pictures [ l, r, t, b ]
       where
@@ -47,14 +59,14 @@ drawWorld World{..} = drawBorder _wSize <> drawPlayer _wPlayer
 
 stepWorld :: Float -> World -> World
 stepWorld dt w
-  = w & wPlayer %~ stepPlayer dt
-      & wPlayer %~ bounceOffBorder (arenaSize w)
+  = w & wPlayers.traverse %~ stepPlayer dt
+      & wPlayers.traverse %~ bounceOffBorder (arenaSize w)
 
 handleEvents :: Event -> World -> World
 handleEvents ev = saveSize >>> wKeys %~ updateKeys ev >>> updatePlayers
   where
     updatePlayers w@World{..} =
-      w & wPlayer %~ updatePlayerByKeys (activeForId 0 _wKeys)
+      w & wPlayers.traversed %@~ \i -> updatePlayerByKeys (activeForId i _wKeys)
     saveSize = case ev of
       EventResize sz -> wSize .~ (sz & both %~ fromIntegral)
       _ -> id

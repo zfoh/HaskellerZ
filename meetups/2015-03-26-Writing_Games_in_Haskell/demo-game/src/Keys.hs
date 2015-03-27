@@ -19,6 +19,12 @@ playerKey k = case k of
   SpecialKey KeyLeft  -> Just $ PKey 0 ALeft
   SpecialKey KeyRight -> Just $ PKey 0 ARight
   SpecialKey KeyDown  -> Just $ PKey 0 ADown
+  Char 'a' -> Just $ PKey 1 ALeft
+  Char 's' -> Just $ PKey 1 ADown
+  Char 'd' -> Just $ PKey 1 ARight
+  Char 'j' -> Just $ PKey 2 ALeft
+  Char 'k' -> Just $ PKey 2 ADown
+  Char 'l' -> Just $ PKey 2 ARight
   _ -> Nothing
 
 updateKeys :: Event -> KeySet -> KeySet
