@@ -13,6 +13,7 @@ import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Geometry.Angle
 
 import Keys
+import Moving
 
 playerR :: Float
 playerR = 30
@@ -33,6 +34,11 @@ makeLenses ''Player
 instance Default Player where
   def = Player (0,0) (0,0) 0 0 black False "" 0
 
+instance Moving Player where
+  pos = pPos
+  spd = pSpd
+  radius _ = playerR
+
 drawPlayer :: Player -> Picture
 drawPlayer Player{..} = translateP _pPos $ rotate (-radToDeg _pAng) $
                         Pictures [ body1, body2, flame ]
@@ -43,9 +49,6 @@ drawPlayer Player{..} = translateP _pPos $ rotate (-radToDeg _pAng) $
     flamePath' = tail $ reverse $ tail $ map (second negate) flamePath
     flame = if not _pFire then Blank
             else color red $ polygon $ flamePath ++ flamePath'
-
-translateP :: Point -> Picture -> Picture
-translateP (x,y) = translate x y
 
 
 stepPlayer :: Float -> Player -> Player
@@ -63,15 +66,6 @@ updatePlayerByKeys (ActiveKeys l r d) = pRot .~ rot >>> pFire .~ not d
       (True, False) -> 1
       (False, True) -> -1
       _ -> 0
-
-bounceOffBorder :: (Float,Float) -> Player -> Player
-bounceOffBorder arenaSize p@Player{..} = p & horiz & vert
-  where
-    (w,h) = arenaSize & both %~ (/2) & both -~ playerR
-    (x,y) = _pPos
-    (vx, vy) = _pSpd
-    horiz = if abs x > w && signum x == signum vx then pSpd._1 %~ negate else id
-    vert  = if abs y > h && signum y == signum vy then pSpd._2 %~ negate else id
 
 drawScore :: (Float,Float) -> Int -> Player -> Picture
 drawScore sz k Player{..} = translate x y $ color c $ Pictures [ name, score ]

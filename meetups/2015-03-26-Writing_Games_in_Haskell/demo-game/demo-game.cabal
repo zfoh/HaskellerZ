@@ -20,12 +20,14 @@ executable demo-game
   ghc-options:         -Wall
   other-modules:
     Keys,
+    Moving,
     Player
   build-depends:
     base >=4.7 && <4.8,
+    containers,
+    data-default,
     gloss,
     lens,
-    containers,
-    vector-space,
     random,
-    data-default
+    transformers,
+    vector-space

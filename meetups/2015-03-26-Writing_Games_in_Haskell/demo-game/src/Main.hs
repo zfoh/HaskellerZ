@@ -3,20 +3,22 @@
 
 module Main (main) where
 
+import Control.Applicative
 import Control.Arrow
 import Control.Lens
-import Data.AffineSpace
+import Control.Monad.Trans.State.Strict
 import Data.Default
 import Data.Foldable
 import Data.Monoid
 import Graphics.Gloss
-import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Geometry.Angle
 import Graphics.Gloss.Interface.Pure.Game
 import System.Random
 
-import Player
 import Keys
+import Moving
+import Player
+import Target
 
 data World
   = World
@@ -26,14 +28,16 @@ data World
     , _wToken :: !Int
     , _wGrace :: !Float
     , _wShowScores :: !Bool
+    , _wRandom :: !StdGen
+    , _wTarget :: !Target
     } deriving (Show)
 makeLenses ''World
 
 iniWorld :: IO World
 iniWorld = do
-  let playerList = [player0, player1, player2]
-  iniTokenHolder <- randomRIO (0, length playerList - 1)
-  return $ World playerList mempty iniSize iniTokenHolder graceT True
+  rnd <- newStdGen
+  let world0 = World [player0, player1, player2] mempty iniSize 0 graceT True rnd def
+  return $ generateTarget Goal world0
 
 player0 :: Player
 player0 = def & pColor .~ blue & pPos .~ (300,300) & pAng .~ degToRad 225 & pName .~ "Blue"
@@ -56,10 +60,13 @@ graceT = 2
 arenaSize :: World -> (Float,Float)
 arenaSize = view wSize >>> both -~ (2*borderWidth)
 
-
+allThings :: World -> [MovingThing]
+allThings World{..} = toThing _wTarget : map toThing _wPlayers
 
 drawWorld :: World -> Picture
-drawWorld world@World{..} = drawBorder _wSize <> scores <> foldMap drawPlayer _wPlayers
+drawWorld world@World{..} = drawBorder _wSize <> scores
+                            <> drawTarget _wTarget
+                            <> foldMap drawPlayer _wPlayers
                             <> token
   where
     scores = if not _wShowScores then Blank
@@ -72,7 +79,7 @@ drawWorld world@World{..} = drawBorder _wSize <> scores <> foldMap drawPlayer _w
         b = translate 0 (-h/2) $ rectangleSolid w bw
         t = translate 0 (h/2) $ rectangleSolid w bw
     token = translateP tokenPos $ color tokenColor $ circleSolid 15
-    tokenPos = _pPos $ _wPlayers !! _wToken
+    tokenPos = view pos $ allThings world !! _wToken
     tokenColor = if _wGrace <= 0 then light yellow else greyN 0.7
 
 
@@ -80,22 +87,45 @@ stepWorld :: Float -> World -> World
 stepWorld dt w@World{..}
   = w & wPlayers.traverse %~ stepPlayer dt
       & wPlayers.traverse %~ bounceOffBorder (arenaSize w)
+      & wTarget %~ stepTarget dt
+      & wTarget %~ bounceOffBorder (arenaSize w)
       & wGrace -~ dt
-      & updateScore
       & tokenInteractions
+      & changeTargetIfNeeded
+
+changeTargetIfNeeded :: World -> World
+changeTargetIfNeeded w@World{..} = w & upd
   where
-    updateScore = if _wGrace < 0 then wPlayers.ix _wToken.pScore +~ dt else id
+    upd = case (_wToken == 0, _tTag _wTarget) of
+      (False, Holder) -> generateTarget Goal
+      (True, Goal) -> generateTarget Holder
+      _ -> id
 
 tokenInteractions :: World -> World
 tokenInteractions w@World{..} = if _wGrace < 0 then upd w else w
   where
     c = _wToken
-    cur = _pPos $ _wPlayers !! c
-    hits = _wPlayers ^@.. traversed<.pPos & filter ((/=c) . fst) & filter (closeby . snd)
-    closeby pos = magV (pos .-. cur) < 2 * playerR
+    everybody = allThings w
+    cur = everybody !! c
+    hits = everybody ^@.. traversed & filter ((/=c) . fst) & filter (touching cur . snd)
     upd = case hits of
       [] -> id
-      ((n,_):_) -> wToken .~ n >>> wGrace .~ graceT
+      ((n,_):_) -> wToken .~ n >>> wGrace .~ graceT >>> updScore n
+    updScore n | n == 0, c > 0 = wPlayers.ix (c-1).pScore +~ 1
+               | otherwise     = id
+
+wRandomR :: Random a => (a,a) -> State World a
+wRandomR = zoom wRandom . state . randomR
+
+generateTarget :: TargetTag -> World -> World
+generateTarget tag = execState $ do
+  sz <- arenaSize <$> get
+  let (w,h) = sz & both %~ (/2) & both -~ targetR tag
+  x <- wRandomR (-w,w)
+  y <- wRandomR (-h,h)
+  vx <- wRandomR (-200,200)
+  vy <- wRandomR (-200,200)
+  wTarget .= Target (x,y) (vx,vy) tag
 
 
 handleEvents :: Event -> World -> World
