@@ -52,7 +52,7 @@ stepPlayer dt p@Player{..} = p & pPos .~ pos' & pSpd .~ spd' & pAng +~ 3*dt*_pRo
   where
     pos' = _pPos .+^ dt *^ _pSpd
     spd' = _pSpd ^+^ dt *^ acc
-    acc = if _pFire then 72 *^ dir else (0,0)
+    acc = -0.2 *^ _pSpd ^+^ if _pFire then 72 *^ dir else (0,0)
     dir = unitVectorAtAngle _pAng
 
 updatePlayerByKeys :: ActiveKeys -> Player -> Player
