@@ -1,0 +1,30 @@
+name:                asteroids-sounds
+version:             0.1.0.0
+license:             BSD3
+license-file:        LICENSE
+author:              Mihaly Barasz
+maintainer:          klao@nilcons.com
+-- copyright:
+category:            Sound
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+synopsis:            Sounds from the Asteroids game
+description:
+  Sound wires from Ollie Charles' Asteroids game, adapted and
+  rewritten for Netwire 5.
+  .
+  For the original see: https://github.com/ocharles/netwire-classics
+
+executable sounds
+  main-is:             sounds.hs
+  -- other-modules:
+  -- other-extensions:
+  -- hs-source-dirs:
+  ghc-options:         -Wall
+  default-language:    Haskell2010
+  build-depends:
+    base               >= 4.8  &&  < 4.9,
+    netwire            >= 5    &&  < 6,
+    random,
+    pulse-simple       >= 0.1
