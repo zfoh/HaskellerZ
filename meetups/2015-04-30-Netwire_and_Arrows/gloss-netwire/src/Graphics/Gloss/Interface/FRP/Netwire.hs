@@ -1,6 +1,8 @@
 module Graphics.Gloss.Interface.FRP.Netwire (
   InputEvent,
+  GameWire,
   playWire,
+  GameWireIO,
   playWireIO,
   ) where
 
@@ -14,6 +16,9 @@ import Control.Wire.Unsafe.Event
 -- 'Event'.
 type InputEvent = G.Event
 
+-- | Wire type that represents a game. (Pure variant)
+type GameWire = Wire (Timed Float ()) () Identity (Event InputEvent) Picture
+
 -- | Gloss' 'play' with the event handling and updating provided by
 -- the supplied 'Wire'.
 playWire
@@ -25,14 +30,19 @@ playWire
 playWire disp bgColor hz wire0
   = play disp bgColor hz (Blank, wire0) fst handleEvents step
   where
-    step dt (_, wire) = (pic, wire')
+    step dt (pic0, wire) = (pic, wire')
       where
         (ePic, wire') = runIdentity $ stepWire wire (Timed dt ()) (Right NoEvent)
-        pic = case ePic of { Right x -> x ; Left _ -> Blank }
+        pic = case ePic of { Right x -> x ; Left _ -> pic0 }
     handleEvents evt (pic0, wire) = (pic, wire')
       where
         (ePic, wire') = runIdentity $ stepWire wire (Timed 0 ()) (Right $ Event evt)
         pic = case ePic of { Right x -> x ; Left _ -> pic0 }
+
+
+
+-- | Wire type that represents a game. (IO variant)
+type GameWireIO = Wire (Timed Float ()) () IO (Event InputEvent) Picture
 
 -- | Gloss' 'playIO' with the event handling and updating provided by
 -- the supplied 'Wire'.
@@ -45,9 +55,9 @@ playWireIO
 playWireIO disp bgColor hz wire0
   = playIO disp bgColor hz (Blank, wire0) (return . fst) handleEvents step
   where
-    step dt (_, wire) = do
+    step dt (pic0, wire) = do
       (ePic, wire') <- stepWire wire (Timed dt ()) (Right NoEvent)
-      let pic = case ePic of { Right x -> x ; Left _ -> Blank }
+      let pic = case ePic of { Right x -> x ; Left _ -> pic0 }
       return (pic, wire')
     handleEvents evt (pic0, wire) = do
       (ePic, wire') <- stepWire wire (Timed 0 ()) (Right $ Event evt)
