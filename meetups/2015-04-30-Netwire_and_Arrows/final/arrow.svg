@@ -1,0 +1,161 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: fig2dev Version 3.2 Patchlevel 5e -->
+<!-- CreationDate: Wed Apr 29 19:09:26 2015 -->
+<!-- Magnification: 1.050 -->
+<svg	xmlns="http://www.w3.org/2000/svg"
+	xmlns:xlink="http://www.w3.org/1999/xlink"
+	width="6.7in" height="3.0in"
+	viewBox="1294 1843 8009 3635">
+<g style="stroke-width:.025in; fill:none">
+<!-- Line -->
+<polyline points="1417,2598
+5905,2598
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="5196,3307
+5433,3307
+5433,3070
+5905,3070
+" style="stroke:#ff0000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="5196,3779
+5433,3779
+5433,4488
+5905,4488
+" style="stroke:#ff0000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="2598,4488
+2598,3543
+4724,3543
+" style="stroke:#ff0000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="2125" y="1889" width="6377" height="3543" rx="0" 
+style="stroke:#000000;stroke-width:48;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="3070" y="3779" width="1181" height="944" rx="0" 
+style="stroke:#000000;stroke-width:16;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="3070,4488
+1417,4488
+" style="stroke:#ff0000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="4251,4251
+4960,4251
+4960,3779
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="7086,2834
+7322,2834
+7322,3307
+7559,3307
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="7086,4251
+7322,4251
+7322,3779
+7559,3779
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="8031,3543
+9212,3543
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="4960,4251
+4960,5196
+7795,5196
+7795,3779
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="5905" y="3779" width="1181" height="944" rx="0" 
+style="stroke:#000000;stroke-width:16;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="5905" y="2362" width="1181" height="944" rx="0" 
+style="stroke:#000000;stroke-width:16;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="2834,2598
+2834,4015
+3070,4015
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="5669,2598
+5669,4015
+5905,4015
+" style="stroke:#000000;stroke-width:8;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Text -->
+<text xml:space="preserve" x="3307" y="4251" fill="#000000"  font-family="Courier" font-style="italic" font-weight="bold" font-size="152" text-anchor="start">condW</text>
+<!-- Text -->
+<text xml:space="preserve" x="6141" y="2834" fill="#000000"  font-family="Courier" font-style="italic" font-weight="bold" font-size="152" text-anchor="start">thenW</text>
+<!-- Text -->
+<text xml:space="preserve" x="6141" y="4251" fill="#000000"  font-family="Courier" font-style="italic" font-weight="bold" font-size="152" text-anchor="start">elseW</text>
+<!-- Circle -->
+<circle cx="1370" cy="2598" r="67"
+ style="fill:#ffffff;stroke:#000000;stroke-width:8;"/>
+<!-- Circle -->
+<circle cx="1376" cy="4487" r="67"
+ style="fill:#ffffff;stroke:#000000;stroke-width:8;"/>
+<!-- Circle -->
+<circle cx="9228" cy="3540" r="67"
+ style="fill:#ffffff;stroke:#000000;stroke-width:8;"/>
+<!-- Line -->
+<polygon points="4724,3307
+4724,3779
+5196,4015
+5196,3070
+4724,3307
+4724,3307
+" style="stroke:#000000;stroke-width:16;
+stroke-linejoin:miter; stroke-linecap:butt;
+fill:#ffffff;
+"/>
+<!-- Line -->
+<polyline points="7559,3070
+7559,4015
+8031,3779
+8031,3307
+7559,3070
+" style="stroke:#000000;stroke-width:16;
+stroke-linejoin:miter; stroke-linecap:butt;
+fill:#ffffff;
+"/>
+<!-- Text -->
+<text xml:space="preserve" x="1417" y="2362" fill="#000000"  font-family="Courier" font-style="italic" font-weight="bold" font-size="152" text-anchor="start">a</text>
+<!-- Text -->
+<text xml:space="preserve" x="1417" y="4251" fill="#000000"  font-family="Courier" font-style="italic" font-weight="bold" font-size="152" text-anchor="start">s</text>
+<!-- Text -->
+<text xml:space="preserve" x="8976" y="3307" fill="#000000"  font-family="Courier" font-style="italic" font-weight="bold" font-size="152" text-anchor="start">b</text>
+</g>
+</svg>

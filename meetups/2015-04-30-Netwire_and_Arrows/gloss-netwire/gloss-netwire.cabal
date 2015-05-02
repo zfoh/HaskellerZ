@@ -1,0 +1,72 @@
+name:                gloss-netwire
+version:             0.1.0.0
+license:             BSD3
+license-file:        LICENSE
+author:              Mihaly Barasz
+maintainer:          klao@nilcons.com
+-- copyright:
+category:            Graphics
+build-type:          Simple
+cabal-version:       >=1.10
+-- extra-source-files:
+synopsis:            Netwire interface to Gloss
+-- description:
+
+library
+  exposed-modules:
+    Graphics.Gloss.Interface.FRP.Netwire
+  -- other-modules:
+  -- other-extensions:
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+  build-depends:
+    base               >= 4.8  &&  < 4.9,
+    gloss              >= 1.9  &&  < 1.10,
+    netwire            >= 5    &&  < 6
+
+executable demo1
+  main-is:             Demo1.hs
+  hs-source-dirs:      demo
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+  build-depends:
+    base,
+    gloss,
+    gloss-netwire,
+    netwire
+
+executable demo2
+  main-is:             Demo2.hs
+  hs-source-dirs:      demo
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+  build-depends:
+    base,
+    gloss,
+    gloss-netwire,
+    netwire
+
+executable demo3
+  main-is:             Demo3.hs
+  hs-source-dirs:      demo
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+  build-depends:
+    base,
+    gloss,
+    gloss-netwire,
+    netwire,
+    vector-space
+
+executable demo4
+  main-is:             Demo4.hs
+  hs-source-dirs:      demo
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+  build-depends:
+    base,
+    gloss,
+    gloss-netwire,
+    netwire,
+    vector-space

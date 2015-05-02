@@ -1,0 +1,262 @@
+# -*- mode: org; eval: (progn (org-remove-from-invisibility-spec '(org-link)) (org-restart-font-lock) (setq org-descriptive-links nil)); -*-
+
+#+TITLE: Programming with Arrows: Introduction to Netwire
+#+DATE: 2015−04−30
+#+AUTHOR: Mihály Bárász
+#+EMAIL: klao@nilcons.com
+#+REVEAL_ROOT: revealjs/
+#+REVEAL_BACKGROUND: none
+#+REVEAL_TRANS: none
+#+REVEAL_THEME: mgtheme
+#+REVEAL_HLEVEL: 2
+#+REVEAL_PLUGINS: ()
+#+REVEAL_TITLE_SLIDE_TEMPLATE: <h1 style="margin-top: 70px">%t</h1><center><h4 style="margin-top: 100px">%a &lt;%e&gt;</h4><h4>%d</h4></center>
+#+REVEAL_HEAD_PREAMBLE: <style type="text/css"> .reveal .slides { font-size: 100%%; }</style>
+#+REVEAL_MIN_SCALE: 0.01
+#+REVEAL_MAX_SCALE: 1000
+#+OPTIONS: toc:1 H:2 reveal_center:nil reveal_history:t reveal_mathjax:nil reveal_width:1000 reveal_height:700 reveal_overview:nil
+
+* Netwire intro
+
+** What is a Wire?
+
+#+BEGIN_HTML
+<center style="font-size: 160%; margin-top: 3ex; margin-bottom: 3ex;">
+#+END_HTML
+
+=data Wire s e m a b=
+
+#+BEGIN_HTML
+</center>
+#+END_HTML
+
+
++ Represents a /reactive/ value of type =b=, ie. a value changing over time.
++ It reacts to (ie. its value may depened on) a reactive value of type =a=.
++ Best to think of as a function between /reactive/ values (signal function).
+
+** A Wire is…
+
+Let’s try to understand / create wires based on what type class
+interfaces =Wire= implements.
+
+
+
+* Events
+
+#+BEGIN_HTML
+<center style="font-size: 140%; margin-top: 3ex; margin-bottom: 2ex;">
+#+END_HTML
+=data Event a=
+#+BEGIN_HTML
+</center>
+#+END_HTML
+
+The above data type and the signals (wires) of type
+
+#+BEGIN_HTML
+<center style="font-size: 140%; margin-top: 2ex; margin-bottom: 2ex;">
+#+END_HTML
+=Wire s e m a (Event b)=
+#+BEGIN_HTML
+</center>
+#+END_HTML
+
+define the notion of /events/ in Netwire.
+
+** Event internals
+
+#+BEGIN_SRC haskell
+data Event a = Event a | NoEvent
+#+END_SRC
+
++ The implementation is not exposed to preserve the “continuous
+  time — discrete events” semantics
++ The user should consider it an abstract data type and use
+  the conbinators provided by Netwire
++ The implementation is exposed (in a separate module) for library
+  writers, who are creating frameworks on top of Netwire, to define
+  custom events in their framework
+
+** Event synthesis
+
+#+BEGIN_SRC haskell
+at :: HasTime t s => t -> Wire s e m a (Event a)
+
+periodic :: HasTime t s => t -> Wire s e m a (Event a)
+
+became :: (a -> Bool) -> Wire s e m a (Event a)
+#+END_SRC
+
+Many more in =Control.Wire.Event=
+
+** Event handling
+
+From =Control.Wire.Interval=
+
+#+BEGIN_SRC haskell
+  --| Start when the event occurs for the first time reflecting its latest value.
+  hold :: Monoid e => Wire s e m (Event a) a
+
+  --| Hold each event occurrence for the given time period. Inhibits
+  --  when no event occurred for the given amount of time. New occurrences
+  --  override old occurrences, even when they are still held.
+  holdFor :: (HasTime t s, Monoid e) => t -> Wire s e m (Event a) a
+#+END_SRC
+
+Also, most of the behavior switching is defined in terms of events (in
+=Control.Wire.Switch=).
+
+* Wire internals
+
+#+BEGIN_SRC haskell
+data Wire s e m a b where
+  WId    :: Wire s e m a a
+  WConst :: Either e b -> Wire s e m a b
+  WArr   :: (Either e a -> Either e b) -> Wire s e m a b
+  WPure  :: (s -> Either e a -> (Either e b, Wire s e m a b)) -> Wire s e m a b
+  WGen   :: (s -> Either e a -> m (Either e b, Wire s e m a b)) -> Wire s e m a b
+#+END_SRC
+
+#+BEGIN_SRC haskell
+stepWire :: Monad m => Wire s e m a b -> s -> Either e a -> m (Either e b, Wire s e m a b)
+#+END_SRC
+
+
+
+* Conditional switching
+
+#+BEGIN_SRC haskell
+ifteWire :: Wire s e m a Bool
+         -> Wire s e m a b
+         -> Wire s e m a b
+         -> Wire s e m a b
+ifteWire condW thenW elseW = undefined
+#+END_SRC
+
+
+** Using the applicative interface
+
+[[./applicative.svg]]
+
+
+** Using the arrow interface
+
+[[./arrow.svg]]
+
+
+
+
+
+* Arrows
+
+Recommeded reading:
+
++ John Hughes, Programming with Arrows
++ https://www.haskell.org/arrows/
+
+#+BEGIN_HTML
+<br/><br/><br/>
+#+END_HTML
+
+
+#+BEGIN_SRC haskell
+class Category arr => Arrow arr
+#+END_SRC
+
+** Category
+
+#+BEGIN_SRC haskell
+class Category cat where
+    id  :: cat a a
+    (.) :: cat b c -> cat a b -> cat a c
+#+END_SRC
+
+“Stuff that can be composed associatively”
+
+** Arrow
+
+#+BEGIN_SRC haskell
+class Category arr => Arrow arr where
+
+    -- | Lift a function to an arrow.
+    arr :: (b -> c) -> arr b c
+
+    -- | Send the first component of the input through the argument
+    --   arrow, and copy the rest unchanged to the output.
+    first :: arr b c -> arr (b,d) (c,d)
+#+END_SRC
+
+“Support for looking inside the structure, ie. pattern match”
+
+** ArrowChoice
+
+#+BEGIN_SRC haskell
+class Arrow arr => ArrowChoice arr where
+
+    -- | Feed marked inputs through the argument arrow, passing the
+    --   rest through unchanged to the output.
+    left :: arr b c -> arr (Either b d) (Either c d)
+#+END_SRC
+
+“Case distinctions”
+
+** ArrowLoop
+
+#+BEGIN_SRC haskell
+class Arrow arr => ArrowLoop arr where
+    loop :: arr (b,d) (c,d) -> arr b c
+#+END_SRC
+
+“Fixpoint operator, ie. recursion”
+
+** Arrow do notation
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE Arrows #-}
+
+ex :: Arrow arr => arr [a] (a, [a])
+ex = proc l -> do
+  (x : xs) <- someListArrow1 -< l
+  ys <- someListArrow2 -< xs
+  returnA -< (x, ys)
+
+someListArrow1, someListArrow2 :: Arrow arr => arr [a] [a]
+#+END_SRC
+
+** Arrow do notation (if / case)
+
+#+BEGIN_SRC haskell
+ex :: ArrowChoice arr => arr (Maybe a) b
+ex = proc mx -> do
+  case mx of
+    Nothing -> returnA -< someDefault
+    Just x  -> someArrow -< x
+#+END_SRC
+
+** Arrow do notation (rec)
+
+#+BEGIN_SRC haskell
+ex :: ArrowLoop arr => arr a b
+ex = proc a -> do
+  rec
+    y <- arr1 -< (x, a)
+    x <- arr2 -< y
+  returnA -< x
+#+END_SRC
+
+** Arrow notation pitfalls
+
+#+BEGIN_SRC haskell
+something a = proc (x,y) -> do
+  z <- arr1 a -< x
+  v <- arr2 y -< x              -- 'y' not in scope!
+  w <- arr3 z -< x              -- 'z' not in scope!
+  returnA -< (z,v,w)
+#+END_SRC
+
+* Netwire demos
+
+
+* Thank you!
+Questions, comments?

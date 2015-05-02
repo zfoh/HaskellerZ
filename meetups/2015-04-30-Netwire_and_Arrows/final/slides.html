@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Programming with Arrows: Introduction to Netwire</title>
+<meta name="author" content="(Mihály Bárász)"/>
+
+<link rel="stylesheet" href="revealjs/css/reveal.css"/>
+<link rel="stylesheet" href="revealjs/css/theme/mgtheme.css" id="theme"/>
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'revealjs/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+<style type="text/css"> .reveal .slides { font-size: 100%; }</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1 style="margin-top: 70px">Programming with Arrows: Introduction to Netwire</h1><center><h4 style="margin-top: 100px">Mihály Bárász &lt;<a href="mailto:klao@nilcons.com">klao@nilcons.com</a>&gt;</h4><h4>2015−04−30</h4></center>
+</section>
+<section id="table-of-contents">
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#/slide-sec-1">1. Netwire intro</a></li>
+<li><a href="#/slide-sec-2">2. Events</a></li>
+<li><a href="#/slide-sec-3">3. Wire internals</a></li>
+<li><a href="#/slide-sec-4">4. Conditional switching</a></li>
+<li><a href="#/slide-sec-5">5. Arrows</a></li>
+<li><a href="#/slide-sec-6">6. Netwire demos</a></li>
+
+</ul>
+</div>
+</div>
+</section>
+
+<section>
+<section id="slide-sec-1">
+<h2 id="sec-1"><span class="section-number-2">1</span> Netwire intro</h2>
+<div class="outline-text-2" id="text-1">
+</div></section>
+</section>
+<section>
+<section id="slide-sec-1-1">
+<h3 id="sec-1-1"><span class="section-number-3">1.1</span> What is a Wire?</h3>
+<center style="font-size: 160%; margin-top: 3ex; margin-bottom: 3ex;">
+
+<p>
+<code>data Wire s e m a b</code>
+</p>
+
+</center>
+
+
+<ul>
+<li>Represents a <i>reactive</i> value of type <code>b</code>, ie. a value changing over time.</li>
+<li>It reacts to (ie. its value may depened on) a reactive value of type <code>a</code>.</li>
+<li>Best to think of as a function between <i>reactive</i> values (signal function).</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-1-2">
+<h3 id="sec-1-2"><span class="section-number-3">1.2</span> A Wire is…</h3>
+<p>
+Let’s try to understand / create wires based on what type class
+interfaces <code>Wire</code> implements.
+</p>
+
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Events</h2>
+<center style="font-size: 140%; margin-top: 3ex; margin-bottom: 2ex;">
+<p>
+<code>data Event a</code>
+</p>
+</center>
+
+<p>
+The above data type and the signals (wires) of type
+</p>
+
+<center style="font-size: 140%; margin-top: 2ex; margin-bottom: 2ex;">
+<p>
+<code>Wire s e m a (Event b)</code>
+</p>
+</center>
+
+<p>
+define the notion of <i>events</i> in Netwire.
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-2-1">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> Event internals</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #a020f0;">data</span> <span style="color: #228b22;">Event</span> a <span style="color: #b8860b;">=</span> <span style="color: #228b22;">Event</span> a <span style="color: #b8860b;">|</span> <span style="color: #228b22;">NoEvent</span>
+</pre>
+</div>
+
+<ul>
+<li>The implementation is not exposed to preserve the “continuous
+time — discrete events” semantics</li>
+<li>The user should consider it an abstract data type and use
+the conbinators provided by Netwire</li>
+<li>The implementation is exposed (in a separate module) for library
+writers, who are creating frameworks on top of Netwire, to define
+custom events in their framework</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-2-2">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Event synthesis</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #0000ff;">at</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">HasTime</span> t s <span style="color: #b8860b;">=&gt;</span> t <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a (<span style="color: #228b22;">Event</span> a)
+
+<span style="color: #0000ff;">periodic</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">HasTime</span> t s <span style="color: #b8860b;">=&gt;</span> t <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a (<span style="color: #228b22;">Event</span> a)
+
+<span style="color: #0000ff;">became</span> <span style="color: #b8860b;">::</span> (a <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Bool</span>) <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a (<span style="color: #228b22;">Event</span> a)
+</pre>
+</div>
+
+<p>
+Many more in <code>Control.Wire.Event</code>
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-2-3">
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Event handling</h3>
+<p>
+From <code>Control.Wire.Interval</code>
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #b22222;">--</span><span style="color: #b22222;">| Start when the event occurs for the first time reflecting its latest value.</span>
+<span style="color: #0000ff;">hold</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Monoid</span> e <span style="color: #b8860b;">=&gt;</span> <span style="color: #228b22;">Wire</span> s e m (<span style="color: #228b22;">Event</span> a) a
+
+<span style="color: #b22222;">--</span><span style="color: #b22222;">| Hold each event occurrence for the given time period. Inhibits</span>
+<span style="color: #b22222;">--  </span><span style="color: #b22222;">when no event occurred for the given amount of time. New occurrences</span>
+<span style="color: #b22222;">--  </span><span style="color: #b22222;">override old occurrences, even when they are still held.</span>
+<span style="color: #0000ff;">holdFor</span> <span style="color: #b8860b;">::</span> (<span style="color: #228b22;">HasTime</span> t s, <span style="color: #228b22;">Monoid</span> e) <span style="color: #b8860b;">=&gt;</span> t <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m (<span style="color: #228b22;">Event</span> a) a
+</pre>
+</div>
+
+<p>
+Also, most of the behavior switching is defined in terms of events (in
+<code>Control.Wire.Switch</code>).
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-3">
+<h2 id="sec-3"><span class="section-number-2">3</span> Wire internals</h2>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #a020f0;">data</span> <span style="color: #228b22;">Wire</span> s e m a b <span style="color: #a020f0;">where</span>
+  <span style="color: #228b22;">WId</span>    <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Wire</span> s e m a a
+  <span style="color: #228b22;">WConst</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Either</span> e b <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b
+  <span style="color: #228b22;">WArr</span>   <span style="color: #b8860b;">::</span> (<span style="color: #228b22;">Either</span> e a <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Either</span> e b) <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b
+  <span style="color: #228b22;">WPure</span>  <span style="color: #b8860b;">::</span> (s <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Either</span> e a <span style="color: #b8860b;">-&gt;</span> (<span style="color: #228b22;">Either</span> e b, <span style="color: #228b22;">Wire</span> s e m a b)) <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b
+  <span style="color: #228b22;">WGen</span>   <span style="color: #b8860b;">::</span> (s <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Either</span> e a <span style="color: #b8860b;">-&gt;</span> m (<span style="color: #228b22;">Either</span> e b, <span style="color: #228b22;">Wire</span> s e m a b)) <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #0000ff;">stepWire</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Monad</span> m <span style="color: #b8860b;">=&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b <span style="color: #b8860b;">-&gt;</span> s <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Either</span> e a <span style="color: #b8860b;">-&gt;</span> m (<span style="color: #228b22;">Either</span> e b, <span style="color: #228b22;">Wire</span> s e m a b)
+</pre>
+</div>
+
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-4">
+<h2 id="sec-4"><span class="section-number-2">4</span> Conditional switching</h2>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #0000ff;">ifteWire</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Wire</span> s e m a <span style="color: #228b22;">Bool</span>
+         <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b
+         <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b
+         <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Wire</span> s e m a b
+<span style="color: #0000ff;">ifteWire</span> condW thenW elseW <span style="color: #b8860b;">=</span> undefined
+</pre>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-4-1">
+<h3 id="sec-4-1"><span class="section-number-3">4.1</span> Using the applicative interface</h3>
+
+<div class="figure">
+<p><img src="./applicative.svg" alt="applicative.svg" />
+</p>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-4-2">
+<h3 id="sec-4-2"><span class="section-number-3">4.2</span> Using the arrow interface</h3>
+
+<div class="figure">
+<p><img src="./arrow.svg" alt="arrow.svg" />
+</p>
+</div>
+
+
+
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5">
+<h2 id="sec-5"><span class="section-number-2">5</span> Arrows</h2>
+<p>
+Recommeded reading:
+</p>
+
+<ul>
+<li>John Hughes, Programming with Arrows</li>
+<li><a href="https://www.haskell.org/arrows/">https://www.haskell.org/arrows/</a></li>
+
+</ul>
+
+<br/><br/><br/>
+
+
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #a020f0;">class</span> <span style="color: #228b22;">Category</span> arr <span style="color: #b8860b;">=&gt;</span> <span style="color: #228b22;">Arrow</span> arr
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-1">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> Category</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #a020f0;">class</span> <span style="color: #228b22;">Category</span> cat <span style="color: #a020f0;">where</span>
+    id  <span style="color: #b8860b;">::</span> cat a a
+    (.) <span style="color: #b8860b;">::</span> cat b c <span style="color: #b8860b;">-&gt;</span> cat a b <span style="color: #b8860b;">-&gt;</span> cat a c
+</pre>
+</div>
+
+<p>
+“Stuff that can be composed associatively”
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-2">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> Arrow</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #a020f0;">class</span> <span style="color: #228b22;">Category</span> arr <span style="color: #b8860b;">=&gt;</span> <span style="color: #228b22;">Arrow</span> arr <span style="color: #a020f0;">where</span>
+
+    <span style="color: #bc8f8f;">-- | Lift a function to an arrow.</span>
+    arr <span style="color: #b8860b;">::</span> (b <span style="color: #b8860b;">-&gt;</span> c) <span style="color: #b8860b;">-&gt;</span> arr b c
+
+    <span style="color: #bc8f8f;">-- | Send the first component of the input through the argument</span>
+    <span style="color: #bc8f8f;">--   arrow, and copy the rest unchanged to the output.</span>
+    first <span style="color: #b8860b;">::</span> arr b c <span style="color: #b8860b;">-&gt;</span> arr (b,d) (c,d)
+</pre>
+</div>
+
+<p>
+“Support for looking inside the structure, ie. pattern match”
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> ArrowChoice</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #a020f0;">class</span> <span style="color: #228b22;">Arrow</span> arr <span style="color: #b8860b;">=&gt;</span> <span style="color: #228b22;">ArrowChoice</span> arr <span style="color: #a020f0;">where</span>
+
+    <span style="color: #bc8f8f;">-- | Feed marked inputs through the argument arrow, passing the</span>
+    <span style="color: #bc8f8f;">--   rest through unchanged to the output.</span>
+    left <span style="color: #b8860b;">::</span> arr b c <span style="color: #b8860b;">-&gt;</span> arr (<span style="color: #228b22;">Either</span> b d) (<span style="color: #228b22;">Either</span> c d)
+</pre>
+</div>
+
+<p>
+“Case distinctions”
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-4">
+<h3 id="sec-5-4"><span class="section-number-3">5.4</span> ArrowLoop</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #a020f0;">class</span> <span style="color: #228b22;">Arrow</span> arr <span style="color: #b8860b;">=&gt;</span> <span style="color: #228b22;">ArrowLoop</span> arr <span style="color: #a020f0;">where</span>
+    loop <span style="color: #b8860b;">::</span> arr (b,d) (c,d) <span style="color: #b8860b;">-&gt;</span> arr b c
+</pre>
+</div>
+
+<p>
+“Fixpoint operator, ie. recursion”
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-5">
+<h3 id="sec-5-5"><span class="section-number-3">5.5</span> Arrow do notation</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #b22222;">{-# LANGUAGE Arrows #-}</span>
+
+<span style="color: #0000ff;">ex</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Arrow</span> arr <span style="color: #b8860b;">=&gt;</span> arr [a] (a, [a])
+<span style="color: #0000ff;">ex</span> <span style="color: #b8860b;">=</span> <span style="color: #a020f0;">proc</span> l <span style="color: #b8860b;">-&gt;</span> <span style="color: #a020f0;">do</span>
+  (x : xs) <span style="color: #b8860b;">&lt;-</span> someListArrow1 -&lt; l
+  ys <span style="color: #b8860b;">&lt;-</span> someListArrow2 -&lt; xs
+  returnA -&lt; (x, ys)
+
+<span style="color: #0000ff;">someListArrow1, someListArrow2</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Arrow</span> arr <span style="color: #b8860b;">=&gt;</span> arr [a] [a]
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-6">
+<h3 id="sec-5-6"><span class="section-number-3">5.6</span> Arrow do notation (if / case)</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #0000ff;">ex</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">ArrowChoice</span> arr <span style="color: #b8860b;">=&gt;</span> arr (<span style="color: #228b22;">Maybe</span> a) b
+<span style="color: #0000ff;">ex</span> <span style="color: #b8860b;">=</span> <span style="color: #a020f0;">proc</span> mx <span style="color: #b8860b;">-&gt;</span> <span style="color: #a020f0;">do</span>
+  <span style="color: #a020f0;">case</span> mx <span style="color: #a020f0;">of</span>
+    <span style="color: #228b22;">Nothing</span> <span style="color: #b8860b;">-&gt;</span> returnA -&lt; someDefault
+    <span style="color: #228b22;">Just</span> x  <span style="color: #b8860b;">-&gt;</span> someArrow -&lt; x
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-7">
+<h3 id="sec-5-7"><span class="section-number-3">5.7</span> Arrow do notation (rec)</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #0000ff;">ex</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">ArrowLoop</span> arr <span style="color: #b8860b;">=&gt;</span> arr a b
+<span style="color: #0000ff;">ex</span> <span style="color: #b8860b;">=</span> <span style="color: #a020f0;">proc</span> a <span style="color: #b8860b;">-&gt;</span> <span style="color: #a020f0;">do</span>
+  <span style="color: #a020f0;">rec</span>
+    y <span style="color: #b8860b;">&lt;-</span> arr1 -&lt; (x, a)
+    x <span style="color: #b8860b;">&lt;-</span> arr2 -&lt; y
+  returnA -&lt; x
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5-8">
+<h3 id="sec-5-8"><span class="section-number-3">5.8</span> Arrow notation pitfalls</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #0000ff;">something</span> a <span style="color: #b8860b;">=</span> <span style="color: #a020f0;">proc</span> (x,y) <span style="color: #b8860b;">-&gt;</span> <span style="color: #a020f0;">do</span>
+  z <span style="color: #b8860b;">&lt;-</span> arr1 a -&lt; x
+  v <span style="color: #b8860b;">&lt;-</span> arr2 y -&lt; x              <span style="color: #b22222;">-- </span><span style="color: #b22222;">'y' not in scope!</span>
+  w <span style="color: #b8860b;">&lt;-</span> arr3 z -&lt; x              <span style="color: #b22222;">-- </span><span style="color: #b22222;">'z' not in scope!</span>
+  returnA -&lt; (z,v,w)
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-6">
+<h2 id="sec-6"><span class="section-number-2">6</span> Netwire demos</h2>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-7">
+<h2 id="sec-7"><span class="section-number-2">7</span> Thank you!</h2>
+<p>
+Questions, comments?
+</p>
+</section>
+</section>
+</div>
+</div>
+
+<script src="revealjs/lib/js/head.min.js"></script>
+<script src="revealjs/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: true,
+center: false,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+overview: false,
+width: 1000,
+height: 700,
+minScale: 0.01,
+maxScale: 1000.00,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'none', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'default',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+
+]
+});
+</script>
+</body>
+</html>
