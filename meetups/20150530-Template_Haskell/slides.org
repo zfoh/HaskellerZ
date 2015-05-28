@@ -1,0 +1,338 @@
+# -*- mode: org; eval: (progn (org-remove-from-invisibility-spec '(org-link)) (org-restart-font-lock) (setq org-descriptive-links nil)); -*-
+
+#+TITLE: Template Haskell
+#+DATE: 2015-05-30
+#+AUTHOR: Gergely Risko
+#+EMAIL: errge@nilcons.com
+#+REVEAL_ROOT: revealjs/
+#+REVEAL_BACKGROUND: none
+#+REVEAL_TRANS: none
+#+REVEAL_THEME: mgtheme
+#+REVEAL_HLEVEL: 2
+#+REVEAL_PLUGINS: ()
+#+REVEAL_TITLE_SLIDE_TEMPLATE: <h1>%t</h1><h4 style="margin-top: 100px">%a (%e)</h4><h4>%d</h4><h4><a href="http://bit.do/nilcons-th">http://bit.do/nilcons-th</a></h4><h4 style="padding-top: 220px">© 2015 Gergely Risko, All rights reserved.</h4>
+#+REVEAL_HEAD_PREAMBLE: <style type="text/css"> .reveal .slides { font-size: 100%%; }</style>
+#+REVEAL_MIN_SCALE: 0.01
+#+REVEAL_MAX_SCALE: 1000
+#+OPTIONS: toc:1 H:2 reveal_center:nil reveal_history:t reveal_mathjax:t reveal_width:1000 reveal_height:700 reveal_overview:nil
+
+* About me
+- From Hungary, Eötvös Loránd university, CS MSc
+- 2008 -- 2010: Nokia Maemo
+- 2010 -- 2013: Googler, SRE and later SWE
+- 2014 -- : own consulting and training company
+- Haskeller since 2007
+- Contributed TH features and patches to GHC 7.8
+
+
+* TH Goals, features
+- Provide a clean macro system for Haskell
+- Generating expressions and top-level declarations
+- With the possibility of reification (looking up info)
+- To automate code generation, e.g.:
+  - lenses
+  - command line parsing
+
+
+* Versions
+- TH is shipped with GHC: =ghc-pkg list | grep template-haskell=
+- The compiler exposes an API with the =Q monad=
+- The =template-haskell= package contains the client side of that API
+  and some extra helper functions
+- Have to use the =template-haskell= package version that shipped, no upgrade
+  - GHC 7.8: TH 2.9 (that's what I'm using for this talk)
+  - GHC 7.10: TH 2.10
+
+Docs: http://hackage.haskell.org/package/template-haskell-2.9.0.0
+
+
+* TH concepts
+Look into [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html][the TH hackage docs]].
+
+- Names
+- Reification
+- Locations
+- =AddTopDecls=
+
+The last one sounds promising for generating code, but we're missing
+the real stuff:
+  - quotations
+  - splices
+
+
+* Quotations
+#+MACRO: BO @@html:&#91;@@
+#+MACRO: LO @@html:&#93;@@
+Convert an inline piece of Haskell into an AST of:
+  - type [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Exp][Exp]] if quoting with =[e| ... |]= or =[| ... |]=
+  - type [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Type][Type]] if quoting with =[t| ... |]=
+  - type [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Dec][{{{BO}}}Dec{{{LO}}}]] if quoting with =[d| ... |]=
+  - type [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Pat][Pat]] if quoting with =[p| ... |]=
+
+#+BEGIN_SRC
+> :set -XTemplateHaskell
+> import Language.Haskell.TH
+> let pprintQ q = putStrLn . pprint =<< runQ q
+> pprintQ [| 1 + 2 |]
+> runQ [| 1 + 2 |]
+#+END_SRC
+
+#+BEGIN_SRC
+something :: [Dec]
+something = [FunD f_19 [Clause [VarP x_20]
+               (NormalB (InfixE (Just (LitE (IntegerL 1)))
+                                (VarE GHC.Num.+)
+                                (Just (InfixE (Just (LitE (IntegerL 2)))
+                                      (VarE GHC.Num.*)
+                                      (Just (VarE x_20)))))) []]]
+#+END_SRC
+
+
+* Splices
+The opposite of quotation.
+
+If we already have a =Q Exp=, =Q Pat=, =Q Type= or =Q [Dec]=, then we
+can use splicing to insert that piece of code (so we can actually use
+TH as a macro language).
+
+#+BEGIN_SRC
+> :set -ddump-splices
+> $(return $ LitE $ IntegerL 42)
+#+END_SRC
+
+What is the =return= for?  That's just for putting this constant
+expression into the =Q= monad, because the splicing API expects us to
+do that.
+
+If we leave off the splicing we will just print out in =IO=, so this
+is an easy way to test our AST producing functions:
+#+BEGIN_SRC
+> return $ LitE $ IntegerL 42
+#+END_SRC
+
+
+* AST builders
+So far we have built up our ASTs with the data constructors (=LitE=,
+=IntegerL=) directly and then used =return= to put into the =Q= monad.
+
+There are also builder functions in
+[[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html][TH]]
+that can be useful for building up bigger expressions.
+
+#+BEGIN_SRC
+> $(uInfixE (litE $ integerL 42) (varE '(+)) (litE $ integerL 42))
+#+END_SRC
+
+We could have done the same with constructor names, but we will see
+that there are some operations (new name generation, reification) that
+are in the =Q= monad.  And once you're in, it's easier to stay in.
+
+Also note the apostrophe before =(+)= for name lookup:
+#+BEGIN_SRC
+> :t '(+)
+> :t 'something
+> :t ''Int
+#+END_SRC
+
+
+* Splicing in quotes in splicing in quotes...
+#+BEGIN_SRC
+> let funExp = [| \x -> x + 2 |]
+> let valExp = [| 40 |]
+> let thrice = [| $funExp $([| $funExp $([| $funExp $valExp |]) |]) |]
+#+END_SRC
+
+So quotation and splicing is recursively embeddable, this example is
+of course equivalent to the much simpler:
+#+BEGIN_SRC
+> pprintQ [| $funExp ($funExp ($funExp $valExp)) |]
+#+END_SRC
+
+Hmm, so many parantheses, we should use =$=, right?
+
+#+BEGIN_SRC
+> pprintQ [| $funExp $ $funExp $ $funExp $valExp |]
+#+END_SRC
+
+
+* Exercise
+Implement a generic tuple getter.
+
+This is invalid Haskell with type errors:
+#+BEGIN_SRC
+tupleget 3 3 ("a", "b", "c") ===> "c"
+tupleget 4 2 ("a", "b", "c", "d") ===> "b"
+#+END_SRC
+
+But we can do this with TH:
+#+BEGIN_SRC
+$(tupleget 3 3) ("a", "b", "c") ===> "c"
+$(tupleget 4 2) ("a", "b", "c", "d") ===> "b"
+#+END_SRC
+
+** Solution 1
+We cheat and look into a basic case:
+#+BEGIN_SRC
+> runQ [| \(_, m) -> m |]
+LamE [TupP [WildP,VarP m]] (VarE m)
+#+END_SRC
+
+Makes sense: a lambda expression using a tuple pattern with wildcards and variables.
+
+Now we're ready to just disassemble this big piece of data and reassembly in our liking:
+#+BEGIN_SRC haskell
+{-# LANGUAGE TemplateHaskell #-}
+
+import Language.Haskell.TH
+
+tupleget :: Int -> Int -> ExpQ
+tupleget n i = do
+  -- LamE [TupP [WildP,VarP m]] (VarE m)
+  LamE [TupP [tplWild, tplMatch]] lamBody <- [| \(_, m) -> m |]
+  let wildsBefore = replicate (i - 1) tplWild
+  let wildsAfter = replicate (n - i) tplWild
+  return $ LamE [TupP $ wildsBefore ++ [tplMatch] ++ wildsAfter] lamBody
+#+END_SRC
+
+** Solution 2
+If we don't want to do the whole disassembly-reassembly dance, we need
+to generate names on our own.
+
+We can use [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html#v:newName][newName]] for that.
+
+#+BEGIN_SRC haskell
+{-# LANGUAGE TemplateHaskell #-}
+
+import Control.Monad
+import Language.Haskell.TH
+
+tupleget :: Int -> Int -> Q Exp
+tupleget n i = do
+  when (i > n) $ reportError "i > n"
+  var <- newName "m"
+  let wildsBefore = replicate (i - 1) WildP
+  let wildsAfter = replicate (n - i) WildP
+  return $ LamE [TupP $ wildsBefore ++ [VarP var] ++ wildsAfter] (VarE var)
+#+END_SRC
+
+
+* Reification
+For generating code based on existing code (e.g. lenses based on a
+record type), we need some infrastructure to "look around"
+programatically in the code base.
+
+This is reification.
+
+** Docs and testing
+The API is documented in \\
+[[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html#g:3][Langauge.Haskell.TH -> Querying the compiler]].
+
+If we try to test this with our current debug mechanism, then we fail,
+because reification of course can't work in the IO monad, it can
+only work in the real Q monad, where we have access to the compiler
+backend.
+
+#+BEGIN_SRC
+ > pprintQ $ reify '(+)
+ Template Haskell error: Can't do `reify' in the IO monad
+ *** Exception: user error (Template Haskell failure)
+#+END_SRC
+
+Then how do we use the REPL?  We have to do a splice, so that reify
+runs in the Q monad, not in IO.
+
+#+BEGIN_SRC
+> import Control.Applicative
+> $(pprint <$> reify '(+) >>= runIO . putStrLn >> [| () |])
+> $(show <$> reify '(+) >>= runIO . putStrLn >> [| () |])
+#+END_SRC
+
+Exercise: how does this work?
+
+** Exercise
+Given these data types:
+#+BEGIN_SRC
+data Tree a = Branch (Tree a) (Tree a)
+data Maybe a = Nothing | Just a
+#+END_SRC
+
+Implement a function that determines if a datatype is data recursive!
+
+So it should return true for =Tree=, but false for =Maybe=.
+
+Caveats:
+  - the list type is special, so although it's recursive, it's fine if
+    your implementation says false, the same for other tricky builtin
+    types (if any),
+  - it's OK if your program only works for the easy cases, we know
+    that the Haskell type system with all the extensions is hairy and
+    complicated.
+
+** Solution
+#+BEGIN_SRC haskell
+{-# LANGUAGE TemplateHaskell #-}
+
+import Control.Applicative
+import Control.Monad
+import Language.Haskell.TH
+
+isRecursive :: Name -> Q Bool
+isRecursive n = isRecursive' n n
+
+isRecursive' :: Name -> Name -> Q Bool
+isRecursive' nOrig nNew = do
+  info <- reify nNew
+  case info of
+    TyConI (NewtypeD _ _ _ cons _) -> checkConstructor nOrig cons
+    TyConI (DataD _ _ _ conss _) -> or <$> (sequence $ map (checkConstructor nOrig) conss)
+    TyConI (TySynD _ _ typ) -> checkType nOrig typ
+    _ -> pure False
+
+checkConstructor :: Name -> Con -> Q Bool
+checkConstructor typName (NormalC _ ts) = or <$> (sequence $ map (checkType typName . snd) ts)
+checkConstructor typName (RecC _ ts) = or <$> (sequence $ map (\(_, _, x) -> checkType typName x) ts)
+checkConstructor typName (InfixC (_, typ1) _ (_, typ2)) = (||) <$> checkType typName typ1
+                                                               <*> checkType typName typ2
+checkConstructor typName (ForallC _ _ con) = checkConstructor typName con
+
+checkType :: Name -> Type -> Q Bool
+checkType typName (ForallT _ _ t) = checkType typName t
+checkType typName (AppT t1 t2) = (||) <$> checkType typName t1 <*> checkType typName t2
+checkType typName (SigT t _) = checkType typName t
+checkType typName (ConT n) | typName == n = return True
+                           | otherwise = isRecursive' typName n
+checkType _ _ = pure False
+#+END_SRC
+
+
+* A bigger example: HFlags
+HFlags is a library to help handling command line arguments.  It's
+basically a Haskell knockoff of the superb
+[[http://gflags.github.io/gflags/][gflags library by Google]].
+
+The main idea is that you can declare command line flags anywhere in
+any module and HFlags automagically gathers them together in your main
+module and generates you a parser and =--help= output.
+
+To implement the trickery we needed additional features in GHC
+regarding reification around modules and annotations.  And just wanted
+to say that this was my first GHC contribution and it's definitely
+doable to contribute new features and ideas to GHC.  Yes, it takes
+forever, yes they will try to just ignore you, but if you are
+persistent and a little bit pushy, it will work out!
+
+[[https://hackage.haskell.org/package/hflags][HFlags]] is released on
+Hackage, it works and it's usable, but hopefully it will see major
+improvements during the Hackathon!
+
+
+* Missing features, current issues
+- No cross-compilation, being solved thanks to the GHCJS guys
+- No programmatic export/import of symbols from TH
+- Buggy reification behavior for current module since GHC 7.8 \\
+  (with the famous =$(return [])= workaround)
+- But as I said, patches to GHC are always (at least half-heartedly) welcome
+
+
+* Thank you!
+Questions, comments?

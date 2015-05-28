@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Template Haskell</title>
+<meta name="author" content="(Gergely Risko)"/>
+
+<link rel="stylesheet" href="revealjs/css/reveal.css"/>
+<link rel="stylesheet" href="revealjs/css/theme/mgtheme.css" id="theme"/>
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'revealjs/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<style type="text/css"> .reveal .slides { font-size: 100%; }</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Template Haskell</h1><h4 style="margin-top: 100px">Gergely Risko (<a href="mailto:errge@nilcons.com">errge@nilcons.com</a>)</h4><h4>2015-05-30</h4><h4><a href="http://bit.do/nilcons-th">http://bit.do/nilcons-th</a></h4><h4 style="padding-top: 220px">© 2015 Gergely Risko, All rights reserved.</h4>
+</section>
+<section id="table-of-contents">
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+
+<li><a href="#/slide-sec-2">2. TH Goals, features</a></li>
+<li><a href="#/slide-sec-3">3. Versions</a></li>
+<li><a href="#/slide-sec-4">4. TH concepts</a></li>
+<li><a href="#/slide-sec-5">5. Quotations</a></li>
+<li><a href="#/slide-sec-6">6. Splices</a></li>
+<li><a href="#/slide-sec-7">7. AST builders</a></li>
+<li><a href="#/slide-sec-8">8. Splicing in quotes in splicing in quotes&#x2026;</a></li>
+<li><a href="#/slide-sec-9">9. Exercise</a></li>
+<li><a href="#/slide-sec-10">10. Reification</a></li>
+<li><a href="#/slide-sec-11">11. A bigger example: HFlags</a></li>
+<li><a href="#/slide-sec-12">12. Missing features, current issues</a></li>
+
+</ul>
+</div>
+</div>
+</section>
+
+<section>
+<section id="slide-sec-1">
+<h2 id="sec-1"><span class="section-number-2">1</span> About me</h2>
+<ul>
+<li>From Hungary, Eötvös Loránd university, CS MSc</li>
+<li>2008 &#x2013; 2010: Nokia Maemo</li>
+<li>2010 &#x2013; 2013: Googler, SRE and later SWE</li>
+<li>2014 &#x2013; : own consulting and training company</li>
+<li>Haskeller since 2007</li>
+<li>Contributed TH features and patches to GHC 7.8</li>
+
+</ul>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> TH Goals, features</h2>
+<ul>
+<li>Provide a clean macro system for Haskell</li>
+<li>Generating expressions and top-level declarations</li>
+<li>With the possibility of reification (looking up info)</li>
+<li>To automate code generation, e.g.:
+<ul>
+<li>lenses</li>
+<li>command line parsing</li>
+
+</ul></li>
+
+</ul>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-3">
+<h2 id="sec-3"><span class="section-number-2">3</span> Versions</h2>
+<ul>
+<li>TH is shipped with GHC: <code>ghc-pkg list | grep template-haskell</code></li>
+<li>The compiler exposes an API with the <code>Q monad</code></li>
+<li>The <code>template-haskell</code> package contains the client side of that API
+and some extra helper functions</li>
+<li>Have to use the <code>template-haskell</code> package version that shipped, no upgrade
+<ul>
+<li>GHC 7.8: TH 2.9 (that's what I'm using for this talk)</li>
+<li>GHC 7.10: TH 2.10</li>
+
+</ul></li>
+
+</ul>
+
+<p>
+Docs: <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0">http://hackage.haskell.org/package/template-haskell-2.9.0.0</a>
+</p>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-4">
+<h2 id="sec-4"><span class="section-number-2">4</span> TH concepts</h2>
+<p>
+Look into <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html">the TH hackage docs</a>.
+</p>
+
+<ul>
+<li>Names</li>
+<li>Reification</li>
+<li>Locations</li>
+<li><code>AddTopDecls</code></li>
+
+</ul>
+
+<p>
+The last one sounds promising for generating code, but we're missing
+the real stuff:
+</p>
+<ul>
+<li>quotations</li>
+<li>splices</li>
+
+</ul>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-5">
+<h2 id="sec-5"><span class="section-number-2">5</span> Quotations</h2>
+<p>
+Convert an inline piece of Haskell into an AST of:
+</p>
+<ul>
+<li>type <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Exp">Exp</a> if quoting with <code>[e| ... |]</code> or <code>[| ... |]</code></li>
+<li>type <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Type">Type</a> if quoting with <code>[t| ... |]</code></li>
+<li>type <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Dec">&#91;Dec&#93;</a> if quoting with <code>[d| ... |]</code></li>
+<li>type <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH-Syntax.html#t:Pat">Pat</a> if quoting with <code>[p| ... |]</code></li>
+
+</ul>
+
+<pre  class="example">
+&gt; :set -XTemplateHaskell
+&gt; import Language.Haskell.TH
+&gt; let pprintQ q = putStrLn . pprint =&lt;&lt; runQ q
+&gt; pprintQ [| 1 + 2 |]
+&gt; runQ [| 1 + 2 |]
+</pre>
+
+<pre  class="example">
+something :: [Dec]
+something = [FunD f_19 [Clause [VarP x_20]
+               (NormalB (InfixE (Just (LitE (IntegerL 1)))
+                                (VarE GHC.Num.+)
+                                (Just (InfixE (Just (LitE (IntegerL 2)))
+                                      (VarE GHC.Num.*)
+                                      (Just (VarE x_20)))))) []]]
+</pre>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-6">
+<h2 id="sec-6"><span class="section-number-2">6</span> Splices</h2>
+<p>
+The opposite of quotation.
+</p>
+
+<p>
+If we already have a <code>Q Exp</code>, <code>Q Pat</code>, <code>Q Type</code> or <code>Q [Dec]</code>, then we
+can use splicing to insert that piece of code (so we can actually use
+TH as a macro language).
+</p>
+
+<pre  class="example">
+&gt; :set -ddump-splices
+&gt; $(return $ LitE $ IntegerL 42)
+</pre>
+
+<p>
+What is the <code>return</code> for?  That's just for putting this constant
+expression into the <code>Q</code> monad, because the splicing API expects us to
+do that.
+</p>
+
+<p>
+If we leave off the splicing we will just print out in <code>IO</code>, so this
+is an easy way to test our AST producing functions:
+</p>
+<pre  class="example">
+&gt; return $ LitE $ IntegerL 42
+</pre>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-7">
+<h2 id="sec-7"><span class="section-number-2">7</span> AST builders</h2>
+<p>
+So far we have built up our ASTs with the data constructors (<code>LitE</code>,
+<code>IntegerL</code>) directly and then used <code>return</code> to put into the <code>Q</code> monad.
+</p>
+
+<p>
+There are also builder functions in
+<a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html">TH</a>
+that can be useful for building up bigger expressions.
+</p>
+
+<pre  class="example">
+&gt; $(uInfixE (litE $ integerL 42) (varE '(+)) (litE $ integerL 42))
+</pre>
+
+<p>
+We could have done the same with constructor names, but we will see
+that there are some operations (new name generation, reification) that
+are in the <code>Q</code> monad.  And once you're in, it's easier to stay in.
+</p>
+
+<p>
+Also note the apostrophe before <code>(+)</code> for name lookup:
+</p>
+<pre  class="example">
+&gt; :t '(+)
+&gt; :t 'something
+&gt; :t ''Int
+</pre>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-8">
+<h2 id="sec-8"><span class="section-number-2">8</span> Splicing in quotes in splicing in quotes&#x2026;</h2>
+<pre  class="example">
+&gt; let funExp = [| \x -&gt; x + 2 |]
+&gt; let valExp = [| 40 |]
+&gt; let thrice = [| $funExp $([| $funExp $([| $funExp $valExp |]) |]) |]
+</pre>
+
+<p>
+So quotation and splicing is recursively embeddable, this example is
+of course equivalent to the much simpler:
+</p>
+<pre  class="example">
+&gt; pprintQ [| $funExp ($funExp ($funExp $valExp)) |]
+</pre>
+
+<p>
+Hmm, so many parantheses, we should use <code>$</code>, right?
+</p>
+
+<pre  class="example">
+&gt; pprintQ [| $funExp $ $funExp $ $funExp $valExp |]
+</pre>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-9">
+<h2 id="sec-9"><span class="section-number-2">9</span> Exercise</h2>
+<p>
+Implement a generic tuple getter.
+</p>
+
+<p>
+This is invalid Haskell with type errors:
+</p>
+<pre  class="example">
+tupleget 3 3 ("a", "b", "c") ===&gt; "c"
+tupleget 4 2 ("a", "b", "c", "d") ===&gt; "b"
+</pre>
+
+<p>
+But we can do this with TH:
+</p>
+<pre  class="example">
+$(tupleget 3 3) ("a", "b", "c") ===&gt; "c"
+$(tupleget 4 2) ("a", "b", "c", "d") ===&gt; "b"
+</pre>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-9-1">
+<h3 id="sec-9-1"><span class="section-number-3">9.1</span> Solution 1</h3>
+<p>
+We cheat and look into a basic case:
+</p>
+<pre  class="example">
+&gt; runQ [| \(_, m) -&gt; m |]
+LamE [TupP [WildP,VarP m]] (VarE m)
+</pre>
+
+<p>
+Makes sense: a lambda expression using a tuple pattern with wildcards and variables.
+</p>
+
+<p>
+Now we're ready to just disassemble this big piece of data and reassembly in our liking:
+</p>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #b22222;">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span style="color: #a020f0;">import</span> <span style="color: #228b22;">Language.Haskell.TH</span>
+
+<span style="color: #0000ff;">tupleget</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Int</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Int</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">ExpQ</span>
+<span style="color: #0000ff;">tupleget</span> n i <span style="color: #b8860b;">=</span> <span style="color: #a020f0;">do</span>
+  <span style="color: #b22222;">-- </span><span style="color: #b22222;">LamE [TupP [WildP,VarP m]] (VarE m)</span>
+  <span style="color: #228b22;">LamE</span> [<span style="color: #228b22;">TupP</span> [tplWild, tplMatch]] lamBody <span style="color: #b8860b;">&lt;-</span> [<span style="color: #b8860b;">|</span> <span style="color: #b8860b;">\</span>(<span style="color: #a020f0;">_</span>, m) <span style="color: #b8860b;">-&gt;</span> m <span style="color: #b8860b;">|</span>]
+  <span style="color: #a020f0;">let</span> wildsBefore <span style="color: #b8860b;">=</span> replicate (i - 1) tplWild
+  <span style="color: #a020f0;">let</span> wildsAfter <span style="color: #b8860b;">=</span> replicate (n - i) tplWild
+  return $ <span style="color: #228b22;">LamE</span> [<span style="color: #228b22;">TupP</span> $ wildsBefore ++ [tplMatch] ++ wildsAfter] lamBody
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-9-2">
+<h3 id="sec-9-2"><span class="section-number-3">9.2</span> Solution 2</h3>
+<p>
+If we don't want to do the whole disassembly-reassembly dance, we need
+to generate names on our own.
+</p>
+
+<p>
+We can use <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html#v:newName">newName</a> for that.
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #b22222;">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span style="color: #a020f0;">import</span> <span style="color: #228b22;">Control.Monad</span>
+<span style="color: #a020f0;">import</span> <span style="color: #228b22;">Language.Haskell.TH</span>
+
+<span style="color: #0000ff;">tupleget</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Int</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Int</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Q</span> <span style="color: #228b22;">Exp</span>
+<span style="color: #0000ff;">tupleget</span> n i <span style="color: #b8860b;">=</span> <span style="color: #a020f0;">do</span>
+  when (i &gt; n) $ reportError <span style="color: #bc8f8f;">"i &gt; n"</span>
+  var <span style="color: #b8860b;">&lt;-</span> newName <span style="color: #bc8f8f;">"m"</span>
+  <span style="color: #a020f0;">let</span> wildsBefore <span style="color: #b8860b;">=</span> replicate (i - 1) <span style="color: #228b22;">WildP</span>
+  <span style="color: #a020f0;">let</span> wildsAfter <span style="color: #b8860b;">=</span> replicate (n - i) <span style="color: #228b22;">WildP</span>
+  return $ <span style="color: #228b22;">LamE</span> [<span style="color: #228b22;">TupP</span> $ wildsBefore ++ [<span style="color: #228b22;">VarP</span> var] ++ wildsAfter] (<span style="color: #228b22;">VarE</span> var)
+</pre>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-10">
+<h2 id="sec-10"><span class="section-number-2">10</span> Reification</h2>
+<p>
+For generating code based on existing code (e.g. lenses based on a
+record type), we need some infrastructure to "look around"
+programatically in the code base.
+</p>
+
+<p>
+This is reification.
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-10-1">
+<h3 id="sec-10-1"><span class="section-number-3">10.1</span> Docs and testing</h3>
+<p>
+The API is documented in <br  />
+<a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html#g:3">Langauge.Haskell.TH -&gt; Querying the compiler</a>.
+</p>
+
+<p>
+If we try to test this with our current debug mechanism, then we fail,
+because reification of course can't work in the IO monad, it can
+only work in the real Q monad, where we have access to the compiler
+backend.
+</p>
+
+<pre  class="example">
+&gt; pprintQ $ reify '(+)
+Template Haskell error: Can't do `reify' in the IO monad
+*** Exception: user error (Template Haskell failure)
+</pre>
+
+<p>
+Then how do we use the REPL?  We have to do a splice, so that reify
+runs in the Q monad, not in IO.
+</p>
+
+<pre  class="example">
+&gt; import Control.Applicative
+&gt; $(pprint &lt;$&gt; reify '(+) &gt;&gt;= runIO . putStrLn &gt;&gt; [| () |])
+&gt; $(show &lt;$&gt; reify '(+) &gt;&gt;= runIO . putStrLn &gt;&gt; [| () |])
+</pre>
+
+<p>
+Exercise: how does this work?
+</p>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-10-2">
+<h3 id="sec-10-2"><span class="section-number-3">10.2</span> Exercise</h3>
+<p>
+Given these data types:
+</p>
+<pre  class="example">
+data Tree a = Branch (Tree a) (Tree a)
+data Maybe a = Nothing | Just a
+</pre>
+
+<p>
+Implement a function that determines if a datatype is data recursive!
+</p>
+
+<p>
+So it should return true for <code>Tree</code>, but false for <code>Maybe</code>.
+</p>
+
+<p>
+Caveats:
+</p>
+<ul>
+<li>the list type is special, so although it's recursive, it's fine if
+your implementation says false, the same for other tricky builtin
+types (if any),</li>
+<li>it's OK if your program only works for the easy cases, we know
+that the Haskell type system with all the extensions is hairy and
+complicated.</li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-sec-10-3">
+<h3 id="sec-10-3"><span class="section-number-3">10.3</span> Solution</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #b22222;">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span style="color: #a020f0;">import</span> <span style="color: #228b22;">Control.Applicative</span>
+<span style="color: #a020f0;">import</span> <span style="color: #228b22;">Control.Monad</span>
+<span style="color: #a020f0;">import</span> <span style="color: #228b22;">Language.Haskell.TH</span>
+
+<span style="color: #0000ff;">isRecursive</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Name</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Q</span> <span style="color: #228b22;">Bool</span>
+<span style="color: #0000ff;">isRecursive</span> n <span style="color: #b8860b;">=</span> isRecursive' n n
+
+<span style="color: #0000ff;">isRecursive'</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Name</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Name</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Q</span> <span style="color: #228b22;">Bool</span>
+<span style="color: #0000ff;">isRecursive'</span> nOrig nNew <span style="color: #b8860b;">=</span> <span style="color: #a020f0;">do</span>
+  info <span style="color: #b8860b;">&lt;-</span> reify nNew
+  <span style="color: #a020f0;">case</span> info <span style="color: #a020f0;">of</span>
+    <span style="color: #228b22;">TyConI</span> (<span style="color: #228b22;">NewtypeD</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> cons <span style="color: #a020f0;">_</span>) <span style="color: #b8860b;">-&gt;</span> checkConstructor nOrig cons
+    <span style="color: #228b22;">TyConI</span> (<span style="color: #228b22;">DataD</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> conss <span style="color: #a020f0;">_</span>) <span style="color: #b8860b;">-&gt;</span> or &lt;$&gt; (sequence $ map (checkConstructor nOrig) conss)
+    <span style="color: #228b22;">TyConI</span> (<span style="color: #228b22;">TySynD</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> typ) <span style="color: #b8860b;">-&gt;</span> checkType nOrig typ
+    <span style="color: #a020f0;">_</span> <span style="color: #b8860b;">-&gt;</span> pure <span style="color: #228b22;">False</span>
+
+<span style="color: #0000ff;">checkConstructor</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Name</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Con</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Q</span> <span style="color: #228b22;">Bool</span>
+<span style="color: #0000ff;">checkConstructor</span> typName (<span style="color: #228b22;">NormalC</span> <span style="color: #a020f0;">_</span> ts) <span style="color: #b8860b;">=</span> or &lt;$&gt; (sequence $ map (checkType typName . snd) ts)
+<span style="color: #0000ff;">checkConstructor</span> typName (<span style="color: #228b22;">RecC</span> <span style="color: #a020f0;">_</span> ts) <span style="color: #b8860b;">=</span> or &lt;$&gt; (sequence $ map (<span style="color: #b8860b;">\</span>(<span style="color: #a020f0;">_</span>, <span style="color: #a020f0;">_</span>, x) <span style="color: #b8860b;">-&gt;</span> checkType typName x) ts)
+<span style="color: #0000ff;">checkConstructor</span> typName (<span style="color: #228b22;">InfixC</span> (<span style="color: #a020f0;">_</span>, typ1) <span style="color: #a020f0;">_</span> (<span style="color: #a020f0;">_</span>, typ2)) <span style="color: #b8860b;">=</span> (||) &lt;$&gt; checkType typName typ1
+                                                               &lt;*&gt; checkType typName typ2
+<span style="color: #0000ff;">checkConstructor</span> typName (<span style="color: #228b22;">ForallC</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> con) <span style="color: #b8860b;">=</span> checkConstructor typName con
+
+<span style="color: #0000ff;">checkType</span> <span style="color: #b8860b;">::</span> <span style="color: #228b22;">Name</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Type</span> <span style="color: #b8860b;">-&gt;</span> <span style="color: #228b22;">Q</span> <span style="color: #228b22;">Bool</span>
+<span style="color: #0000ff;">checkType</span> typName (<span style="color: #228b22;">ForallT</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> t) <span style="color: #b8860b;">=</span> checkType typName t
+<span style="color: #0000ff;">checkType</span> typName (<span style="color: #228b22;">AppT</span> t1 t2) <span style="color: #b8860b;">=</span> (||) &lt;$&gt; checkType typName t1 &lt;*&gt; checkType typName t2
+<span style="color: #0000ff;">checkType</span> typName (<span style="color: #228b22;">SigT</span> t <span style="color: #a020f0;">_</span>) <span style="color: #b8860b;">=</span> checkType typName t
+<span style="color: #0000ff;">checkType</span> typName (<span style="color: #228b22;">ConT</span> n) <span style="color: #b8860b;">|</span> typName == n <span style="color: #b8860b;">=</span> return <span style="color: #228b22;">True</span>
+                           <span style="color: #b8860b;">|</span> otherwise <span style="color: #b8860b;">=</span> isRecursive' typName n
+<span style="color: #0000ff;">checkType</span> <span style="color: #a020f0;">_</span> <span style="color: #a020f0;">_</span> <span style="color: #b8860b;">=</span> pure <span style="color: #228b22;">False</span>
+</pre>
+</div>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-11">
+<h2 id="sec-11"><span class="section-number-2">11</span> A bigger example: HFlags</h2>
+<p>
+HFlags is a library to help handling command line arguments.  It's
+basically a Haskell knockoff of the superb
+<a href="http://gflags.github.io/gflags/">gflags library by Google</a>.
+</p>
+
+<p>
+The main idea is that you can declare command line flags anywhere in
+any module and HFlags automagically gathers them together in your main
+module and generates you a parser and <code>--help</code> output.
+</p>
+
+<p>
+To implement the trickery we needed additional features in GHC
+regarding reification around modules and annotations.  And just wanted
+to say that this was my first GHC contribution and it's definitely
+doable to contribute new features and ideas to GHC.  Yes, it takes
+forever, yes they will try to just ignore you, but if you are
+persistent and a little bit pushy, it will work out!
+</p>
+
+<p>
+<a href="https://hackage.haskell.org/package/hflags">HFlags</a> is released on
+Hackage, it works and it's usable, but hopefully it will see major
+improvements during the Hackathon!
+</p>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-12">
+<h2 id="sec-12"><span class="section-number-2">12</span> Missing features, current issues</h2>
+<ul>
+<li>No cross-compilation, being solved thanks to the GHCJS guys</li>
+<li>No programmatic export/import of symbols from TH</li>
+<li>Buggy reification behavior for current module since GHC 7.8 <br  />
+  (with the famous <code>$(return [])</code> workaround)</li>
+<li>But as I said, patches to GHC are always (at least half-heartedly) welcome</li>
+
+</ul>
+
+
+</section>
+</section>
+<section>
+<section id="slide-sec-13">
+<h2 id="sec-13"><span class="section-number-2">13</span> Thank you!</h2>
+<p>
+Questions, comments?
+</p>
+</section>
+</section>
+</div>
+</div>
+
+<script src="revealjs/lib/js/head.min.js"></script>
+<script src="revealjs/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: true,
+center: false,
+slideNumber: true,
+rollingLinks: false,
+keyboard: true,
+overview: false,
+width: 1000,
+height: 700,
+minScale: 0.01,
+maxScale: 1000.00,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'none', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'default',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+
+]
+});
+</script>
+</body>
+</html>
