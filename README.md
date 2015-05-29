@@ -56,11 +56,11 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 * 2014-09-25: Bas van Dijk - An overview of concurrent programming in Haskell
 
 * 2015-10-30: Simon Meier - [An introduction to the GHC Runtime System](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/intro_ghc_rts-talk.md)
- 
+
 The following libraries were mentioned in the January meetup as something that people would be interested in. Please feel free to volunteer to present one of them.
-    Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), and computing 
+    Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), and computing
     [`statistics`](http://hackage.haskell.org/package/statistics).
-    
+
 
 2013 meetups
 ============
