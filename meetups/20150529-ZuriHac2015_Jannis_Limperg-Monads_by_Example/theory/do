@@ -1,0 +1,32 @@
+do
+  x <- action         action >>= (\x -> do stmts)
+  stmts
+
+
+do
+  action              action >> (do stmts)
+  stmts
+
+
+do
+  action              action
+
+
+do
+  let x = y           let x = y in (do stmts)
+  stmts
+
+
+do
+  case x of           case x of
+    p1 -> act1          p1 -> do { act1; stmts }
+    ...                 ...
+    pn -> actn          pn -> do { act1; stmts }
+  stmts
+
+
+do
+  if x                if x
+    then act1           then do { act1; stmts }
+    else act2           else do { act2; stmts }
+  stmts

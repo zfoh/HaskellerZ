@@ -1,0 +1,10 @@
+[left identity]    return >=> f      =   f
+
+[right identity]   f >=> return      =   f
+
+[associativity]    f >=> (g >=> h)   =   (f >=> g) >=> h
+
+---
+
+return  :: a -> m a
+f, g, h :: a -> m b

@@ -1,0 +1,6 @@
+1. The Maybe Monad instance (src/Maybe.hs)
+2. The List Monad instance (src/List.hs)
+3. The State Monad instance (src/State.hs)
+4. The IO Monad instance
+5. Monad laws (theory/laws)
+6. Do notation (theory/do)
