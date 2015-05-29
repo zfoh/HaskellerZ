@@ -22,6 +22,13 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2015-05-29: *[ZuriHac 2015](https://wiki.haskell.org/ZuriHac2015)*
 
+  - Jannis Limperg    - Monads by example ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150529-ZuriHac2015_Jannis_Limperg-Monads_by_Example))
+  - Oliver Charles    - Web programming ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150529-ZuriHac2015_Oliver_Charles-Web_Programming))
+  - Duncan Coutts     - Better faster binary serialization ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150529-ZuriHac2015_Duncan_Coutts-Better_Faster_Binary_Serialization))
+  - Gergely Risko     - Template Haskell ([slides](http://tiny.cc/nilcons-th))
+  - Mathieu Boespflug - Distributed programming ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150530-ZuriHac2015_Mathieu_Boespflug-Distributed_Programming))
+  - Edward Kmett      - Discrimination is Wrong: Improving Productivity  ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150530-ZuriHac2015_Edward_Kmett-Discrimination_is_Wrong_Improving_Productivity))
+  - Johan Tibell      - Performance ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150531-ZuriHac2015_Johan_Tibell-Performance))
 
 2014 meetups
 ============
