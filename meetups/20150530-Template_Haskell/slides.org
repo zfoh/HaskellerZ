@@ -10,7 +10,7 @@
 #+REVEAL_THEME: mgtheme
 #+REVEAL_HLEVEL: 2
 #+REVEAL_PLUGINS: ()
-#+REVEAL_TITLE_SLIDE_TEMPLATE: <h1>%t</h1><h4 style="margin-top: 100px">%a (%e)</h4><h4>%d</h4><h4><a href="http://bit.do/nilcons-th">http://tiny.cc/nilcons-th</a></h4><h4 style="padding-top: 220px">© 2015 Gergely Risko, All rights reserved.</h4>
+#+REVEAL_TITLE_SLIDE_TEMPLATE: <h1>%t</h1><h4 style="margin-top: 100px">%a (%e)</h4><h4>%d</h4><h4><a href="http://tiny.cc/nilcons-th">http://tiny.cc/nilcons-th</a></h4><h4 style="padding-top: 220px">© 2015 Gergely Risko, All rights reserved.</h4>
 #+REVEAL_HEAD_PREAMBLE: <style type="text/css"> .reveal .slides { font-size: 100%%; }</style>
 #+REVEAL_MIN_SCALE: 0.01
 #+REVEAL_MAX_SCALE: 1000
