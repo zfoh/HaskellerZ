@@ -18,17 +18,19 @@
 
 * About me
 - From Hungary, Eötvös Loránd university, CS MSc
-- 2008 -- 2010: Nokia Maemo
-- 2010 -- 2013: Googler, SRE and later SWE
-- 2014 -- : own consulting and training company
 - Haskeller since 2007
 - Contributed TH features and patches to GHC 7.8
+- 2008 -- 2010: Nokia Maemo
+- 2010 -- 2013: Googler, SRE and later SWE
+- 2014 -- : []: (Nilcons), own consulting and training company
+  - commercial training or consulting enquiries to [[mailto:cons@nilcons.com][cons@nilcons.com]]
 
 
 * TH Goals, features
 - Provide a clean macro system for Haskell
 - Generating expressions and top-level declarations
-- With the possibility of reification (looking up info)
+- With the possibility of reification \\
+  (looking up info about the source code)
 - To automate code generation, e.g.:
   - lenses
   - command line parsing
@@ -36,12 +38,14 @@
 
 * Versions
 - TH is shipped with GHC: =ghc-pkg list | grep template-haskell=
-- The compiler exposes an API with the =Q monad=
+- The compiler exposes an API with the Q monad
 - The =template-haskell= package contains the client side of that API
   and some extra helper functions
 - Have to use the =template-haskell= package version that shipped, no upgrade
   - GHC 7.8: TH 2.9 (that's what I'm using for this talk)
-  - GHC 7.10: TH 2.10
+  - GHC 7.10: TH 2.10, GHC 7.10 is not deployable:
+    - in 2015, with distributed buildfarms everywhere, it's no good to generate package ids from =/dev/urandom=
+    - (BTW, we also shouldn't use predictable names in =/tmp=)
 
 Docs: http://hackage.haskell.org/package/template-haskell-2.9.0.0
 
@@ -101,7 +105,7 @@ TH as a macro language).
 #+END_SRC
 
 What is the =return= for?  That's just for putting this constant
-expression into the =Q= monad, because the splicing API expects us to
+expression into the Q monad, because the splicing API expects us to
 do that.
 
 If we leave off the splicing we will just print out in =IO=, so this
@@ -113,7 +117,7 @@ is an easy way to test our AST producing functions:
 
 * AST builders
 So far we have built up our ASTs with the data constructors (=LitE=,
-=IntegerL=) directly and then used =return= to put into the =Q= monad.
+=IntegerL=) directly and then used =return= to lift into the Q monad.
 
 There are also builder functions in
 [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html][TH]]
@@ -125,7 +129,7 @@ that can be useful for building up bigger expressions.
 
 We could have done the same with constructor names, but we will see
 that there are some operations (new name generation, reification) that
-are in the =Q= monad.  And once you're in, it's easier to stay in.
+are in the Q monad.  And once you're in, you have to stay in.
 
 Also note the apostrophe before =(+)= for name lookup:
 #+BEGIN_SRC
@@ -154,6 +158,8 @@ Hmm, so many parantheses, we should use =$=, right?
 > pprintQ [| $funExp $ $funExp $ $funExp $valExp |]
 #+END_SRC
 
+Or should we?
+
 
 * Exercise
 Implement a generic tuple getter.
@@ -170,8 +176,17 @@ $(tupleget 3 3) ("a", "b", "c") ===> "c"
 $(tupleget 4 2) ("a", "b", "c", "d") ===> "b"
 #+END_SRC
 
+Reverse live coding time! Post your gist links with solutions to: \\
+https://titanpad.com/ZuriHac2015-TH
+
+Hints:
+  - idea 1: quote in =[| \(_, m) -> m |]= and disassemble (pattern match) and reassemble (constructor calls) it
+  - idea 2: build up the correct lambda expression from scratch \\
+    (but then you have to learn about [[http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html#v:newName][newName]])
+
+
 ** Solution 1
-We cheat and look into a basic case:
+We cheat and look into the basic case:
 #+BEGIN_SRC
 > runQ [| \(_, m) -> m |]
 LamE [TupP [WildP,VarP m]] (VarE m)
@@ -179,7 +194,7 @@ LamE [TupP [WildP,VarP m]] (VarE m)
 
 Makes sense: a lambda expression using a tuple pattern with wildcards and variables.
 
-Now we're ready to just disassemble this big piece of data and reassembly in our liking:
+Now we're ready to just disassemble this piece of data and reassemble it in our liking:
 #+BEGIN_SRC haskell
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -327,11 +342,12 @@ improvements during the Hackathon!
 
 
 * Missing features, current issues
-- No cross-compilation, being solved thanks to the GHCJS guys
+- No cross-compilation, being solved thanks to Luite (GHCJS)
 - No programmatic export/import of symbols from TH
 - Buggy reification behavior for current module since GHC 7.8 \\
   (with the famous =$(return [])= workaround)
-- But as I said, patches to GHC are always (at least half-heartedly) welcome
+- But as I said, patches to GHC are always welcome \\
+  (at least welcome, even if not accepted) :)
 
 
 * Thank you!

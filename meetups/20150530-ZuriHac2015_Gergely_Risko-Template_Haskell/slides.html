@@ -56,11 +56,15 @@
 <h2 id="sec-1"><span class="section-number-2">1</span> About me</h2>
 <ul>
 <li>From Hungary, Eötvös Loránd university, CS MSc</li>
-<li>2008 &#x2013; 2010: Nokia Maemo</li>
-<li>2010 &#x2013; 2013: Googler, SRE and later SWE</li>
-<li>2014 &#x2013; : own consulting and training company</li>
 <li>Haskeller since 2007</li>
 <li>Contributed TH features and patches to GHC 7.8</li>
+<li>2008 &#x2013; 2010: Nokia Maemo</li>
+<li>2010 &#x2013; 2013: Googler, SRE and later SWE</li>
+<li>2014 &#x2013; : []: (Nilcons), own consulting and training company
+<ul>
+<li>commercial training or consulting enquiries to <a href="mailto:cons@nilcons.com">cons@nilcons.com</a></li>
+
+</ul></li>
 
 </ul>
 
@@ -73,7 +77,8 @@
 <ul>
 <li>Provide a clean macro system for Haskell</li>
 <li>Generating expressions and top-level declarations</li>
-<li>With the possibility of reification (looking up info)</li>
+<li>With the possibility of reification <br  />
+  (looking up info about the source code)</li>
 <li>To automate code generation, e.g.:
 <ul>
 <li>lenses</li>
@@ -91,13 +96,18 @@
 <h2 id="sec-3"><span class="section-number-2">3</span> Versions</h2>
 <ul>
 <li>TH is shipped with GHC: <code>ghc-pkg list | grep template-haskell</code></li>
-<li>The compiler exposes an API with the <code>Q monad</code></li>
+<li>The compiler exposes an API with the Q monad</li>
 <li>The <code>template-haskell</code> package contains the client side of that API
 and some extra helper functions</li>
 <li>Have to use the <code>template-haskell</code> package version that shipped, no upgrade
 <ul>
 <li>GHC 7.8: TH 2.9 (that's what I'm using for this talk)</li>
-<li>GHC 7.10: TH 2.10</li>
+<li>GHC 7.10: TH 2.10, GHC 7.10 is not deployable:
+<ul>
+<li>in 2015, with distributed buildfarms everywhere, it's no good to generate package ids from <code>/dev/urandom</code></li>
+<li>(BTW, we also shouldn't use predictable names in <code>/tmp</code>)</li>
+
+</ul></li>
 
 </ul></li>
 
@@ -193,7 +203,7 @@ TH as a macro language).
 
 <p>
 What is the <code>return</code> for?  That's just for putting this constant
-expression into the <code>Q</code> monad, because the splicing API expects us to
+expression into the Q monad, because the splicing API expects us to
 do that.
 </p>
 
@@ -213,7 +223,7 @@ is an easy way to test our AST producing functions:
 <h2 id="sec-7"><span class="section-number-2">7</span> AST builders</h2>
 <p>
 So far we have built up our ASTs with the data constructors (<code>LitE</code>,
-<code>IntegerL</code>) directly and then used <code>return</code> to put into the <code>Q</code> monad.
+<code>IntegerL</code>) directly and then used <code>return</code> to lift into the Q monad.
 </p>
 
 <p>
@@ -229,7 +239,7 @@ that can be useful for building up bigger expressions.
 <p>
 We could have done the same with constructor names, but we will see
 that there are some operations (new name generation, reification) that
-are in the <code>Q</code> monad.  And once you're in, it's easier to stay in.
+are in the Q monad.  And once you're in, you have to stay in.
 </p>
 
 <p>
@@ -269,6 +279,10 @@ Hmm, so many parantheses, we should use <code>$</code>, right?
 &gt; pprintQ [| $funExp $ $funExp $ $funExp $valExp |]
 </pre>
 
+<p>
+Or should we?
+</p>
+
 
 </section>
 </section>
@@ -295,13 +309,29 @@ $(tupleget 3 3) ("a", "b", "c") ===&gt; "c"
 $(tupleget 4 2) ("a", "b", "c", "d") ===&gt; "b"
 </pre>
 
+<p>
+Reverse live coding time! Post your gist links with solutions to: <br  />
+<a href="https://titanpad.com/ZuriHac2015-TH">https://titanpad.com/ZuriHac2015-TH</a>
+</p>
+
+<p>
+Hints:
+</p>
+<ul>
+<li>idea 1: quote in <code>[| \(_, m) -&gt; m |]</code> and disassemble (pattern match) and reassemble (constructor calls) it</li>
+<li>idea 2: build up the correct lambda expression from scratch <br  />
+    (but then you have to learn about <a href="http://hackage.haskell.org/package/template-haskell-2.9.0.0/docs/Language-Haskell-TH.html#v:newName">newName</a>)</li>
+
+</ul>
+
+
 </section>
 </section>
 <section>
 <section id="slide-sec-9-1">
 <h3 id="sec-9-1"><span class="section-number-3">9.1</span> Solution 1</h3>
 <p>
-We cheat and look into a basic case:
+We cheat and look into the basic case:
 </p>
 <pre  class="example">
 &gt; runQ [| \(_, m) -&gt; m |]
@@ -313,7 +343,7 @@ Makes sense: a lambda expression using a tuple pattern with wildcards and variab
 </p>
 
 <p>
-Now we're ready to just disassemble this big piece of data and reassembly in our liking:
+Now we're ready to just disassemble this piece of data and reassemble it in our liking:
 </p>
 <div class="org-src-container">
 
@@ -532,11 +562,12 @@ improvements during the Hackathon!
 <section id="slide-sec-12">
 <h2 id="sec-12"><span class="section-number-2">12</span> Missing features, current issues</h2>
 <ul>
-<li>No cross-compilation, being solved thanks to the GHCJS guys</li>
+<li>No cross-compilation, being solved thanks to Luite (GHCJS)</li>
 <li>No programmatic export/import of symbols from TH</li>
 <li>Buggy reification behavior for current module since GHC 7.8 <br  />
   (with the famous <code>$(return [])</code> workaround)</li>
-<li>But as I said, patches to GHC are always (at least half-heartedly) welcome</li>
+<li>But as I said, patches to GHC are always welcome <br  />
+  (at least welcome, even if not accepted) :)</li>
 
 </ul>
 
