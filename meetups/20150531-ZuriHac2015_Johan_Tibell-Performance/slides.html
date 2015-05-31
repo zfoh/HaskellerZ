@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Johan Tibell" />
+  <meta name="date" content="2015-05-31" />
+  <title>Writing Production Quality Code</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="http://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <script src="http://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">Writing Production Quality Code</h1>
+  <p class="author">
+Johan Tibell
+  </p>
+  <p class="date">May 31, 2015</p>
+</div>
+<div id="goal" class="slide section level2">
+<h1>Goal</h1>
+<p>The goal of this talk is to give you a set of guidelines for writing production quality code.</p>
+<p>These guidelines are based on what we <em>actually do</em> in our core libraries (bytestring, text, containers, attoparsec, etc).</p>
+<p>The goal is to avoid performance problems &quot;by design&quot;, not by being &quot;very careful&quot;.</p>
+</div>
+<div id="outline" class="slide section level2">
+<h1>Outline</h1>
+<ul>
+<li><p>Reasoning about space usage</p></li>
+<li><p>Reasoning about laziness</p></li>
+<li><p>Inlining</p></li>
+<li><p>Reading Core</p></li>
+</ul>
+</div>
+<div id="reasoning-about-space-usage" class="slide section level2">
+<h1>Reasoning about space usage</h1>
+<p>Knowing how GHC represents values in memory is useful because</p>
+<ul>
+<li><p>it allows us to approximate memory usage, and</p></li>
+<li><p>it allows us to count the number of indirections, which affect cache behavior.</p></li>
+</ul>
+</div>
+<div id="memory-usage-for-data-constructors" class="slide section level2">
+<h1>Memory usage for data constructors</h1>
+<p>Rule of thumb: a constructor uses one word for a header, and one word for each field. So e.g.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Uno</span> <span class="fu">=</span> <span class="dt">Uno</span> a
+<span class="kw">data</span> <span class="dt">Due</span> <span class="fu">=</span> <span class="dt">Due</span> a b</code></pre></div>
+<p>an <code>Uno</code> takes 2 words, and a <code>Due</code> takes 3.</p>
+<ul>
+<li>Exception: a constructor with no fields (like <code>Nothing</code> or <code>True</code>) takes no space, as it's shared among all uses.</li>
+</ul>
+</div>
+<div id="memory-layout" class="slide section level2">
+<h1>Memory layout</h1>
+<p>Here's how GHC represents the list <code>[1,2]</code> in memory:</p>
+<p>
+<img src="list12.png" alt="" />
+</p>
+<ul>
+<li><p>Each box represents one machine word</p></li>
+<li><p>Arrows represent pointers</p></li>
+<li><p>Each constructor has one word overhead for e.g. GC information</p></li>
+</ul>
+</div>
+<div id="refresher-unboxed-types" class="slide section level2">
+<h1>Refresher: unboxed types</h1>
+<p>GHC defines a number of <em>unboxed</em> types. These typically represent primitive machine types.</p>
+<ul>
+<li><p>By convention, the names of these types end with a <code>#</code>.</p></li>
+<li><p>Most unboxed types take one word (except e.g. <code>Double#</code> on 32-bit machines)</p></li>
+<li><p>Values of unboxed types cannot be thunks.</p></li>
+<li><p>The basic types are defined in terms unboxed types e.g.</p></li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Int</span> <span class="fu">=</span> <span class="dt">I</span><span class="fu">#</span> <span class="dt">Int</span><span class="fu">#</span></code></pre></div>
+<ul>
+<li>We call types such as <code>Int</code> <em>boxed</em> types</li>
+</ul>
+</div>
+<div id="poll" class="slide section level2">
+<h1>Poll</h1>
+<p>How many machine words is needed to store a value of this data type:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">IntPair</span> <span class="fu">=</span> <span class="dt">IP</span> <span class="dt">Int</span> <span class="dt">Int</span></code></pre></div>
+<ul>
+<li><p>3?</p></li>
+<li><p>5?</p></li>
+<li><p>7?</p></li>
+<li><p>9?</p></li>
+</ul>
+<p>Tip: Draw a boxes-and-arrows diagram.</p>
+</div>
+<div id="intpair-memory-layout" class="slide section level2">
+<h1>IntPair memory layout</h1>
+<p>
+<img src="intpair.png" alt="" />
+</p>
+<p>So an <code>IntPair</code> value takes 7 words.</p>
+</div>
+<div id="refresher-unpacking" class="slide section level2">
+<h1>Refresher: unpacking</h1>
+<p>GHC gives us some control over data representation via the <code>UNPACK</code> pragma.</p>
+<ul>
+<li><p>The pragma unpacks the contents of a constructor into the field of another constructor, removing one level of indirection and one constructor header.</p></li>
+<li><p>Only fields that are strict, monomorphic, and single-constructor can be unpacked.</p></li>
+</ul>
+<p>The pragma is added just before the bang pattern:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Foo</span> <span class="fu">=</span> <span class="dt">Foo</span> <span class="ot">{-# UNPACK #-}</span> <span class="fu">!</span><span class="dt">SomeType</span></code></pre></div>
+<p>GHC 7 and later will warn if an <code>UNPACK</code> pragma cannot be used because it fails the use constraint.</p>
+</div>
+<div id="unpacking-example" class="slide section level2">
+<h1>Unpacking example</h1>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">IntPair</span> <span class="fu">=</span> <span class="dt">IP</span> <span class="fu">!</span><span class="dt">Int</span> <span class="fu">!</span><span class="dt">Int</span></code></pre></div>
+<p>
+<img src="intpair.png" alt="" />
+</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">IntPair</span> <span class="fu">=</span> <span class="dt">IP</span> <span class="ot">{-# UNPACK #-}</span> <span class="fu">!</span><span class="dt">Int</span>
+                  <span class="ot">{-# UNPACK #-}</span> <span class="fu">!</span><span class="dt">Int</span></code></pre></div>
+<p>
+<img src="intpair-unpacked.png" alt="" />
+</p>
+</div>
+<div id="a-structural-comparison-with-c" class="slide section level2">
+<h1>A structural comparison with C</h1>
+<p>By reference:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Haskell</span>
+<span class="kw">data</span> <span class="dt">A</span> <span class="fu">=</span> <span class="dt">A</span> <span class="fu">!</span><span class="dt">Int</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode c"><code class="sourceCode c"><span class="co">// C</span>
+<span class="kw">struct</span> A {
+  <span class="dt">int</span> *a;
+};</code></pre></div>
+<p>By value:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Haskell</span>
+<span class="kw">data</span> <span class="dt">A</span> <span class="fu">=</span> <span class="dt">A</span> <span class="ot">{-# UNPACK #-}</span> <span class="fu">!</span><span class="dt">Int</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode c"><code class="sourceCode c"><span class="co">// C</span>
+<span class="kw">struct</span> A {
+  <span class="dt">int</span> a;
+};</code></pre></div>
+<p>If you can figure out which C representation you want, you can figure out which Haskell representation you want.</p>
+</div>
+<div id="benefits-of-unpacking" class="slide section level2">
+<h1>Benefits of unpacking</h1>
+<p>When the pragma applies, it offers the following benefits:</p>
+<ul>
+<li><p>Reduced memory usage (4 words saved in the case of <code>IntPair</code>)</p></li>
+<li><p>Removes indirection</p></li>
+</ul>
+<p>Caveat: There are (rare) cases where unpacking hurts performance e.g. if the value is passed to a non-strict function, as it needs to be reboxed.</p>
+<p><strong>Unpacking is one of the most important optimizations available to us.</strong></p>
+</div>
+<div id="compiler-support" class="slide section level2">
+<h1>Compiler support</h1>
+<p>Starting with GHC 7.10, small (pointer-sized* or less) strict fields are unpacked automatically.</p>
+<p>* Applies to <code>Double</code> even on 32-bit architectures.</p>
+</div>
+<div id="reasoning-about-laziness" class="slide section level2">
+<h1>Reasoning about laziness</h1>
+<p>A function application is only evaluated if its result is needed, therefore:</p>
+<ul>
+<li><p>One of the function's right-hand sides will be evaluated.</p></li>
+<li><p>Any expression whose value is required to decide which RHS to evaluate, must be evaluated.</p></li>
+</ul>
+<p>These two properties allow us to use &quot;back-to-front&quot; analysis (known as demand/strictness analysis) to figure which arguments a function is strict in.</p>
+</div>
+<div id="example" class="slide section level2">
+<h1>Example</h1>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">max<span class="ot"> ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
+max x y
+    <span class="fu">|</span> x <span class="fu">&gt;=</span> y <span class="fu">=</span> x
+    <span class="fu">|</span> x <span class="fu">&lt;</span>  y <span class="fu">=</span> y</code></pre></div>
+<ul>
+<li><p>To pick one of the two RHSs, we must evaluate <code>x &gt; y</code>.</p></li>
+<li><p>Therefore we must evaluate <em>both</em> <code>x</code> and <code>y</code>.</p></li>
+<li><p>Therefore <code>max</code> is strict in both <code>x</code> and <code>y</code>.</p></li>
+</ul>
+</div>
+<div id="poll-1" class="slide section level2">
+<h1>Poll</h1>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Tree</span> <span class="fu">=</span> <span class="dt">Leaf</span> <span class="fu">|</span> <span class="dt">Node</span> <span class="dt">Int</span> <span class="dt">Tree</span> <span class="dt">Tree</span>
+
+<span class="ot">insert ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span>
+insert x <span class="dt">Leaf</span>   <span class="fu">=</span> <span class="dt">Node</span> x <span class="dt">Leaf</span> <span class="dt">Leaf</span>
+insert x (<span class="dt">Node</span> y l r)
+    <span class="fu">|</span> x <span class="fu">&lt;</span> y     <span class="fu">=</span> <span class="dt">Node</span> y (insert x l) r
+    <span class="fu">|</span> x <span class="fu">&gt;</span> y     <span class="fu">=</span> <span class="dt">Node</span> y l (insert x r)
+    <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">Node</span> x l r</code></pre></div>
+<p>Which argument(s) is <code>insert</code> strict in?</p>
+<ul>
+<li><p>None</p></li>
+<li><p>1st</p></li>
+<li><p>2nd</p></li>
+<li><p>Both</p></li>
+</ul>
+</div>
+<div id="solution" class="slide section level2">
+<h1>Solution</h1>
+<p>Only the second, as inserting into an empty tree can be done without comparing the value being inserted. For example, this expression</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">insert (<span class="dv">1</span> <span class="ot">`div`</span> <span class="dv">0</span>) <span class="dt">Leaf</span></code></pre></div>
+<p>does not raise a division-by-zero expression but</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">insert (<span class="dv">1</span> <span class="ot">`div`</span> <span class="dv">0</span>) (<span class="dt">Node</span> <span class="dv">2</span> <span class="dt">Leaf</span> <span class="dt">Leaf</span>)</code></pre></div>
+<p>does.</p>
+</div>
+<div id="strict-data-types-cannot-contain-thunks" class="slide section level2">
+<h1>Strict data types cannot contain thunks</h1>
+<p>Given a function <code>f :: ... -&gt; T</code> where <code>T</code> is a type with only strict fields*, whose value are types containing only strict fields, and so forth, cannot contain any thunks.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">T1</span> <span class="fu">=</span> <span class="dt">C1</span> <span class="fu">!</span><span class="dt">Int</span>  <span class="co">-- Exactly 2 words</span>
+<span class="kw">data</span> <span class="dt">T2</span> <span class="fu">=</span> <span class="dt">C2</span> <span class="dt">Int</span>   <span class="co">-- 2-inf words</span></code></pre></div>
+<p>Therefore, <code>f</code> cannot leak space after the evaluation of <code>f</code> has finished.</p>
+<p>Using strict fields is thus a way to prevent space leaks, without sprinkling bangs all over the definition of <code>f</code>.</p>
+<p>* of non-function type, because closures can retain data.</p>
+</div>
+<div id="guideline-1-data-types-should-be-strict-by-default" class="slide section level2">
+<h1>Guideline 1: data types should be strict by default</h1>
+<ul>
+<li><p>Allows a more compact data representation.</p></li>
+<li><p>Avoids many space leaks by construction.</p></li>
+<li><p>Can be more cache-friendly to create.</p></li>
+</ul>
+</div>
+<div id="in-practice-strict-can-be-more-cache-friendly" class="slide section level2">
+<h1>In practice: strict can be more cache-friendly</h1>
+<p>Example: <code>Data.Map</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Map</span> k a <span class="fu">=</span> <span class="dt">Tip</span>
+             <span class="fu">|</span> <span class="dt">Bin</span> <span class="ot">{-# UNPACK #-}</span> <span class="fu">!</span><span class="dt">Size</span> <span class="fu">!</span>k a
+                   <span class="fu">!</span>(<span class="dt">Map</span> k a) <span class="fu">!</span>(<span class="dt">Map</span> k a)</code></pre></div>
+<p>(Note the bang on the <code>Map k a</code> fields.)</p>
+<ul>
+<li><p>Most container types have a strict spine.</p></li>
+<li><p>Strict spines cause more work to be done up-front (e.g. on <code>insert</code>), when the data structure is in cache, rather than later (e.g. on the next <code>lookup</code>.)</p></li>
+<li><p>Does not always apply (e.g. when representing streams and other infitinte structures.)</p></li>
+</ul>
+</div>
+<div id="guideline-2-use-strict-data-types-in-accumulators" class="slide section level2">
+<h1>Guideline 2: use strict data types in accumulators</h1>
+<p>If you're using a composite accumulator (e.g. a pair), make sure it has strict fields.</p>
+<p>Allocates on each iteration:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mean ::</span> [<span class="dt">Double</span>] <span class="ot">-&gt;</span> <span class="dt">Double</span>
+mean xs <span class="fu">=</span> s <span class="fu">/</span> n
+  <span class="kw">where</span> (s, n) <span class="fu">=</span> foldl&#39; (\ (s, n) x <span class="ot">-&gt;</span> (s<span class="fu">+</span>x, n<span class="fu">+</span><span class="dv">1</span>)) (<span class="dv">0</span>, <span class="dv">0</span>) xs</code></pre></div>
+<p>Doesn't allocate on each iteration:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">StrictPair</span> a b <span class="fu">=</span> <span class="dt">SP</span> <span class="fu">!</span>a <span class="fu">!</span>b
+
+<span class="ot">mean2 ::</span> [<span class="dt">Double</span>] <span class="ot">-&gt;</span> <span class="dt">Double</span>
+mean2 xs <span class="fu">=</span> s <span class="fu">/</span> n
+  <span class="kw">where</span> <span class="dt">SP</span> s n <span class="fu">=</span> foldl&#39; (\ (<span class="dt">SP</span> s n) x <span class="ot">-&gt;</span> <span class="dt">SP</span> (s<span class="fu">+</span>x) (n<span class="fu">+</span><span class="dv">1</span>)) (<span class="dt">SP</span> <span class="dv">0</span> <span class="dv">0</span>) xs</code></pre></div>
+<p>Haskell makes it cheap to create throwaway data types like <code>StrictPair</code>: one line of code.</p>
+</div>
+<div id="guideline-3-use-strict-returns-in-monadic-code" class="slide section level2">
+<h1>Guideline 3: use strict returns in monadic code</h1>
+<p><code>return</code> often wraps the value in some kind of (lazy) box. This is an example of a hidden lazy data type in our code. For example, assuming we're in a state monad:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">return <span class="fu">$</span> x <span class="fu">+</span> y</code></pre></div>
+<p>creates a thunk. We most likely want:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">return <span class="fu">$!</span> x <span class="fu">+</span> y</code></pre></div>
+<p>Just use <code>$!</code> by default.</p>
+</div>
+<div id="in-practice-beware-of-the-lazy-base-case" class="slide section level2">
+<h1>In practice: beware of the lazy base case</h1>
+<p>Functions that would otherwise be strict might be made lazy by the &quot;base case&quot;:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Tree</span> <span class="fu">=</span> <span class="dt">Leaf</span>
+          <span class="fu">|</span> <span class="dt">Bin</span> <span class="dt">Key</span> <span class="fu">!</span><span class="dt">Value</span> <span class="fu">!</span><span class="dt">Tree</span> <span class="fu">!</span><span class="dt">Tree</span>
+
+<span class="ot">insert ::</span> <span class="dt">Key</span> <span class="ot">-&gt;</span> <span class="dt">Value</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span>
+insert k v <span class="dt">Leaf</span> <span class="fu">=</span> <span class="dt">Bin</span> k v <span class="dt">Leaf</span> <span class="dt">Leaf</span>  <span class="co">-- lazy in @k@</span>
+insert k v (<span class="dt">Bin</span> k&#39; v&#39; l r)
+   <span class="fu">|</span> k <span class="fu">&lt;</span> k&#39;    <span class="fu">=</span> <span class="fu">...</span>
+   <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="fu">...</span></code></pre></div>
+<p>Since GHC does good things to strict arguments, we should make the base case strict, unless the extra laziness is useful:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">insert <span class="fu">!</span>k v <span class="dt">Leaf</span> <span class="fu">=</span> <span class="dt">Bin</span> k v <span class="dt">Leaf</span> <span class="dt">Leaf</span>  <span class="co">-- strict in @k@</span></code></pre></div>
+<p>In this case GHC might unbox the key, making all those comparisons cheaper.</p>
+</div>
+<div id="guideline-4-force-expressions-before-wrapping-them-in-lazy-data-types" class="slide section level2">
+<h1>Guideline 4: force expressions before wrapping them in lazy data types</h1>
+<p>We don't control all data types in our program.</p>
+<ul>
+<li><p>Many standard data types are lazy (e.g. <code>Maybe</code>, <code>Either</code>, tuples).</p></li>
+<li><p>This means that it's easy to be lazier than you intend by wrapping an expression in such a value:</p></li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">safeDiv ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+safeDiv _ <span class="dv">0</span> <span class="fu">=</span> <span class="dt">Nothing</span>
+safeDiv x y <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> x <span class="fu">/</span> y  <span class="co">-- creates thunk</span></code></pre></div>
+<ul>
+<li>Force the value (e.g. using <code>$!</code>) before wrapping it in the constructor.</li>
+</ul>
+</div>
+<div id="inline-all-the-things" class="slide section level2">
+<h1>INLINE all the things!?!</h1>
+<ul>
+<li><p><strong>Don't.</strong> GHC typically does a good job inlining code on its own.</p></li>
+<li><p>We probably inline too much in core libraries, out of paranoia.</p></li>
+<li><p>We should however <em>make it possible</em> for GHC to inline (see next slide).</p></li>
+</ul>
+</div>
+<div id="guideline-5-add-wrappers-to-recursive-functions" class="slide section level2">
+<h1>Guideline 5: Add wrappers to recursive functions</h1>
+<ul>
+<li>GHC does not inline recursive functions:</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]
+map _ []     <span class="fu">=</span> []
+map f (x<span class="fu">:</span>xs) <span class="fu">=</span> f x <span class="fu">:</span> map f xs</code></pre></div>
+<ul>
+<li><strong>If</strong> you want to inline a recursive function, use a non-recursive wrapper like so:</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]
+map f <span class="fu">=</span> go
+  <span class="kw">where</span>
+    go []     <span class="fu">=</span> []
+    go (x<span class="fu">:</span>xs) <span class="fu">=</span> f x <span class="fu">:</span> go xs</code></pre></div>
+</div>
+<div id="inlining-hofs-avoids-indirect-calls" class="slide section level2">
+<h1>Inlining HOFs avoids indirect calls</h1>
+<ul>
+<li>Calling an unknown function (e.g. a function that's passed as an argument) is more expensive than calling a known function. Such <em>indirect</em> calls appear in higher-order functions:</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">map<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]
+map _ []     <span class="fu">=</span> []
+map f (x<span class="fu">:</span>xs) <span class="fu">=</span> f x <span class="fu">:</span> map f xs
+
+g xs <span class="fu">=</span> map (<span class="fu">+</span><span class="dv">1</span>) xs  <span class="co">-- map is recursive =&gt; not inlined</span></code></pre></div>
+<ul>
+<li><p>If we use the non-recursive wrapper from the last slide, GHC will likely inline <code>map</code> into <code>g</code>.</p></li>
+<li><p>It's useful to Inline HOFs if the higher-order argument is used a lot (e.g. in <code>map</code>, but not in <code>Data.Map.insertWith</code>). Sometimes GHC gets this wrong (check the Core) and you can use a manual pragma to help it.</p></li>
+</ul>
+</div>
+<div id="guideline-6-use-inlinable" class="slide section level2">
+<h1>Guideline 6: Use INLINABLE</h1>
+<p>Use <code>INLINABLE</code> to remove overhead from type classes.</p>
+<ul>
+<li><p>Despite its name, it works quite differently from <code>INLINE</code>.</p></li>
+<li><p><code>INLINABLE</code> gives us a way to do call-site specialization of type class parameters.</p></li>
+</ul>
+<p>Given</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">M1</span> <span class="kw">where</span>
+<span class="ot">    f ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
+    f x y <span class="fu">=</span> <span class="fu">...</span>
+    <span class="ot">{-# INLINABLE f #-}</span>
+
+<span class="kw">module</span> <span class="dt">M2</span> <span class="kw">where</span>
+    main <span class="fu">=</span> print <span class="fu">$</span> f (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>) <span class="dv">2</span></code></pre></div>
+<p>GHC will create a copy of <code>f</code> at the call site, specialized to <code>Int</code>.</p>
+</div>
+<div id="ghc-core" class="slide section level2">
+<h1>GHC Core</h1>
+<ul>
+<li>GHC uses an intermediate language, called &quot;Core,&quot; as its internal representation during several compilation stages</li>
+<li>Core resembles a subset of Haskell</li>
+<li>The compiler performs many of its optimizations by repeatedly rewriting the Core code</li>
+</ul>
+</div>
+<div id="why-knowing-how-to-read-core-is-important" class="slide section level2">
+<h1>Why knowing how to read Core is important</h1>
+<p>Reading the generated Core lets you answer many questions, for example:</p>
+<ul>
+<li>When are expressions evaluated?</li>
+<li>Is this function argument accessed via an indirection?</li>
+<li>Did my function get inlined?</li>
+</ul>
+</div>
+<div id="convincing-ghc-to-show-us-the-core" class="slide section level2">
+<h1>Convincing GHC to show us the Core</h1>
+<p>Given this &quot;program&quot;</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Sum</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (sum)
+
+sum<span class="ot"> ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span>
+sum []     <span class="fu">=</span> <span class="dv">0</span>
+sum (x<span class="fu">:</span>xs) <span class="fu">=</span> x <span class="fu">+</span> sum xs</code></pre></div>
+<p>we can get GHC to output the Core by adding the <code>-ddump-simpl</code> flag</p>
+<pre><code>$ ghc -O -ddump-simpl -dsuppress-module-prefixes \
+    -dsuppress-idinfo Sum.hs -fforce-recomp</code></pre>
+</div>
+<div id="reading-core-a-guide" class="slide section level2">
+<h1>Reading Core: a guide</h1>
+<ul>
+<li><p>Unless you use the <code>-dsuppress-*</code> flags,</p>
+<ul>
+<li>all names are fully qualified (e.g.<code>GHC.Types.Int</code> instead of just <code>Int</code>) and</li>
+<li>there's lots of meta information about the function (strictness, types, etc.)</li>
+</ul></li>
+<li><p>Lots of the names are generated by GHC (e.g. <code>w_sgJ</code>).</p></li>
+</ul>
+<p>Note: The Core syntax changes slightly with new compiler releases.</p>
+</div>
+<div id="tips-for-reading-core" class="slide section level2">
+<h1>Tips for reading Core</h1>
+<p>Three tips for reading Core:</p>
+<ul>
+<li>Open and edit it in your favorite editor to simplify it (e.g. rename variables to something sensible).</li>
+<li>Use the ghc-core package on Hackage</li>
+<li>Use the GHC Core major mode in Emacs (ships with haskell-mode)</li>
+</ul>
+</div>
+<div id="core-for-the-sum-function" class="slide section level2">
+<h1>Core for the sum function</h1>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Rec</span> {
+<span class="fu">$</span><span class="ot">wsum ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span><span class="fu">#</span>
+<span class="fu">$</span>wsum <span class="fu">=</span>
+  \ (<span class="ot">w_sxC ::</span> [<span class="dt">Int</span>]) <span class="ot">-&gt;</span>
+    <span class="kw">case</span> w_sxC <span class="kw">of</span> _ {
+      [] <span class="ot">-&gt;</span> <span class="dv">0</span>;
+      <span class="fu">:</span> x_amZ xs_an0 <span class="ot">-&gt;</span>
+        <span class="kw">case</span> x_amZ <span class="kw">of</span> _ { <span class="dt">I</span><span class="fu">#</span> x1_ax0 <span class="ot">-&gt;</span>
+        <span class="kw">case</span> <span class="fu">$</span>wsum xs_an0 <span class="kw">of</span> ww_sxF { __<span class="dt">DEFAULT</span> <span class="ot">-&gt;</span> <span class="fu">+#</span> x1_ax0 ww_sxF }
+        }
+    }
+end <span class="dt">Rec</span> }
+
+sum<span class="ot"> ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span>
+sum <span class="fu">=</span>
+  \ (<span class="ot">w_sxC ::</span> [<span class="dt">Int</span>]) <span class="ot">-&gt;</span>
+    <span class="kw">case</span> <span class="fu">$</span>wsum w_sxC <span class="kw">of</span> ww_sxF { __<span class="dt">DEFAULT</span> <span class="ot">-&gt;</span> <span class="dt">I</span><span class="fu">#</span> ww_sxF }</code></pre></div>
+</div>
+<div id="core-for-sum-explained" class="slide section level2">
+<h1>Core for sum explained</h1>
+<ul>
+<li>Convention: A variable name that ends with # stands for an unboxed value.</li>
+<li>GHC has split <code>sum</code> into two parts: a wrapper, <code>sum</code>, and a worker, <code>$wsum</code>.</li>
+<li>The worker returns an unboxed integer, which the wrapper wraps in an <code>I#</code> constructor.</li>
+<li><code>+#</code> is addition for unboxed integers (i.e. a single assembler instruction).</li>
+<li>GHC has added a note that <code>sum</code> should be inlined.</li>
+</ul>
+</div>
+<div id="what-can-we-learn-from-this-core" class="slide section level2">
+<h1>What can we learn from this Core?</h1>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="dt">Rec</span> {
+<span class="fu">$</span><span class="ot">wsum ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span><span class="fu">#</span>
+<span class="fu">$</span>wsum <span class="fu">=</span>
+  \ (<span class="ot">w_sxC ::</span> [<span class="dt">Int</span>]) <span class="ot">-&gt;</span>
+    <span class="kw">case</span> w_sxC <span class="kw">of</span> _ {
+      [] <span class="ot">-&gt;</span> <span class="dv">0</span>;
+      <span class="fu">:</span> x_amZ xs_an0 <span class="ot">-&gt;</span>
+        <span class="kw">case</span> x_amZ <span class="kw">of</span> _ { <span class="dt">I</span><span class="fu">#</span> x1_ax0 <span class="ot">-&gt;</span>
+        <span class="kw">case</span> <span class="fu">$</span>wsum xs_an0 <span class="kw">of</span> ww_sxF { __<span class="dt">DEFAULT</span> <span class="ot">-&gt;</span> <span class="fu">+#</span> x1_ax0 ww_sxF }
+        }
+    }
+end <span class="dt">Rec</span> }</code></pre></div>
+<p>The worker is not tail recursive, as it performs an addition after calling itself recursively.</p>
+<p>This means that it will use more stack.</p>
+<p>We should probably rewrite it to use an accumulator parameter.</p>
+</div>
+<div id="summary-how-to-write-production-quality-code" class="slide section level2">
+<h1>Summary: how to write production quality code</h1>
+<ul>
+<li><p>Think about memory layout. Use back-of-the-envelope calculations to figure out how much memory your data types will take (e.g. if you want to store lots of data in a map).</p></li>
+<li><p>Use strict fields by default.</p></li>
+<li><p>Know the limited number of cases (e.g. accumulator recursion) where you need to use an explicit bang pattern.</p></li>
+<li><p>Don't go overboard with inlining.</p></li>
+<li><p>Learn to read Core, it's useful and fun!</p></li>
+</ul>
+</div>
+</body>
+</html>
