@@ -31,6 +31,10 @@ Note that we welcome guests and will happily adjust our schedule if they would l
   - Johan Tibell      - Performance ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150531-ZuriHac2015_Johan_Tibell-Performance))
 * 2015-08-27: Carl Baatz - [An intro to web-programming using PureScript](https://github.com/cbaatz/purescript-intro)
 
+* 2015-10-29: Martin Geisler - An intro to to typing REST APIs using
+  Servant ([notes](meetups/20151029-Introduction-to-Servant/notes.md),
+  [examples](meetups/20151029-Introduction-to-Servant/))
+
 2014 meetups
 ============
 
