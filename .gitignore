@@ -1,2 +1,6 @@
 dist/
 .virtualenv/
+
+*~
+*.orig
+*.bak
