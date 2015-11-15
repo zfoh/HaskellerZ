@@ -12,9 +12,9 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 2015 meetups
 ============
 
-* 2015-01-30: Emilie Balland - [Testing in Haskell](http://htmlpreview.github.io/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015_01-29-Property_Based_Testing/slides.html)
+* 2015-01-30: Emilie Balland - [Testing in Haskell](http://rawgit.com/meiersi/HaskellerZ/master/meetups/2015_01-29-Property_Based_Testing/slides.html)
 
-* 2015-02-26: Simon Meier - [Writing your first real-world Haskell program](https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/real_world_haskell_intro.markdown)
+* 2015-02-26: Simon Meier - [Writing your first real-world Haskell program](meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/real_world_haskell_intro.markdown)
 
 * 2015-03-26: Mihaly Barasz - An introduction to game programming in Haskell
 
@@ -22,13 +22,13 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2015-05-29: *[ZuriHac 2015](https://wiki.haskell.org/ZuriHac2015)*
 
-  - Jannis Limperg    - Monads by example ([structure](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150529-ZuriHac2015_Jannis_Limperg-Monads_by_Example/structure), [materials](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150529-ZuriHac2015_Jannis_Limperg-Monads_by_Example))
-  - Oliver Charles    - Web programming ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150529-ZuriHac2015_Oliver_Charles-Web_Programming))
-  - Duncan Coutts     - Better faster binary serialization ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150529-ZuriHac2015_Duncan_Coutts-Better_Faster_Binary_Serialization))
+  - Jannis Limperg    - Monads by example ([structure](meetups/20150529-ZuriHac2015_Jannis_Limperg-Monads_by_Example/structure), [materials](meetups/20150529-ZuriHac2015_Jannis_Limperg-Monads_by_Example))
+  - Oliver Charles    - Web programming ([slides](meetups/20150529-ZuriHac2015_Oliver_Charles-Web_Programming))
+  - Duncan Coutts     - Better faster binary serialization ([slides](meetups/20150529-ZuriHac2015_Duncan_Coutts-Better_Faster_Binary_Serialization))
   - Gergely Risko     - Template Haskell ([slides](http://tiny.cc/nilcons-th))
-  - Mathieu Boespflug - Distributed programming ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150530-ZuriHac2015_Mathieu_Boespflug-Distributed_Programming))
-  - Edward Kmett      - Discrimination is Wrong: Improving Productivity  ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150530-ZuriHac2015_Edward_Kmett-Discrimination_is_Wrong_Improving_Productivity))
-  - Johan Tibell      - Performance ([slides](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20150531-ZuriHac2015_Johan_Tibell-Performance))
+  - Mathieu Boespflug - Distributed programming ([slides](meetups/20150530-ZuriHac2015_Mathieu_Boespflug-Distributed_Programming))
+  - Edward Kmett      - Discrimination is Wrong: Improving Productivity  ([slides](meetups/20150530-ZuriHac2015_Edward_Kmett-Discrimination_is_Wrong_Improving_Productivity))
+  - Johan Tibell      - Performance ([slides](meetups/20150531-ZuriHac2015_Johan_Tibell-Performance))
 * 2015-08-27: Carl Baatz - [An intro to web-programming using PureScript](https://github.com/cbaatz/purescript-intro)
 
 * 2015-10-29: Martin Geisler - An intro to to typing REST APIs using
@@ -58,7 +58,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
                [handout](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140529-make-you-a-monad/final/make-you-a-monad-handout.html))
 
 * 2014-06-06: **[ZuriHac 2014](http://www.haskell.org/haskellwiki/ZuriHac2014)** with talks by Simon Marlow and Edward Kmett
-              ([paper](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20140606-ZuriHac_Edward_Kmett-Functionally_Oblivious/Functionally_Oblivious.pdf?raw=true))
+              ([paper](meetups/20140606-ZuriHac_Edward_Kmett-Functionally_Oblivious/Functionally_Oblivious.pdf?raw=true))
 
 * 2014-07-31: possibly: Matthias Körner - High-performance computing in Haskell: the [`repa`](http://hackage.haskell.org/package/repa) and [`accelerate`](http://hackage.haskell.org/package/accelerate) libraries
               ([slides](http://rawgit.com/meiersi/HaskellerZ/master/meetups/20140731-Intro-Multi-Core-And-GPU/Introduction.html))
@@ -67,7 +67,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 
 * 2014-09-25: Bas van Dijk - An overview of concurrent programming in Haskell
 
-* 2015-10-30: Simon Meier - [An introduction to the GHC Runtime System](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20130321-Intro_GHC_RTS/intro_ghc_rts-talk.md)
+* 2015-10-30: Simon Meier - [An introduction to the GHC Runtime System](meetups/20130321-Intro_GHC_RTS/intro_ghc_rts-talk.md)
 
 The following libraries were mentioned in the January meetup as something that people would be interested in. Please feel free to volunteer to present one of them.
     Drawing using [`diagrams`](http://hackage.haskell.org/package/diagrams), and computing
@@ -94,7 +94,7 @@ The following libraries were mentioned in the January meetup as something that p
 2013-06-27:
   [Thomas Schilling](https://github.com/nominolo) and
   [Simon Meier](https://github.com/meiersi) - A hands-on introduction to stream fusion.
-  ([examples](https://github.com/meiersi/HaskellerZ/tree/master/meetups/2013-06-27-Stream_Fusion),
+  ([examples](meetups/2013-06-27-Stream_Fusion),
    papers: [ICFP 2007](http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.104.7401) and
           [ICFP 2013](http://research.microsoft.com/en-us/um/people/simonpj/papers/ndp/haskell-beats-C.pdf);
    more [ICFP 2013 papers](https://github.com/gasche/icfp2013-papers)
