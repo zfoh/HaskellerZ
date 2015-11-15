@@ -12,7 +12,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 2015 meetups
 ============
 
-* 2015-01-30: Emilie Balland - [Testing in Haskell](http://htmlpreview.github.io/?https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015_01-29-Property_Based_Testing/slides.html)
+* 2015-01-30: Emilie Balland - [Testing in Haskell](http://rawgit.com/meiersi/HaskellerZ/master/meetups/2015_01-29-Property_Based_Testing/slides.html)
 
 * 2015-02-26: Simon Meier - [Writing your first real-world Haskell program](meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/real_world_haskell_intro.markdown)
 
