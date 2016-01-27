@@ -1,4 +1,6 @@
 % A Primer to Commercial Haskell Development
+% Simon Meier, Elevence Digital Finance AG
+% January 28th, 2016
 
 
 # About me
@@ -12,30 +14,31 @@
 
 # Commercial Haskell development
 
-Know your business model.
 
-- Business model (link to Adrian's post)
+![Business model](img/business-model.jpg)
+
+Start with the business model.
+([see](https://medium.com/@adriankyburz/it-s-been-an-amazing-ride-now-my-startup-is-dead-and-here-s-what-i-ve-learned-284e14ef4ee0#.w4621izgf)
+for a enlighting post-mortem writeup of a friend's startup)
 
 
 # You are selling a user experience
 
-[iphone image]
+![You are building a user experience](img/user-experience-for-startups.png)
 
 Haskell is just a tool in your box.
 
 
 # Your only done once you've shipped your code
 
-- Deploy Software (ship-it image)
+![Ship it](img/shipit_to_space.gif)
+
+Deployment is an integral part of commercial development: just factor it in.
 
 
-Deployment is an integral part of commercial development.
+# Use the right tool for your job
 
-
-# Use your best tools for the job
-
-[ Not every problem can be solved using a hammer. ]
-
+![Know your tools before you rely on them](img/cnc_machine.jpg)
 
 Haskell is a great tool for many software engineering tasks... provided you
 know it well enough for the task at hand.
@@ -63,9 +66,10 @@ know it well enough for the task at hand.
   (probably available from the last talk)
 
 
-- TODO (SM): adapt elevence-base such that it uses a BSD-3 licence and has
-  proper documentation. Also adapt style guide-line such that it is shared
-  under a Creative-Commons-Alike license.
+# The stack tool
+
+- http://docs.haskellstack.org/en/stable/GUIDE.html
+
 
 # The custom prelude
 
