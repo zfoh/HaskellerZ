@@ -60,10 +60,14 @@ know it well enough for the task at hand.
 # Code layout
 
 - mono-repositories: link to reasoning, link to post on Facebooks move
+  (see [here](http://danluu.com/monorepo/) and
+       [here](https://github.com/babel/babel/blob/master/doc/design/monorepo.md)
+  )
+
 - future proof
 - link-to-github
-- create a small test-project: command-line app that does word-counting
-  (probably available from the last talk)
+  https://github.com/meiersi/HaskellerZ/tree/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence
+
 
 
 # The stack tool
@@ -71,7 +75,7 @@ know it well enough for the task at hand.
 - http://docs.haskellstack.org/en/stable/GUIDE.html
 
 
-# The custom prelude
+# Our custom prelude
 
 - Principled way of introducing orphan instances
 - Code sharing, impedacne mismatching, broader requirements
@@ -80,22 +84,21 @@ know it well enough for the task at hand.
 
 - Impedance mismatching between Hackage and your company's codebase.
 - link to Jasper's post
+- https://jaspervdj.be/posts/2015-01-20-haskell-design-patterns-extended-modules.html
 
 
 # Style guidelines
 
-- [See link to github].
+- [See link to github](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence/docs/hs-style-guide.md)
 
 
 # Additional Resources
 
 - stephen diehl's post on what I wish I kenw
-- my talk on getting started with Haskell
-  - what libraries to know
-- patterns book
-- jasper's posts
-- my post on service pattern
+  http://dev.stephendiehl.com/hask/
 
+- my talk on getting started with Haskell
+  https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/real_world_haskell_intro.markdown
 
 
 
