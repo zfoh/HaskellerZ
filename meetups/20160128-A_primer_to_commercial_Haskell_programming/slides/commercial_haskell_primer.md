@@ -15,7 +15,7 @@
 # Commercial Haskell development
 
 
-![Business model](img/business-model.jpg)
+![](img/business-model.jpg)
 
 Start with the business model.
 ([see](https://medium.com/@adriankyburz/it-s-been-an-amazing-ride-now-my-startup-is-dead-and-here-s-what-i-ve-learned-284e14ef4ee0#.w4621izgf)
@@ -24,21 +24,21 @@ for a enlighting post-mortem writeup of a friend's startup)
 
 # You are selling a user experience
 
-![You are building a user experience](img/user-experience-for-startups.png)
+![](img/user-experience-for-startups.png)
 
 Haskell is just a tool in your box.
 
 
 # Your only done once you've shipped your code
 
-![Ship it](img/shipit_to_space.gif)
+![](img/spacex-launch.jpg)
 
 Deployment is an integral part of commercial development: just factor it in.
 
 
 # Use the right tool for your job
 
-![Know your tools before you rely on them](img/cnc_machine.jpg)
+![](img/cnc_machine.jpg)
 
 Haskell is a great tool for many software engineering tasks... provided you
 know it well enough for the task at hand.
