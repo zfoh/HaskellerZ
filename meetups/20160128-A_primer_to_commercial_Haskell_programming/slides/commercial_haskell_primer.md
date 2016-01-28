@@ -17,7 +17,7 @@
 
 ![](img/business-model.jpg)
 
-We'll want to be concious about our business model.
+We'll want to be conscious about our business model.
 
 See [this post-mortem of Klimpr](https://medium.com/@adriankyburz/it-s-been-an-amazing-ride-now-my-startup-is-dead-and-here-s-what-i-ve-learned-284e14ef4ee0#.w4621izgf),
 a friend's startup, for further insights.
@@ -93,7 +93,7 @@ but has a way higher ramp-up cost.)
 Key purposes of our [`Elevence.Prelude`](https://github.com/meiersi/HaskellerZ/tree/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence/libs/hs/elevence-base/src/Elevence/Prelude.hs):
 
 - reduce import clutter for standard modules
-- provide an insulation layour against changes in GHC/Hackage
+- provide an insulation layer against changes in GHC/Hackage
 - provide a principled way of introducing orphan instances
     - introduce `Orphans.Lib_<library>` modules for defining orphan instances
       for classes defined in `<library>`
@@ -114,7 +114,7 @@ but for individual libraries on Hackage.
       (e.g., `lens` support for `text` values).
 - provide an insulation layer for changes in Hackage libraries
 
-See [Jasper van der Jeugt's post for a detailed explanation](https://jaspervdj.be/posts/2015-01-20-haskell-design-patterns-extended-modules.html).
+See [Jasper Van der Jeugt's post for a detailed explanation](https://jaspervdj.be/posts/2015-01-20-haskell-design-patterns-extended-modules.html).
 
 
 # The Elevence Haskell style guidelines
