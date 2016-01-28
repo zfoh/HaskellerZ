@@ -12,93 +12,120 @@
 - Haskell software engineer/architect at Elevence Digital Finance AG (2015 -)
 
 
-# Commercial Haskell development
+# Commercial Haskell development - my view on it
 
 
 ![](img/business-model.jpg)
 
-Start with the business model.
-([see](https://medium.com/@adriankyburz/it-s-been-an-amazing-ride-now-my-startup-is-dead-and-here-s-what-i-ve-learned-284e14ef4ee0#.w4621izgf)
-for a enlighting post-mortem writeup of a friend's startup)
+We'll want to be concious about our business model.
+
+See [this post-mortem of Klimpr](https://medium.com/@adriankyburz/it-s-been-an-amazing-ride-now-my-startup-is-dead-and-here-s-what-i-ve-learned-284e14ef4ee0#.w4621izgf),
+a friend's startup, for further insights.
 
 
-# You are selling a user experience
+# We are always selling a user experience
 
 ![](img/user-experience-for-startups.png)
 
-Haskell is just a tool in your box.
+Haskell is just a tool in our box.
 
 
-# Your only done once you've shipped your code
+# We're only done once we've shipped our code
 
 ![](img/spacex-launch.jpg)
 
-Deployment is an integral part of commercial development: just factor it in.
+Deployment and coding are equally important.
 
 
-# Use the right tool for your job
+# We want to use the right tools for the jobs at hand
 
 ![](img/cnc_machine.jpg)
 
-Haskell is a great tool for many software engineering tasks... provided you
-know it well enough for the task at hand.
-
+Haskell is a great tool for many software engineering tasks.
+However not all problems are best solved using Haskell or FP.
 
 
 # Talk Outline
 
-- Code layout
-- "stack" the tool
-  - explain mental model
-  - link to documentation and initial blog posts
-- The custom-prelude pattern
-- The .Extended-pattern
-- Style guidelines
-
+- code layout
+- the `stack` tool
+- the custom-prelude pattern
+- the .Extended-pattern
+- style guidelines
+- additional resources
 
 
 # Code layout
 
-- mono-repositories: link to reasoning, link to post on Facebooks move
-  (see [here](http://danluu.com/monorepo/) and
-       [here](https://github.com/babel/babel/blob/master/doc/design/monorepo.md)
-  )
-
-- future proof
-- link-to-github
-  https://github.com/meiersi/HaskellerZ/tree/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence
-
+- mono-repositories are great
+    - transactional changes across any of your
+      company's software artifacts are very valuable
+    - see [this](http://danluu.com/monorepo/) and
+         [that](https://github.com/babel/babel/blob/master/doc/design/monorepo.md)
+      for more in-depth comparison of mono- vs multi-repo setups
+- **big thanks to Elevence for publishing their
+  [development repo layout](https://github.com/meiersi/HaskellerZ/tree/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence)**
+  including
+    - their `elevence-base` library and
+    - their style-guide
 
 
 # The stack tool
 
-- http://docs.haskellstack.org/en/stable/GUIDE.html
+
+- solid multi-library and application support
+- good build reproducability
+- lots of options, which one should know about:
+  http://docs.haskellstack.org/en/stable/GUIDE.html
+
+In my opinion, a must use for commercial Haskell development.
 
 
-# Our custom prelude
+# The custom-prelude pattern
 
-- Principled way of introducing orphan instances
-- Code sharing, impedacne mismatching, broader requirements
+Key purposes of our [`Elevence.Prelude`](https://github.com/meiersi/HaskellerZ/tree/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence/libs/hs/elevence-base/src/Elevence/Prelude.hs):
+
+- reduce import clutter for standard modules
+- provide an insulation layour against changes in GHC/Hackage
+- provide a principled way of introducing orphan instances
+    - introduce `Orphans.Lib_<library>` modules for defining orphan instances
+      for classes defined in `<library>`
+    - import all of these in `Elevence.Prelude`
+    - guarantees instance coherence, as `Elevence.Prelude` is always in scope
+
+I believe that every Haskell company should use their own prelude.
+
 
 # The .Extended pattern
 
-- Impedance mismatching between Hackage and your company's codebase.
-- link to Jasper's post
-- https://jaspervdj.be/posts/2015-01-20-haskell-design-patterns-extended-modules.html
+Similar goals as the custom-prelude pattern,
+but for individual libraries on Hackage.
+
+- reduce import clutter
+    - for libraries whose exports are too fine-grained
+    - or for functionality spread over multiple libraries
+      (e.g., `lens` support for `text` values).
+- provide an insulation layer for changes in Hackage libraries
+
+See [Jasper van der Jeugt's post for a detailed explanation](https://jaspervdj.be/posts/2015-01-20-haskell-design-patterns-extended-modules.html).
 
 
-# Style guidelines
+# The Elevence Haskell style guidelines
 
-- [See link to github](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence/docs/hs-style-guide.md)
+[Let's have a look at them](https://github.com/meiersi/HaskellerZ/blob/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence/docs/hs-style-guide.md).
 
 
 # Additional Resources
 
-- stephen diehl's post on what I wish I kenw
-  http://dev.stephendiehl.com/hask/
+There are a lot of resources, but they are not as condensed as one might like.
 
-- my talk on getting started with Haskell
-  https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/real_world_haskell_intro.markdown
+I believe Stephen Diehl's
+[What I wish I knew when I learned Haskell](http://dev.stephendiehl.com/hask/)
+provides a great entry point.
+
+For people that are more freshly starting with Haskell,
+there's also our [HaskellerZ meetup repo](https://github.com/meiersi/HaskellerZ)
+and [my talk on getting started with Haskell](https://github.com/meiersi/HaskellerZ/blob/master/meetups/2015-02-26-Writing_your_first_real_world_Haskell_application/real_world_haskell_intro.markdown).
 
 
 

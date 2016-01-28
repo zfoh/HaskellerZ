@@ -9,6 +9,12 @@ The README moreover serves as a drafting document for upcoming meetups.
 In general, we'll have a HaskellerZ meetup every last thursday of January until October every year.
 Note that we welcome guests and will happily adjust our schedule if they would like to give a talk.
 
+2016 meetups
+============
+
+* 2016-01-28: Simon Meier - [A primer to commercial Haskell programming](meetups/20160128-A_primer_to_commercial_Haskell_programming/slides/commercial_haskell_primer.md)
+
+
 2015 meetups
 ============
 
@@ -29,6 +35,7 @@ Note that we welcome guests and will happily adjust our schedule if they would l
   - Mathieu Boespflug - Distributed programming ([slides](meetups/20150530-ZuriHac2015_Mathieu_Boespflug-Distributed_Programming))
   - Edward Kmett      - Discrimination is Wrong: Improving Productivity  ([slides](meetups/20150530-ZuriHac2015_Edward_Kmett-Discrimination_is_Wrong_Improving_Productivity))
   - Johan Tibell      - Performance ([slides](meetups/20150531-ZuriHac2015_Johan_Tibell-Performance))
+
 * 2015-08-27: Carl Baatz - [An intro to web-programming using PureScript](https://github.com/cbaatz/purescript-intro)
 
 * 2015-10-29: Martin Geisler - An intro to to typing REST APIs using
