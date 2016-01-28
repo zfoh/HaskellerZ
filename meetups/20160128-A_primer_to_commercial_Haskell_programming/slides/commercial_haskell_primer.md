@@ -42,6 +42,7 @@ Deployment and coding are equally important.
 ![](img/cnc_machine.jpg)
 
 Haskell is a great tool for many software engineering tasks.
+
 However not all problems are best solved using Haskell or FP.
 
 
@@ -57,17 +58,20 @@ However not all problems are best solved using Haskell or FP.
 
 # Code layout
 
-- mono-repositories are great
-    - transactional changes across any of your
-      company's software artifacts are very valuable
-    - see [this](http://danluu.com/monorepo/) and
-         [that](https://github.com/babel/babel/blob/master/doc/design/monorepo.md)
-      for more in-depth comparison of mono- vs multi-repo setups
-- **big thanks to Elevence for publishing their
+Mono-repositories are great.
+
+- transactional changes across all of your
+  software artifacts
+- see [this](http://danluu.com/monorepo/) and
+     [that](https://github.com/babel/babel/blob/master/doc/design/monorepo.md)
+  for more in-depth comparison of mono- vs multi-repo setups
+
+**Big thanks to Elevence for publishing their
   [development repo layout](https://github.com/meiersi/HaskellerZ/tree/master/meetups/20160128-A_primer_to_commercial_Haskell_programming/code-by-elevence)**
   including
-    - their `elevence-base` library and
-    - their style-guide
+
+- their `elevence-base` library and
+- their style-guide.
 
 
 # The stack tool
@@ -75,10 +79,13 @@ However not all problems are best solved using Haskell or FP.
 
 - solid multi-library and application support
 - good build reproducability
-- lots of options, which one should know about:
-  http://docs.haskellstack.org/en/stable/GUIDE.html
+- lots of options,
+  [which one should know about](http://docs.haskellstack.org/en/stable/GUIDE.html).
 
-In my opinion, a must use for commercial Haskell development.
+In my opinion, `stack` is a must use for commercial Haskell development.
+
+([Nix](http://www.cse.chalmers.se/~bernardy/nix.html) is an alternative,
+but has a way higher ramp-up cost.)
 
 
 # The custom-prelude pattern
@@ -102,8 +109,8 @@ Similar goals as the custom-prelude pattern,
 but for individual libraries on Hackage.
 
 - reduce import clutter
-    - for libraries whose exports are too fine-grained
-    - or for functionality spread over multiple libraries
+    - for libraries whose exports are too fine-grained, or
+    - for functionality spread over multiple libraries
       (e.g., `lens` support for `text` values).
 - provide an insulation layer for changes in Hackage libraries
 
