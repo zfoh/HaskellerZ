@@ -12,7 +12,8 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 2016 meetups
 ============
 
-* 2016-01-28: Simon Meier - [A primer to commercial Haskell programming](meetups/20160128-A_primer_to_commercial_Haskell_programming/slides/commercial_haskell_primer.md)
+* 2016-01-28: Simon Meier - A primer to commercial Haskell programming ([slides](meetups/20160128-A_primer_to_commercial_Haskell_programming/slides/commercial_haskell_primer.md), 
+ [video](https://www.youtube.com/watch?v=ywOvfjpbYR4))
 
 
 2015 meetups
