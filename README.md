@@ -12,8 +12,14 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 2016 meetups
 ============
 
-* 2016-01-28: Simon Meier - A primer to commercial Haskell programming ([slides](meetups/20160128-A_primer_to_commercial_Haskell_programming/slides/commercial_haskell_primer.md), 
- [video](https://www.youtube.com/watch?v=ywOvfjpbYR4))
+* 2016-02-25: Viktor Winschel - Modelling Economic Game Theory With Haskell 'n String Diagrams
+  ([slides](meetups/20160225-Modelling_economic_game_theory_with_Haskell/HaskellerZ_2016_winschel.pdf),
+  [video](https://www.youtube.com/watch?v=0XU5MYa0d1w))
+
+
+* 2016-01-28: Simon Meier - A primer to commercial Haskell programming
+  ([slides](meetups/20160128-A_primer_to_commercial_Haskell_programming/slides/commercial_haskell_primer.md),
+  [video](https://www.youtube.com/watch?v=ywOvfjpbYR4))
 
 
 2015 meetups
