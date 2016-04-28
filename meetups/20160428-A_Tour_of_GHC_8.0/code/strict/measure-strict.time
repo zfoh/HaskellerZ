@@ -1,0 +1,5 @@
++ ./measure-strict
+
+real	0m0.150s
+user	0m0.141s
+sys	0m0.007s

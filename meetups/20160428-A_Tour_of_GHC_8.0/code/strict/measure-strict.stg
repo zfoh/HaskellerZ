@@ -1,0 +1,172 @@
+
+==================== STG syntax: ====================
+main4 = NO_CCS I#! [0#];
+
+main3 = NO_CCS D! [main4];
+
+main_go =
+    \r srt:SRT:[] [x_s4Sy]
+        let {
+          sat_s4SD =
+              \u srt:SRT:[] []
+                  case x_s4Sy of wild_s4SB {
+                    __DEFAULT ->
+                        case +# [wild_s4SB 1#] of sat_s4SC {
+                          __DEFAULT -> main_go sat_s4SC;
+                        };
+                    10000000# -> [] [];
+                  }; } in
+        let { sat_s4Sz = NO_CCS I#! [x_s4Sy]; } in
+        let { sat_s4SA = NO_CCS D! [sat_s4Sz]; } in  : [sat_s4SA sat_s4SD];
+
+main5 = \u srt:SRT:[] [] main_go 1#;
+
+$tcD1 = NO_CCS TrNameS! ["D"#];
+
+$tc'D1 = NO_CCS TrNameS! ["'D"#];
+
+$trModule1 = NO_CCS TrNameS! ["Main"#];
+
+$trModule2 = NO_CCS TrNameS! ["main"#];
+
+$trModule = NO_CCS Module! [$trModule2 $trModule1];
+
+$tc'D =
+    NO_CCS TyCon! [689042227747467966##
+                   3828627186432438340##
+                   $trModule
+                   $tc'D1];
+
+$tcD =
+    NO_CCS TyCon! [15197273266503820955##
+                   13668516129125380708##
+                   $trModule
+                   $tcD1];
+
+main_$sfoldr =
+    \r srt:SRT:[] [sc_s4SE sc1_s4SF]
+        case sc_s4SE of _ {
+          [] -> sc1_s4SF;
+          : a_s4SH as_s4SI ->
+              let {
+                sat_s4SS =
+                    \u srt:SRT:[] []
+                        case a_s4SH of _ {
+                          D ds_s4SK ->
+                              case ds_s4SK of _ {
+                                I# x_s4SM ->
+                                    case sc1_s4SF of _ {
+                                      D ds1_s4SO ->
+                                          case ds1_s4SO of _ {
+                                            I# y_s4SQ ->
+                                                case +# [x_s4SM y_s4SQ] of sat_s4SR {
+                                                  __DEFAULT -> I# [sat_s4SR];
+                                                };
+                                          };
+                                    };
+                              };
+                        }; } in
+              let { sat_s4ST = NO_CCS D! [sat_s4SS];
+              } in  main_$sfoldr as_s4SI sat_s4ST;
+        };
+
+get =
+    \r srt:SRT:[] [ds_s4SU]
+        case ds_s4SU of _ { D ds1_s4SW -> ds1_s4SW; };
+
+$fShowD4 = \u srt:SRT:[] [] unpackCString# "D {"#;
+
+$fShowD3 = \u srt:SRT:[] [] unpackCString# "get = "#;
+
+$fShowD2 = \u srt:SRT:[] [] unpackCString# "}"#;
+
+$w$cshowsPrec =
+    \r srt:SRT:[rg :-> $fShowD2, ri :-> $fShowD3,
+                rj :-> $fShowD4] [ww_s4SX ww1_s4SY w_s4SZ]
+        let {
+          p_s4T0 =
+              sat-only \r srt:SRT:[rg :-> $fShowD2, ri :-> $fShowD3,
+                                   rj :-> $fShowD4] [x_s4T1]
+                  let {
+                    sat_s4T9 =
+                        \s srt:SRT:[rg :-> $fShowD2, ri :-> $fShowD3] []
+                            let {
+                              sat_s4T8 =
+                                  \s srt:SRT:[rg :-> $fShowD2] []
+                                      case ww1_s4SY of _ {
+                                        I# ww3_s4T3 ->
+                                            let {
+                                              sat_s4T4 =
+                                                  \u srt:SRT:[rg :-> $fShowD2] []
+                                                      ++ $fShowD2 x_s4T1;
+                                            } in 
+                                              case $wshowSignedInt 0# ww3_s4T3 sat_s4T4 of _ {
+                                                (#,#) ww5_s4T6 ww6_s4T7 -> : [ww5_s4T6 ww6_s4T7];
+                                              };
+                                      };
+                            } in  ++ $fShowD3 sat_s4T8;
+                  } in  ++ $fShowD4 sat_s4T9;
+        } in 
+          case >=# [ww_s4SX 11#] of sat_s4Ta {
+            __DEFAULT ->
+                case tagToEnum# [sat_s4Ta] of _ {
+                  False -> p_s4T0 w_s4SZ;
+                  True ->
+                      let {
+                        sat_s4Td =
+                            \u srt:SRT:[] []
+                                let { sat_s4Tc = NO_CCS :! [shows6 w_s4SZ]; } in  p_s4T0 sat_s4Tc;
+                      } in  : [shows9 sat_s4Td];
+                };
+          };
+
+$fShowD_$cshowsPrec =
+    \r srt:SRT:[rv :-> $w$cshowsPrec] [w_s4Te w1_s4Tf w2_s4Tg]
+        case w_s4Te of _ {
+          I# ww1_s4Ti ->
+              case w1_s4Tf of _ {
+                D ww3_s4Tk -> $w$cshowsPrec ww1_s4Ti ww3_s4Tk w2_s4Tg;
+              };
+        };
+
+$fShowD1 =
+    \r srt:SRT:[rv :-> $w$cshowsPrec] [w_s4Tl w1_s4Tm]
+        case w_s4Tl of _ {
+          D ww1_s4To -> $w$cshowsPrec 0# ww1_s4To w1_s4Tm;
+        };
+
+$fShowD_$cshowList =
+    \r srt:SRT:[rs :-> $fShowD1] [eta_B2 eta_B1]
+        showList__ $fShowD1 eta_B2 eta_B1;
+
+$fShowD_$cshow =
+    \r srt:SRT:[rv :-> $w$cshowsPrec] [x_s4Tp]
+        case x_s4Tp of _ { D ww1_s4Tr -> $w$cshowsPrec 0# ww1_s4Tr []; };
+
+$fShowD =
+    NO_CCS C:Show! [$fShowD_$cshowsPrec
+                    $fShowD_$cshow
+                    $fShowD_$cshowList];
+
+main2 =
+    \u srt:SRT:[r7 :-> main5, rv :-> $w$cshowsPrec] []
+        case main_$sfoldr main5 main3 of _ {
+          D ww1_s4Tt -> $w$cshowsPrec 0# ww1_s4Tt [];
+        };
+
+main1 =
+    \r srt:SRT:[r9 :-> main2, ra :-> stdout,
+                rb :-> hPutStr2] [eta_s4Tu]
+        hPutStr2 stdout main2 True eta_s4Tu;
+
+main = \r srt:SRT:[rd :-> main1] [eta_B1] main1 eta_B1;
+
+main6 =
+    \r srt:SRT:[r2 :-> runMainIO1, rd :-> main1] [eta_B1]
+        runMainIO1 main1 eta_B1;
+
+main = \r srt:SRT:[r4Su :-> main6] [eta_B1] main6 eta_B1;
+
+D = \r srt:SRT:[] [eta_B1] D [eta_B1];
+
+

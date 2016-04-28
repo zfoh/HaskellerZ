@@ -1,0 +1,2 @@
+./measure-strict-prof +RTS -tmeasure-strict.prof 
+<<ghc: 3280059272 bytes, 6335 GCs, 38208/46160 avg/max bytes residency (2 samples), 1M in use, 0.000 INIT (0.002 elapsed), 0.581 MUT (0.601 elapsed), 0.011 GC (0.019 elapsed) :ghc>>

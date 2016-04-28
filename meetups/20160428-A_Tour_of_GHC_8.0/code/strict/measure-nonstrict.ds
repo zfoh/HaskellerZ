@@ -1,0 +1,84 @@
+
+==================== Desugar (after optimization) ====================
+Result size of Desugar (after optimization)
+  = {terms: 115, types: 87, coercions: 0}
+
+-- RHS size: {terms: 28, types: 15, coercions: 0}
+$cshowsPrec_a295
+$cshowsPrec_a295 =
+  \ a_a140 ds_d2hU ->
+    case ds_d2hU of _ { D b1_a141 ->
+    showParen
+      (>= $fOrdInt a_a140 (I# 11#))
+      (. (showString (unpackCString# "D {"#))
+         (. (showString (unpackCString# "get = "#))
+            (. (showsPrec $fShowInt (I# 0#) b1_a141)
+               (showString (unpackCString# "}"#)))))
+    }
+
+Rec {
+-- RHS size: {terms: 4, types: 1, coercions: 0}
+$fShowD
+$fShowD = C:Show $cshowsPrec_a295 $cshow_a29G $cshowList_a29K
+
+-- RHS size: {terms: 5, types: 2, coercions: 0}
+$cshowList_a29K
+$cshowList_a29K = showList__ (showsPrec $fShowD (I# 0#))
+
+-- RHS size: {terms: 2, types: 1, coercions: 0}
+$cshow_a29G
+$cshow_a29G = $dmshow $fShowD
+end Rec }
+
+-- RHS size: {terms: 5, types: 3, coercions: 0}
+get
+get = \ ds_d2hS -> case ds_d2hS of _ { D ds_d2hT -> ds_d2hT }
+
+Rec {
+-- RHS size: {terms: 16, types: 17, coercions: 0}
+foldr
+foldr =
+  \ @ a_a1ZV @ b_a1ZW f_aIN b_aIO ds_d2hK ->
+    case ds_d2hK of _ {
+      [] -> b_aIO;
+      : a_aIR as_aIS -> foldr f_aIN (f_aIN a_aIR b_aIO) as_aIS
+    }
+end Rec }
+
+-- RHS size: {terms: 5, types: 0, coercions: 0}
+$trModule
+$trModule = Module (TrNameS "main"#) (TrNameS "Main"#)
+
+-- RHS size: {terms: 6, types: 0, coercions: 0}
+$tc'D
+$tc'D =
+  TyCon
+    689042227747467966##
+    3828627186432438340##
+    $trModule
+    (TrNameS "'D"#)
+
+-- RHS size: {terms: 6, types: 0, coercions: 0}
+$tcD
+$tcD =
+  TyCon
+    15197273266503820955##
+    13668516129125380708##
+    $trModule
+    (TrNameS "D"#)
+
+-- RHS size: {terms: 25, types: 17, coercions: 0}
+main
+main =
+  $ (print $fShowD)
+    ($ (foldr
+          (\ x_aHz y_aHA -> D (+ $fNumInt (get x_aHz) (get y_aHA)))
+          (D (I# 0#)))
+       (map D (enumFromTo $fEnumInt (I# 1#) (I# 10000000#))))
+
+-- RHS size: {terms: 2, types: 1, coercions: 0}
+main
+main = runMainIO main
+
+
+

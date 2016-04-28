@@ -1,0 +1,48 @@
+
+==================== Tidy Core ====================
+Result size of Tidy Core = {terms: 44, types: 90, coercions: 0}
+
+-- RHS size: {terms: 33, types: 59, coercions: 0}
+f5
+f5 =
+  \ @ m_apz
+    @ t_apM
+    @ t1_apW
+    @ t2_apX
+    @ t3_apY
+    $dMonad_aEV
+    a_aoX
+    b_aoY
+    c_aoZ
+    d_ap0 ->
+    >>=
+      $dMonad_aEV
+      a_aoX
+      (\ x1_ap1 ->
+         >>=
+           $dMonad_aEV
+           b_aoY
+           (\ x2_ap2 ->
+              >>=
+                $dMonad_aEV
+                (c_aoZ x1_ap1)
+                (\ x3_ap3 ->
+                   >>=
+                     $dMonad_aEV
+                     d_ap0
+                     (\ x4_ap4 -> return $dMonad_aEV (x2_ap2, x3_ap3, x4_ap4)))))
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule1_rFp
+$trModule1_rFp = TrNameS "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule2_rFO
+$trModule2_rFO = TrNameS "Example5"#
+
+-- RHS size: {terms: 3, types: 0, coercions: 0}
+$trModule
+$trModule = Module $trModule1_rFp $trModule2_rFO
+
+
+

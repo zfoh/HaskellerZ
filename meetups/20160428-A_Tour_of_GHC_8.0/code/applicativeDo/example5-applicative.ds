@@ -1,0 +1,55 @@
+
+==================== Tidy Core ====================
+Result size of Tidy Core = {terms: 59, types: 114, coercions: 0}
+
+-- RHS size: {terms: 48, types: 83, coercions: 0}
+f5
+f5 =
+  \ @ f_apU
+    @ t_aqE
+    @ t1_aqJ
+    @ t2_aqK
+    @ t3_aqL
+    $dMonad_aFk
+    eta_B4
+    eta1_B3
+    eta2_B2
+    eta3_B1 ->
+    let {
+      $dApplicative_aFR
+      $dApplicative_aFR = $p1Monad $dMonad_aFk } in
+    let {
+      $dFunctor_apC
+      $dFunctor_apC = $p1Applicative $dApplicative_aFR } in
+    <*>
+      $dApplicative_aFR
+      (fmap
+         $dFunctor_apC
+         (\ ds_dFU x4_ap4 ->
+            case ds_dFU of _ { (x2_ap2, x3_ap3) -> (x2_ap2, x3_ap3, x4_ap4) })
+         (join
+            $dMonad_aFk
+            (<*>
+               $dApplicative_aFR
+               (fmap
+                  $dFunctor_apC
+                  (\ x1_ap1 x2_ap2 ->
+                     fmap $dFunctor_apC (\ x3_ap3 -> (x2_ap2, x3_ap3)) (eta2_B2 x1_ap1))
+                  eta_B4)
+               eta1_B3)))
+      eta3_B1
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule1_rFO
+$trModule1_rFO = TrNameS "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule2_rG5
+$trModule2_rG5 = TrNameS "Example5"#
+
+-- RHS size: {terms: 3, types: 0, coercions: 0}
+$trModule
+$trModule = Module $trModule1_rFO $trModule2_rG5
+
+
+

@@ -1,0 +1,65 @@
+
+==================== Desugar (after optimization) ====================
+Result size of Desugar (after optimization)
+  = {terms: 66, types: 58, coercions: 0}
+
+-- RHS size: {terms: 8, types: 13, coercions: 0}
+g
+g = \ @ m_az0 $dMonad_azo x_axQ -> $ (return $dMonad_azo) (B x_axQ)
+
+-- RHS size: {terms: 29, types: 23, coercions: 0}
+f
+f =
+  \ @ m_azn $dMonadFail_azw ->
+    let {
+      $dMonad_aJC
+      $dMonad_aJC = $p1MonadFail $dMonadFail_azw } in
+    \ x_awC ->
+      >>=
+        $dMonad_aJC
+        (g $dMonad_aJC x_awC)
+        (\ ds_dJJ ->
+           case ds_dJJ of _ {
+             __DEFAULT ->
+               (\ _ ->
+                  fail
+                    $dMonadFail_azw
+                    (unpackCString#
+                       "Pattern match failure in do expression at compute.hs:10:3-5"#))
+                 void#;
+             A y_awD -> return $dMonad_aJC (+ $fNumInt y_awD (I# 1#))
+           })
+
+-- RHS size: {terms: 5, types: 0, coercions: 0}
+$trModule
+$trModule = Module (TrNameS "main"#) (TrNameS "Compute"#)
+
+-- RHS size: {terms: 6, types: 0, coercions: 0}
+$tc'B
+$tc'B =
+  TyCon
+    10383982379560520680##
+    280918571420133588##
+    $trModule
+    (TrNameS "'B"#)
+
+-- RHS size: {terms: 6, types: 0, coercions: 0}
+$tc'A
+$tc'A =
+  TyCon
+    13127907100587477963##
+    2912179073122273202##
+    $trModule
+    (TrNameS "'A"#)
+
+-- RHS size: {terms: 6, types: 0, coercions: 0}
+$tcD
+$tcD =
+  TyCon
+    10063857494334838871##
+    12190283764588022231##
+    $trModule
+    (TrNameS "D"#)
+
+
+

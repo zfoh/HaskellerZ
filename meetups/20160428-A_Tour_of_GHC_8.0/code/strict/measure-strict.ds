@@ -1,0 +1,99 @@
+
+==================== Desugar (after optimization) ====================
+Result size of Desugar (after optimization)
+  = {terms: 134, types: 96, coercions: 0}
+
+-- RHS size: {terms: 32, types: 16, coercions: 0}
+$cshowsPrec_a29s
+$cshowsPrec_a29s =
+  \ a_a14n ds_d2ik ->
+    case a_a14n of a_X14q { __DEFAULT ->
+    case ds_d2ik of _ { D dt_d2iE ->
+    showParen
+      (>= $fOrdInt a_X14q (I# 11#))
+      (. (showString (unpackCString# "D {"#))
+         (. (showString (unpackCString# "get = "#))
+            (. (showsPrec $fShowInt (I# 0#) (I# dt_d2iE))
+               (showString (unpackCString# "}"#)))))
+    }
+    }
+
+Rec {
+-- RHS size: {terms: 1, types: 0, coercions: 0}
+$fShowD
+$fShowD = ds_d2ii
+
+-- RHS size: {terms: 2, types: 1, coercions: 0}
+$cshow_a2a3
+$cshow_a2a3 = $dmshow $fShowD
+
+-- RHS size: {terms: 5, types: 2, coercions: 0}
+$cshowList_a2a7
+$cshowList_a2a7 = showList__ (showsPrec $fShowD (I# 0#))
+
+-- RHS size: {terms: 4, types: 1, coercions: 0}
+ds_d2ii
+ds_d2ii = C:Show $cshowsPrec_a29s $cshow_a2a3 $cshowList_a2a7
+end Rec }
+
+-- RHS size: {terms: 6, types: 3, coercions: 0}
+get
+get = \ ds_d2if -> case ds_d2if of _ { D dt_d2iD -> I# dt_d2iD }
+
+Rec {
+-- RHS size: {terms: 22, types: 21, coercions: 0}
+foldr
+foldr =
+  \ @ a_a20i @ b_a20j f_aJc b_aJd ds_d2i5 ->
+    case f_aJc of f_XJr { __DEFAULT ->
+    case b_aJd of b_XJt { __DEFAULT ->
+    case ds_d2i5 of _ {
+      [] -> b_XJt;
+      : a_aJg as_aJh -> foldr f_XJr (f_XJr a_aJg b_XJt) as_aJh
+    }
+    }
+    }
+end Rec }
+
+-- RHS size: {terms: 5, types: 0, coercions: 0}
+$trModule
+$trModule = Module (TrNameS "main"#) (TrNameS "Main"#)
+
+-- RHS size: {terms: 6, types: 0, coercions: 0}
+$tc'D
+$tc'D =
+  TyCon
+    689042227747467966##
+    3828627186432438340##
+    $trModule
+    (TrNameS "'D"#)
+
+-- RHS size: {terms: 6, types: 0, coercions: 0}
+$tcD
+$tcD =
+  TyCon
+    15197273266503820955##
+    13668516129125380708##
+    $trModule
+    (TrNameS "D"#)
+
+-- RHS size: {terms: 31, types: 19, coercions: 0}
+main
+main =
+  $ (print $fShowD)
+    ($ (foldr
+          (\ x_aHY y_aHZ ->
+             case x_aHY of x_XId { __DEFAULT ->
+             case y_aHZ of y_XIf { __DEFAULT ->
+             $WD (+ $fNumInt (get x_XId) (get y_XIf))
+             }
+             })
+          ($WD (I# 0#)))
+       (map $WD (enumFromTo $fEnumInt (I# 1#) (I# 10000000#))))
+
+-- RHS size: {terms: 2, types: 1, coercions: 0}
+main
+main = runMainIO main
+
+
+

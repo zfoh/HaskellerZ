@@ -1,0 +1,42 @@
+
+==================== Tidy Core ====================
+Result size of Tidy Core = {terms: 50, types: 63, coercions: 0}
+
+-- RHS size: {terms: 19, types: 19, coercions: 0}
+f2
+f2 =
+  \ @ f_a1A5 $dApplicative_a1Ag eta_B1 ->
+    <*>
+      $dApplicative_a1Ag
+      (fmap
+         ($p1Applicative $dApplicative_a1Ag)
+         (\ x_aoZ y_ap0 -> || x_aoZ y_ap0)
+         (eta_B1 (C# 'a'#)))
+      (eta_B1 (C# 'b'#))
+
+-- RHS size: {terms: 19, types: 19, coercions: 0}
+g2
+g2 =
+  \ @ f_a1kE $dApplicative_a1zD eta_B1 ->
+    <*>
+      $dApplicative_a1zD
+      (<$>
+         ($p1Applicative $dApplicative_a1zD)
+         (\ x_a1k5 y_a1k6 -> || x_a1k5 y_a1k6)
+         (eta_B1 (C# 'a'#)))
+      (eta_B1 (C# 'b'#))
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule1_r1AB
+$trModule1_r1AB = TrNameS "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule2_r1AR
+$trModule2_r1AR = TrNameS "Example2"#
+
+-- RHS size: {terms: 3, types: 0, coercions: 0}
+$trModule
+$trModule = Module $trModule1_r1AB $trModule2_r1AR
+
+
+

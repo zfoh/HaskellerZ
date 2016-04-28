@@ -1,0 +1,42 @@
+
+==================== Tidy Core ====================
+Result size of Tidy Core = {terms: 37, types: 66, coercions: 0}
+
+-- RHS size: {terms: 26, types: 40, coercions: 0}
+f4
+f4 =
+  \ @ m_apv
+    @ a_apw
+    @ t_aqf
+    @ t1_aqg
+    $dMonad_aEP
+    eta_B3
+    eta1_B2
+    eta2_B1 ->
+    let {
+      $dApplicative_aFk
+      $dApplicative_aFk = $p1Monad $dMonad_aEP } in
+    join
+      $dMonad_aEP
+      (<*>
+         $dApplicative_aFk
+         (fmap
+            ($p1Applicative $dApplicative_aFk)
+            (\ x_ap0 y_ap1 -> eta2_B1 (x_ap0, y_ap1))
+            eta_B3)
+         eta1_B2)
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule1_rFh
+$trModule1_rFh = TrNameS "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0}
+$trModule2_rFu
+$trModule2_rFu = TrNameS "Example4"#
+
+-- RHS size: {terms: 3, types: 0, coercions: 0}
+$trModule
+$trModule = Module $trModule1_rFh $trModule2_rFu
+
+
+

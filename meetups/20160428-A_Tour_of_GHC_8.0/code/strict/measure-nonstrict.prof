@@ -1,0 +1,2 @@
+./measure-nonstrict-prof +RTS -tmeasure-nonstrict.prof 
+<<ghc: 5222084488 bytes, 9032 GCs, 261461135/1292568712 avg/max bytes residency (14 samples), 3054M in use, 0.000 INIT (0.002 elapsed), 1.067 MUT (0.807 elapsed), 3.759 GC (5.103 elapsed) :ghc>>

@@ -1,0 +1,28 @@
+
+==================== Desugar (after optimization) ====================
+Result size of Desugar (after optimization)
+  = {terms: 36, types: 40, coercions: 0}
+
+g
+g = \ @ m_anu $dMonad_anJ x_amL -> $ (return $dMonad_anJ) (B x_amL)
+
+f
+f =
+  \ @ m_anI $dMonad_anU x_alL ->
+    >>=
+      $dMonad_anU
+      (g $dMonad_anU x_alL)
+      (\ ds_dxt ->
+         case ds_dxt of _ {
+           __DEFAULT ->
+             (\ _ ->
+                fail
+                  $dMonad_anU
+                  (unpackCString#
+                     "Pattern match failure in do expression at compute.hs:7:3-5"#))
+               void#;
+           A y_alM -> return $dMonad_anU (+ $fNumInt y_alM (I# 1))
+         })
+
+
+
