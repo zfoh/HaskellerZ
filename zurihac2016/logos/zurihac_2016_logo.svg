@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="571.71161"
+   height="668.55316"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="zurihac_2015_logo.svg"
+   inkscape:export-filename="/home/simon/HaskellerZ/zurihac2015/zurihac_2015_logo.png"
+   inkscape:export-xdpi="600"
+   inkscape:export-ydpi="600">
+  <defs
+     id="defs4">
+    <clipPath
+       id="clip1">
+      <path
+         id="path3115"
+         d="m 0,340.15625 481.89062,0 L 481.89062,0 0,0 0,340.15625 z m 0,0"
+         inkscape:connector-curvature="0" />
+    </clipPath>
+    <filter
+       id="filter4147"
+       inkscape:label="Drop Shadow"
+       color-interpolation-filters="sRGB">
+      <feFlood
+         id="feFlood4149"
+         flood-opacity="0.8"
+         flood-color="rgb(0,0,0)"
+         result="flood" />
+      <feComposite
+         id="feComposite4151"
+         in2="SourceGraphic"
+         in="flood"
+         operator="in"
+         result="composite1" />
+      <feGaussianBlur
+         id="feGaussianBlur4153"
+         stdDeviation="8"
+         result="blur" />
+      <feOffset
+         id="feOffset4155"
+         dx="5"
+         dy="5"
+         result="offset" />
+      <feComposite
+         id="feComposite4157"
+         in2="offset"
+         in="SourceGraphic"
+         operator="over"
+         result="composite2" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="-83.455474"
+     inkscape:cy="287.9331"
+     inkscape:document-units="cm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1600"
+     inkscape:window-height="876"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     units="cm" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(967.09724,-124.31177)">
+    <path
+       style="fill:#ffffff;stroke:#000000;stroke-width:7.08683443;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m -963.49373,127.85335 8.07931,438.18417 c 11.68771,191.76419 208.81844,223.02658 273.01646,223.28278 64.19802,0.25627 263.62968,-31.51859 275.31739,-223.28278 l 8.07931,-438.18417 z"
+       id="path3142"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cczccc" />
+    <g
+       id="surface0"
+       transform="matrix(0.56767832,0,0,0.56767832,-706.6352,149.88814)">
+      <g
+         id="g3118"
+         clip-rule="nonzero"
+         clip-path="url(#clip1)">
+        <path
+           id="path3120"
+           d="M 0,340.15625 113.38672,170.07812 0,0 85.039062,0 198.42578,170.07812 85.039062,340.15625 0,340.15625 z m 0,0"
+           style="fill:#666666;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           inkscape:connector-curvature="0" />
+        <path
+           id="path3122"
+           d="M 113.38672,340.15625 226.77344,170.07812 113.38672,0 l 85.03906,0 226.76953,340.15625 -85.03906,0 -70.86328,-106.29688 -70.86719,106.29688 -85.03906,0 z m 0,0"
+           style="fill:#999999;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           inkscape:connector-curvature="0" />
+        <path
+           id="path3124"
+           d="m 387.40234,240.94531 -37.79297,-56.6914 132.28125,-0.004 0,56.69531 -94.48828,0 z m 0,0"
+           style="fill:#666666;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           inkscape:connector-curvature="0" />
+        <path
+           id="path3126"
+           d="m 330.71094,155.90625 -37.79688,-56.691406 188.97656,-0.0039 0,56.695316 -151.17968,0 z m 0,0"
+           style="fill:#666666;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+    <path
+       style="fill:#0065bd;fill-opacity:1;stroke:#000000;stroke-width:3.57920957;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4"
+       d="m -963.49566,127.84624 8.0756,438.18472 c 11.6877,191.76416 208.82855,223.04173 273.02657,223.29793 52.47766,0.20945 195.29774,-20.9935 252.08819,-133.48215 L -962.28534,129.00695 z"
+       id="rect3935"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccsccc" />
+    <path
+       sodipodi:nodetypes="cczccc"
+       inkscape:connector-curvature="0"
+       id="path3945"
+       d="m -963.49373,127.85335 8.07931,438.18417 c 11.68771,191.76419 208.81844,223.02658 273.01646,223.28278 64.19802,0.25627 263.62968,-31.51859 275.31739,-223.28278 l 8.07931,-438.18417 z"
+       style="fill:none;stroke:#000000;stroke-width:7.08683443;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <text
+       xml:space="preserve"
+       style="font-size:128.85734558px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter4147);font-family:Ubuntu Mono;-inkscape-font-specification:Ubuntu Mono"
+       x="-395.81619"
+       y="897.65771"
+       id="text3947"
+       sodipodi:linespacing="125%"
+       transform="matrix(0.508736,0.5036043,-0.5036043,0.508736,-276.97828,36.175176)"><tspan
+         sodipodi:role="line"
+         x="-395.81619"
+         y="897.65771"
+         id="tspan3951"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;font-family:Droid Sans;-inkscape-font-specification:Droid Sans Bold">ZuriHac 2016</tspan></text>
+  </g>
+</svg>
