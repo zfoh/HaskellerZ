@@ -1,0 +1,1322 @@
+<!D
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>A Tour of GHC 8.0</title>
+    <!-- <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet"> -->
+    <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+        integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+        crossorigin="anonymous">
+    <style>
+      .inverse {
+        background: #272822;
+        color: #777872;
+        text-shadow: 0 0 20px #333;
+      }
+      .inverse h1, .inverse h2 {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+   </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, inverse
+
+# A Tour of GHC 8.0
+
+## [HaskellerZ](http://meetup.com/HaskellerZ) - April 2016
+## Alexander Bernauer
+
+---
+class: center, middle, inverse
+# Inverse Agenda
+
+---
+.row[
+.col-xs-3[
+Type System
+]
+.col-xs-9[
+
+* XUndecidableSuperClasses: recursive super classes
+* XTypeApplications: visible type application
+* XTypeFamilyDependencies: injective type families
+* XTypeInType: experimental extention to XPolyKids
+* reasoning about kind equalities
+* wildcards in data and type family instances
+* custom type errors
+
+]
+]
+
+--
+.row[
+.col-xs-3[
+Template Haskell
+]
+.col-xs-9[
+
+* XTemplateHaskellQuotes: safe subeset of XTemplateHaskell
+* XDeriveLift: `lift :: t -> Q Exp`
+* expose language extensions
+* typed holes
+* strictness and unpacking
+
+]
+]
+
+--
+.row[
+.col-xs-3[
+Pattern Synonyms
+]
+.col-xs-9[
+
+* record pattern synonyms
+* exporting of pattern synonyms
+]
+]
+---
+.row[
+.col-xs-3[
+Warnings
+]
+.col-xs-9[
+
+* a huge improvement to pattern matching warnings
+* `-Wunrecognised-warning-flags`
+* `-W(no)xxx` aliases for -f(no)warn-xxx`
+* mention flag that caused printed warning
+* warnings of failed specialization attempts
+]
+]
+--
+.row[
+.col-xs-3[
+Compiler Support
+]
+.col-xs-9[
+
+* instrumentation for tracking compiler performance
+* improved DWARF suppport
+* significantly improved ARM support
+
+]
+]
+
+---
+
+class: center, middle, inverse
+# MonadFail
+
+---
+
+.row[
+.col-xs-3[
+Evolution of `class Monad`
+]
+
+.col-xs-9[
+```haskell
+class Monad where
+  return :: a -> m a
+
+  (>>=) :: m a -> (a -> m b) -> m b
+
+  fail :: String -> a
+```
+]
+]
+
+--
+.row[
+.col-xs-3[
+GHC 7.10: [Applicative-Monad-Proposal](https://wiki.haskell.org/Functor-Applicative-Monad_Proposal)
+]
+.col-xs-9[
+```haskell
+class Applicative m => Monad m where
+  return :: a -> m a
+  return = pure
+
+  (>>=) :: m a -> (a -> m b) -> m b
+
+  fail :: String -> a
+```
+]
+]
+--
+.row[
+.col-xs-3[
+GHC 8.0: [Monad-Fail-Proposal](https://prime.haskell.org/wiki/Libraries/Proposals/MonadFail)
+]
+.col-xs-9[
+```haskell
+class Applicative m => Monad m where
+  return :: a -> m a
+  return = pure
+
+  (>>=) :: m a -> (a -> m b) -> m b
+--  fail :: String -> a
+
+class Monad m => MonadFail m where
+  fail :: String -> a
+```
+]
+]
+
+---
+.row[
+.col-xs-3[
+Example
+]
+.col-xs-9[
+```haskell
+data D = A Int | B Int deriving Show
+
+f :: Monad m => Int -> m Int
+f x = do
+  A y <- g x
+  return (y+1)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Desugared
+]
+.col-xs-9[
+```haskell
+f =
+  g x >>= \fresh -> case fresh of
+    A y -> return (y+1)
+    otherwise ->
+      fail "pattern match failure...."
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Causing failure
+]
+.col-xs-9[
+```haskell
+g x = return (B x)
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Total `fail`
+]
+.col-xs-9[
+```haskell
+instance Monad Maybe where
+  -- ...
+  fail :: String -> a
+  fail _ = Nothing
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`Nothing`
+]
+.col-xs-9[
+```haskell
+main = print (f 23 :: Maybe Int)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Non-total `fail`
+]
+.col-xs-9[
+```haskell
+instance Monad (Either e) where
+  fail s = error s
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Run Time Error!
+]
+.col-xs-9[
+```haskell
+main = print (f 23 :: Either Char Int)
+
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Broken Abstraction
+]
+.col-xs-9[
+
+```haskell
+-- Total for some `m` and non-total for others.
+f :: Monad m => Int -> m Int
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Example
+]
+.col-xs-9[
+```haskell
+{-# LANGUAGE MonadFailDesugaring #-}
+
+data D = A Int | B Int deriving Show
+
+*f :: MonadFail m => Int -> m Int
+f x = do
+  A y <- g x
+  return (y+1)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Desugared
+]
+.col-xs-9[
+```haskell
+f =
+  g x >>= \fresh -> case fresh of
+    A y -> return (y+1)
+    otherwise ->
+      fail "pattern match failure...."
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`Nothing`
+]
+.col-xs-9[
+```haskell
+main = print (f 23 :: Maybe Int)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Compile Time Error!
+]
+.col-xs-9[
+```haskell
+main = print (f 23 :: Either Char Int)
+```
+]
+]
+
+---
+
+class: center, middle, inverse
+# ApplicativeDo
+---
+.row[
+.col-xs-3[
+ghci-8.0
+]
+.col-xs-9[
+```haskell
+> :t \m -> do { x <- m; return (not x) }
+  :: Monad m => m Bool -> m Bool
+```
+]
+]
+--
+.row[
+.col-xs-3[
+XApplicativeDo
+]
+.col-xs-9[
+```haskell
+> :t \m -> do x <- m
+              return (not x) }
+  :: Functor f
+  => f Bool -> f Bool
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Multiple Values
+]
+.col-xs-9[
+```haskell
+> :t \m -> do x <- m 'a'
+              y <- m 'b'
+              return (x || y) }
+  :: Applicative f
+  => (Char -> f Bool) -> f Bool
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Data Dependencies
+]
+.col-xs-9[
+```haskell
+> :t \m -> do x <- m True
+              y <- m x
+              return (x || y)
+  :: Monad m
+  => (Bool -> m Bool) -> m Bool
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Desugaring Functor
+]
+.col-xs-9[
+```haskell
+f1 m = do x <- m
+          return (not x)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`-ddump-simpl`
+]
+.col-xs-9[
+```haskell
+f1 = \ @ f_a1kl $dFunctor_a1yT m_aoX ->
+       fmap $dFunctor_a1yT
+         (\ x_aoY -> not x_aoY) m_aoX
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Manual Desugaring
+]
+.col-xs-9[
+```haskell
+f1 m = fmap (\x -> not x) m
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Desugaring Applicative
+]
+.col-xs-9[
+```haskell
+f2 m = do x <- m 'a'
+          y <- m 'b'
+          return (x || y)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`-ddump-simpl`
+]
+.col-xs-9[
+```haskell
+f2 =
+  \ @ f_a1kJ $dApplicative_a1zn eta_B1 ->
+    <*>
+      $dApplicative_a1zn
+      (fmap
+         ($p1Applicative $dApplicative_a1zn)
+         (\ x_aoY y_aoZ -> || x_aoY y_aoZ)
+         (eta_B1 (C# 'a'#)))
+      (eta_B1 (C# 'b'#))
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Manual Desugaring
+]
+.col-xs-9[
+```haskell
+f2 m = (\x y -> x || y) <$> m 'a' <*> m 'b'
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Desugaring Monad
+]
+.col-xs-9[
+```haskell
+f3 m = do x <- m True
+          y <- m x
+          return (x || y)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`-ddump-simpl`
+]
+.col-xs-9[
+```haskell
+f3 =
+\ @ m_a1rs $dMonad_a1zz eta_B1 ->
+let
+ $dFunctor_s1A = $p1Monad $dMonad_a1zz
+ $dFunctor1_a1rN = $p1Applicative $dFunctor_s1A
+in
+ >>=
+  $dMonad_a1zz
+  (eta_B1 True)
+  (\ x_aw2 ->
+   fmap $dFunctor1_a1rN
+    (\ y_aw3 -> || x_aw2 y_aw3) (eta_B1 x_aw2))
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Manual Desugaring
+]
+.col-xs-9[
+```haskell
+f3 m =
+  m True >>= \x -> fmap (\y -> x || y) (m x)
+```
+]
+]
+---
+.row[
+.col-xs-3[
+`(<*>) == ap`
+]
+.col-xs-9[
+```haskell
+ap :: Monad m
+   => m (a -> b) -> m a -> m b
+ap f a = do
+  f' <- f
+  a' <- a
+  return (f' a')
+```
+]
+]
+--
+.row[
+.col-xs-3[
+
+]
+.col-xs-9[
+```haskell
+(<*>) :: Applicative f
+      => f (a -> b) -> f a -> f b
+(<*>) = ap
+```
+]
+]
+---
+```haskell
+data Fetch a
+  = Done a
+  | Blocked (Fetch a)
+  deriving Show
+
+instance Functor Fetch where
+  fmap f (Done a)    = Done (f a)
+  fmap f (Blocked c) = Blocked (fmap f c)
+
+instance Applicative Fetch where
+  pure a = Done a
+
+  (<*>) :: Fetch (a -> b) -> Fetch a -> Fetch b
+  Done    f <*> Done    a = Done    (f          a)
+  Done    f <*> Blocked a = Blocked (f <$>      a)
+  Blocked f <*> Done    a = Blocked (f <*> Done a)
+* Blocked f <*> Blocked a = Blocked (f <*>      a)
+
+instance Monad Fetch where
+  return = pure
+
+  (>>=) :: Fetch a -> (a -> Fetch b) -> Fetch b
+  Done a    >>= f = f a
+* Blocked a >>= f = Blocked (a >>= f)
+```
+---
+.row[
+.col-xs-3[
+`(<*>) /= ap`
+]
+.col-xs-9[
+```haskell
+exampleApplicative :: Fetch Int
+exampleApplicative =
+  Blocked (Done (+1)) <*>  Blocked (Done 1)
+
+exampleMonadic :: Fetch Int
+exampleMonadic =
+  Blocked (Done (+1)) `ap` Blocked (Done 1)
+
+main :: IO ()
+main = do
+  print $ exampleApplicative
+  print $ exampleMonadic
+```
+]
+]
+--
+.row[
+.col-xs-3[
+
+]
+.col-xs-9[
+```haskell
+Blocked (Done 2)
+Blocked (Blocked (Done 2))
+```
+]
+]
+--
+.row[
+.col-xs-3[
+ICFP 2014
+]
+.col-xs-9[
+[There is no Fork: an Abstraction for Efficient, Concurrent, and Concise Data Access](http://community.haskell.org/~simonmar/papers/haxl-icfp14.pdf)
+]
+]
+---
+.row[
+.col-xs-3[
+Applicative? Monad?
+]
+.col-xs-9[
+```haskell
+f4 a b m = do x <- a
+              y <- b
+              m (x, y)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`-ddump-simpl`
+]
+.col-xs-9[
+```haskell
+f4 =
+\ $dMonad_aEP eta_B3 eta1_B2 eta2_B1 ->
+let $dApplicative_aFk = $p1Monad $dMonad_aEP
+in
+ join $dMonad_aEP
+  (<*> $dApplicative_aFk
+   (fmap ($p1Applicative $dApplicative_aFk)
+    (\ x_ap0 y_ap1 -> eta2_B1 (x_ap0, y_ap1))
+    eta_B3)
+   eta1_B2)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Manual Desugaring
+]
+.col-xs-9[
+```haskell
+f4 a b m =
+  join ((\x y -> m (x, y)) <$> a <*> b)
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Data Dependencies
+]
+.col-xs-9[
+```haskell
+f5 a b c d = do x1 <- a
+                x2 <- b
+                x3 <- c x1
+                x4 <- d
+                return (x2,x3,x4)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`-ddump-simpl`
+]
+.col-xs-9[
+```
+...
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Manual Desugaring
+]
+.col-xs-9[
+```haskell
+f a b c d =
+  (\ (x2, x3) x4 -> (x2, x3, x4))
+  <$> join (
+    (\ x1 x2 -> (\x3 -> (x2, x3)) <$> (c x1))
+    <$> a
+    <*> b)
+  <*> d
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`|`: parallel
+
+`;`: sequential
+
+]
+.col-xs-9[
+```haskell
+((a | b) ; c) | d
+```
+]
+]
+--
+.row[
+.col-xs-3[
+]
+.col-xs-9[
+```haskell
+(a ; (b | c)) | d
+```
+]
+]
+
+---
+class: center, middle, inverse
+# Overloaded Record Fields (*)
+
+(*) didn't quite make it
+
+---
+
+.row[
+.col-xs-3[
+Duplicate Record Fields
+]
+.col-xs-9[
+```haskell
+data A = A
+* { a :: Int
+  , b :: Double
+  } deriving Show
+
+data B = B
+* { a :: String
+  , c :: Char
+  } deriving Show
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Automatic Disambiguation
+]
+.col-xs-9[
+```haskell
+mkA :: A
+mkA = A {a = 23, b = 42}
+
+upA :: A -> A
+upA x = x {a = 12}
+
+sel :: A -> Int
+sel = a
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`12`
+]
+.col-xs-9[
+```haskell
+main :: IO ()
+main = print $ sel $ upA $ mkA
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Overloaded Labels
+]
+.col-xs-9[
+```haskell
+class IsLabel (x :: Symbol) a where
+  fromLabel :: Proxy# x -> a
+
+```
+]
+]
+--
+.row[
+.col-xs-3[
+New Syntax
+]
+.col-xs-9[
+```haskell
+#label
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Mapping Labels to Values
+]
+.col-xs-9[
+```haskell
+instance IsLabel "true" Bool where
+  fromLabel _ = True
+
+instance IsLabel "false" Bool where
+  fromLabel _ = False
+
+instance IsLabel "true" Int where
+  fromLabel _ = 1
+
+a :: Bool
+a = #false
+
+b :: IsLabel "true" t => t
+b = #true
+
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`False`
+
+`True`
+
+`1`
+]
+.col-xs-9[
+```haskell
+main = do print a
+          print (b :: Bool)
+          print (b :: Int)
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Overloaded Record Fields (*)
+]
+.col-xs-9[
+```haskell
+class HasField (x :: Symbol) r a
+  | x r -> a
+  where
+    getField :: Proxy# x -> r -> a
+
+class UpdateField (x :: Symbol) s t b
+  | x t -> b, x s b -> t where
+  where
+    setField :: Proxy# x -> s -> b -> t
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Polymorphism over Record Fields
+]
+.col-xs-9[
+```haskell
+data Person  = Person  {
+  personId :: Int, name    :: String }
+data Address = Address {
+  personId :: Int, address :: String }
+
+getId :: r { personId :: Int } => r -> Int
+getId x = #personId x
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`23` `42`
+]
+.col-xs-9[
+```haskell
+main = do
+  print $ getId $ Person 23 "foo"
+  print $ getId $ Address 42 "bar"
+```
+]
+]
+---
+class: center, middle, inverse
+# Stack Traces
+---
+--
+.row[
+.col-xs-3[
+`head: empty list`
+]
+.col-xs-9[
+```haskell
+head :: [a] -> a
+head [] = error "head: empty list"
+head (x:_) = x
+
+f :: [Int] -> Int
+f xs = case head xs of
+  0 -> 0
+  _ -> 1
+
+g :: [Int] -> Int
+g [] = 0
+g (x:xs) = x + g xs + f xs
+
+main = print $ g [1,2,3]
+```
+]
+]
+---
+.row[
+.col-xs-3[
+7.10 `-prof -xc`
+]
+.col-xs-9[
+```
+ *** Exception (reporting due to +RTS -xc):
+ (THUNK_1_0), stack trace:
+   Main.head,
+   called from Main.f,
+   called from Main.g,
+   called from Main.main,
+   called from Main.CAF
+   --> evaluated by: Main.g,
+   called from Main.main,
+   called from Main.CAF
+ program: head: empty list
+```
+]
+]
+--
+.row[
+.col-xs-3[
+`-g -O`
+
+Improved DWARF Support
+]
+.col-xs-9[
+```
+$ gdb program
+gdb> br program.hs:23
+gdb> run
+gdb> bt
+```
+]
+]
+---
+.row[
+.col-xs-3[
+8.0 `HasCallStack`
+]
+.col-xs-9[
+```
+head: empty list
+CallStack (from HasCallStack):
+  error, called at program.hs:4:11 in main:Main
+```
+]
+]
+--
+.row[
+.col-xs-3[
+8.0 `-prof`
+]
+.col-xs-9[
+```
+program: head: empty list
+CallStack (from HasCallStack):
+  error, called at plain.hs:4:11 in main:Main
+CallStack (from -prof):
+  Main.head (plain.hs:(4,1)-(5,14))
+  Main.f (plain.hs:(8,1)-(10,8))
+  Main.g (plain.hs:(13,1)-(14,26))
+  Main.main (plain.hs:16:1-24)
+  Main.CAF (<entire-module>)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+8.0 `-prof -xc`
+]
+.col-xs-9[
+```
+8.0 -prof -xc
+Exception (reporting due to +RTS -xc):
+  [...]
+program: head: empty list
+CallStack (from HasCallStack):
+  error, called at plain.hs:4:11 in main:Main
+CallStack (from -prof):
+  [..]
+```
+]
+]
+---
+.row[
+.col-xs-3[
+`CallStack` API
+]
+.col-xs-9[
+```haskell
+f :: HasCallStack => Int -> Int
+f x = error $ "Error: " ++ show x
+
+g :: HasCallStack => Int -> Int
+g = f
+
+main = print (g 23)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+both `f` and `g`
+]
+.col-xs-9[
+```
+error, called at cs.hs:8:7 in main:Main
+f, called at cs.hs:13:5 in main:Main
+g, called at cs.hs:15:16 in main:Main
+```
+]
+]
+--
+.row[
+.col-xs-3[
+only `f`
+]
+.col-xs-9[
+```
+error, called at cs.hs:8:7 in main:Main
+f, called at cs.hs:13:5 in main:Main
+```
+]
+]
+--
+.row[
+.col-xs-3[
+only `g`
+]
+.col-xs-9[
+```
+error, called at cs.hs:8:7 in main:Main
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Freezing
+]
+.col-xs-9[
+```
+g = withFrozenCallStack f
+```
+]
+]
+--
+.row[
+.col-xs-3[
+both `f` and `g`
+]
+.col-xs-9[
+```
+g, called at callStack.hs:15:16 in main:Main
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Introspection
+]
+.col-xs-9[
+```haskell
+f :: HasCallStack => Int -> IO ()
+f _ = print $ getCallStack callStack
+```
+]
+]
+--
+.row[
+.col-xs-3[
+]
+.col-xs-9[
+```haskell
+[("f",SrcLoc
+  {srcLocPackage = "main
+  , srcLocModule = "Main"
+  , srcLocFile = "cs.hs"
+  , srcLocStartLine = 6
+  , srcLocStartCol = 8
+  , srcLocEndLine = 6
+  , srcLocEndCol = 12})]
+```
+]
+]
+---
+class: center, middle, inverse
+# Strict Haskell
+---
+.row[
+.col-xs-3[
+Code
+]
+.col-xs-9[
+```haskell
+data T = C a
+f x = y x
+let x = y in rhs
+case x of y -> rhs
+case x of (NewType y) -> rhs
+```
+]
+]
+--
+.row[
+.col-xs-3[
+XStrict Interpretation
+]
+.col-xs-9[
+```haskell
+data T = C !a -- XStrictData
+f !x = y x
+let !x = y in rhs
+case x of !y -> rhs
+case x of !(NewType y) -> rhs
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Example
+]
+.col-xs-9[
+```haskell
+data D = D { get :: Int } deriving Show
+
+plus :: D -> D -> D
+plus x y = D (get x + get y)
+
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr f b []     = b
+foldr f b (a:as) = foldr f (f a b) as
+
+main = print $ foldr plus (D 0)
+             $ map D [1..10000000]
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Benchmark
+]
+.col-xs-9[
+```
+-O2
+$ time ./prog
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Non-Strict
+]
+.col-xs-9[
+```
+*real	0m3.990s
+user	0m3.225s
+sys	0m0.748s
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Strict
+]
+.col-xs-9[
+```bash
+*real	0m0.150s
+user	0m0.141s
+sys	0m0.007s
+```
+]
+]
+---
+.row[
+.col-xs-3[
+Memory Usage
+]
+.col-xs-9[
+```
+-O2 -prof
++RTS -t
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Non-Strict
+]
+.col-xs-9[
+```
+  5222084488 bytes
+, 9032 GCs
+, 261461135/1292568712 avg/max bytes residency
+*, 3054M in use
+, 0.000 INIT (0.002 elapsed)
+, 1.067 MUT (0.807 elapsed)
+, 3.759 GC (5.103 elapsed)
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Strict
+]
+.col-xs-9[
+```
+  3280059272 bytes
+, 6335 GCs
+, 38208/46160 avg/max bytes residency
+*, 1M in use
+, 0.000 INIT (0.002 elapsed)
+, 0.581 MUT (0.601 elapsed)
+, 0.011 GC (0.019 elapsed)
+```
+]
+]
+---
+.row[
+.col-xs-3[
+GHC Core
+]
+.col-xs-9[
+```
+-O2 -ddump-ds
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Non-Strict
+]
+.col-xs-9[
+```haskell
+foldr =
+\ @ a_a1ZV @ b_a1ZW f_aIN b_aIO ds_d2hK ->
+ case ds_d2hK of _ {
+  [] -> b_aIO;
+  : a_aIR as_aIS ->
+   foldr f_aIN (f_aIN a_aIR b_aIO) as_aIS
+ }
+```
+]
+]
+--
+.row[
+.col-xs-3[
+Strict
+]
+.col-xs-9[
+```haskell
+foldr =
+\ @ a_a20i @ b_a20j f_aJc b_aJd ds_d2i5 ->
+ case f_aJc of f_XJr { __DEFAULT ->
+ case b_aJd of b_XJt { __DEFAULT ->
+ case ds_d2i5 of _ {
+  [] -> b_XJt;
+  : a_aJg as_aJh ->
+   foldr f_XJr (f_XJr a_aJg b_XJt) as_aJh
+ } } }
+```
+]
+]
+
+
+    </textarea>
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="remark/remark-latest.min.js"></script>
+-->
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js" type="text/javascript"></script>
+    <script>
+      var slideshow = remark.create({
+          highlightLines: true,
+          countIncrementalSlides: false
+        }) ;
+    </script>
+  </body>
+</html>
