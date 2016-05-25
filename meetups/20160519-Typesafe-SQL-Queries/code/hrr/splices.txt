@@ -1,0 +1,273 @@
+Package has never been configured. Configuring with default flags. If this
+fails, please run configure manually.
+Resolving dependencies...
+Configuring haskellerz-sqlgen-hrr-0.1.0.0...
+Building haskellerz-sqlgen-hrr-0.1.0.0...
+Preprocessing executable 'haskellerz-sqlgen-hrr' for
+haskellerz-sqlgen-hrr-0.1.0.0...
+[1 of 7] Compiling HRR.ConnectionHelpers ( src/HRR/ConnectionHelpers.hs, dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr-tmp/HRR/ConnectionHelpers.o )
+[2 of 7] Compiling HRR.DataSource   ( src/HRR/DataSource.hs, dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr-tmp/HRR/DataSource.o )
+[3 of 7] Compiling HRR.Hashtag      ( src/HRR/Hashtag.hs, dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr-tmp/HRR/Hashtag.o )
+src/HRR/Hashtag.hs:26:3-47: Splicing declarations
+    defineTable "public" "hashtag" [''Eq, ''Show]
+  ======>
+    data Hashtag
+      = Hashtag {hashtagStr :: !String, todoId :: !Int32}
+      deriving (Eq, Show)
+    columnOffsetsHashtag :: GHC.Arr.Array Int Int
+    columnOffsetsHashtag
+      = ((GHC.Arr.listArray (0 :: Int, 2))
+         $ (scanl
+              (+)
+              (0 :: Int)
+              [Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth String),
+               Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth Int32)]))
+    instance Database.Record.Persistable.PersistableWidth Hashtag where
+      Database.Record.Persistable.persistableWidth
+        = (Database.Record.Persistable.unsafePersistableRecordWidth
+           $ (columnOffsetsHashtag GHC.Arr.! 2))
+    instance Database.Relational.Query.Pure.ProductConstructor (String
+                                                                -> Int32 -> Hashtag) where
+      Database.Relational.Query.Pure.productConstructor = Hashtag
+    instance Database.Relational.Query.Table.TableDerivable Hashtag where
+      Database.Relational.Query.Table.derivedTable
+        = Database.Relational.Query.Table.table
+            "PUBLIC.hashtag" ["hashtag_str", "todo_id"]
+    tableOfHashtag :: Database.Relational.Query.Table.Table Hashtag
+    tableOfHashtag = Database.Relational.Query.Table.derivedTable
+    hashtag :: Relation () Hashtag
+    hashtag = Database.Relational.Query.Relation.derivedRelation
+    insertHashtag :: Database.Relational.Query.Type.Insert Hashtag
+    insertHashtag
+      = Database.Relational.Query.Type.derivedInsert
+          Database.Relational.Query.Pi.id'
+    insertQueryHashtag ::
+      forall p_aaCv.
+      Relation p_aaCv Hashtag
+      -> Database.Relational.Query.Type.InsertQuery p_aaCv
+    insertQueryHashtag
+      = Database.Relational.Query.Type.derivedInsertQuery
+          Database.Relational.Query.Pi.id'
+    hashtagStr' ::
+      Database.Relational.Query.Pi.Unsafe.Pi Hashtag String
+    hashtagStr'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsHashtag array-0.5.1.0:Data.Array.Base.! 0)
+    todoId' :: Database.Relational.Query.Pi.Unsafe.Pi Hashtag Int32
+    todoId'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsHashtag array-0.5.1.0:Data.Array.Base.! 1)
+    instance Database.Record.KeyConstraint.HasKeyConstraint Database.Record.KeyConstraint.Primary Hashtag where
+      Database.Record.KeyConstraint.keyConstraint
+        = Database.Record.KeyConstraint.unsafeSpecifyKeyConstraint [0, 1]
+    instance Database.Relational.Query.Constraint.HasConstraintKey Database.Record.KeyConstraint.Primary Hashtag (String,
+                                                                                                                  Int32) where
+      Database.Relational.Query.Constraint.constraintKey
+        = Database.Relational.Query.Constraint.unsafeDefineConstraintKey
+            [0, 1]
+    selectHashtag ::
+      Database.Relational.Query.Type.Query (String, Int32) Hashtag
+    selectHashtag
+      = Database.Relational.Query.Type.relationalQuery
+          (Database.Relational.Query.Derives.primary hashtag)
+    updateHashtag ::
+      Database.Relational.Query.Type.KeyUpdate (String, Int32) Hashtag
+    updateHashtag
+      = Database.Relational.Query.Derives.primaryUpdate tableOfHashtag
+    instance Database.Record.KeyConstraint.HasColumnConstraint Database.Record.KeyConstraint.NotNull Hashtag where
+      Database.Record.KeyConstraint.columnConstraint
+        = Database.Record.KeyConstraint.unsafeSpecifyColumnConstraint 0
+    fromSqlOfHashtag ::
+      Database.Record.FromSql.RecordFromSql Database.HDBC.SqlValue.SqlValue Hashtag
+    fromSqlOfHashtag
+      = (((pure Hashtag) <*> Database.Record.FromSql.recordFromSql)
+         <*> Database.Record.FromSql.recordFromSql)
+    toSqlOfHashtag ::
+      Database.Record.ToSql.RecordToSql Database.HDBC.SqlValue.SqlValue Hashtag
+    toSqlOfHashtag
+      = Database.Record.ToSql.wrapToSql
+          (\ (Hashtag f1_aaCA f2_aaCC)
+             -> ((Database.Record.ToSql.putRecord f1_aaCA)
+                 >>
+                   ((Database.Record.ToSql.putRecord f2_aaCC)
+                    >>
+                      (Database.Record.ToSql.putEmpty ghc-prim-0.4.0.0:GHC.Tuple.()))))
+    instance Database.Record.FromSql.FromSql Database.HDBC.SqlValue.SqlValue Hashtag where
+      Database.Record.FromSql.recordFromSql = fromSqlOfHashtag
+    instance Database.Record.ToSql.ToSql Database.HDBC.SqlValue.SqlValue Hashtag where
+      Database.Record.ToSql.recordToSql = toSqlOfHashtag
+[4 of 7] Compiling HRR.Todo         ( src/HRR/Todo.hs, dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr-tmp/HRR/Todo.o )
+src/HRR/Todo.hs:44:3-38: Splicing declarations
+    defineTable "public" "todo" [''Show]
+  ======>
+    data Todo
+      = Todo {id :: !Int32,
+              title :: !String,
+              dueDate :: !Day,
+              prio :: !(Maybe Int32)}
+      deriving (Show)
+    columnOffsetsTodo :: GHC.Arr.Array Int Int
+    columnOffsetsTodo
+      = ((GHC.Arr.listArray (0 :: Int, 4))
+         $ (scanl
+              (+)
+              (0 :: Int)
+              [Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth Int32),
+               Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth String),
+               Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth Day),
+               Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth (Maybe Int32))]))
+    instance Database.Record.Persistable.PersistableWidth Todo where
+      Database.Record.Persistable.persistableWidth
+        = (Database.Record.Persistable.unsafePersistableRecordWidth
+           $ (columnOffsetsTodo GHC.Arr.! 4))
+    instance ProductConstructor (Int32
+                                 -> String -> Day -> Maybe Int32 -> Todo) where
+      productConstructor = Todo
+    instance TableDerivable Todo where
+      derivedTable
+        = Database.Relational.Query.Table.table
+            "PUBLIC.todo" ["id", "title", "due_date", "prio"]
+    tableOfTodo :: Table Todo
+    tableOfTodo = derivedTable
+    todo :: Relation () Todo
+    todo = derivedRelation
+    insertTodo :: Insert Todo
+    insertTodo = derivedInsert Database.Relational.Query.Pi.id'
+    insertQueryTodo ::
+      forall p_aaCw. Relation p_aaCw Todo -> InsertQuery p_aaCw
+    insertQueryTodo
+      = derivedInsertQuery Database.Relational.Query.Pi.id'
+    id' :: Pi Todo Int32
+    id'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsTodo array-0.5.1.0:Data.Array.Base.! 0)
+    title' :: Pi Todo String
+    title'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsTodo array-0.5.1.0:Data.Array.Base.! 1)
+    dueDate' :: Pi Todo Day
+    dueDate'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsTodo array-0.5.1.0:Data.Array.Base.! 2)
+    prio' :: Pi Todo (Maybe Int32)
+    prio'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsTodo array-0.5.1.0:Data.Array.Base.! 3)
+    instance Database.Record.KeyConstraint.HasColumnConstraint Primary Todo where
+      Database.Record.KeyConstraint.columnConstraint
+        = Database.Record.KeyConstraint.unsafeSpecifyColumnConstraint 0
+    instance Database.Record.KeyConstraint.HasKeyConstraint Primary Todo where
+      Database.Record.KeyConstraint.keyConstraint
+        = Database.Record.KeyConstraint.derivedCompositePrimary
+    instance HasConstraintKey Primary Todo Int32 where
+      constraintKey
+        = Database.Relational.Query.Constraint.unsafeDefineConstraintKey
+            [0]
+    selectTodo :: Query Int32 Todo
+    selectTodo = relationalQuery (primary todo)
+    updateTodo :: KeyUpdate Int32 Todo
+    updateTodo = primaryUpdate tableOfTodo
+    instance Database.Record.KeyConstraint.HasColumnConstraint NotNull Todo where
+      Database.Record.KeyConstraint.columnConstraint
+        = Database.Record.KeyConstraint.unsafeSpecifyColumnConstraint 0
+    fromSqlOfTodo ::
+      Database.Record.FromSql.RecordFromSql Database.HDBC.SqlValue.SqlValue Todo
+    fromSqlOfTodo
+      = (((((pure Todo) <*> Database.Record.FromSql.recordFromSql)
+           <*> Database.Record.FromSql.recordFromSql)
+          <*> Database.Record.FromSql.recordFromSql)
+         <*> Database.Record.FromSql.recordFromSql)
+    toSqlOfTodo ::
+      Database.Record.ToSql.RecordToSql Database.HDBC.SqlValue.SqlValue Todo
+    toSqlOfTodo
+      = Database.Record.ToSql.wrapToSql
+          (\ (Todo f1_aaCx f2_aaCy f3_aaCz f4_aaCB)
+             -> ((Database.Record.ToSql.putRecord f1_aaCx)
+                 >>
+                   ((Database.Record.ToSql.putRecord f2_aaCy)
+                    >>
+                      ((Database.Record.ToSql.putRecord f3_aaCz)
+                       >>
+                         ((Database.Record.ToSql.putRecord f4_aaCB)
+                          >>
+                            (Database.Record.ToSql.putEmpty ghc-prim-0.4.0.0:GHC.Tuple.()))))))
+    instance Database.Record.FromSql.FromSql Database.HDBC.SqlValue.SqlValue Todo where
+      Database.Record.FromSql.recordFromSql = fromSqlOfTodo
+    instance Database.Record.ToSql.ToSql Database.HDBC.SqlValue.SqlValue Todo where
+      Database.Record.ToSql.recordToSql = toSqlOfTodo
+src/HRR/Todo.hs:71:3-39: Splicing declarations
+    makeRecordPersistableDefault ''PiTodo
+  ======>
+    columnOffsetsPiTodo :: GHC.Arr.Array Int Int
+    columnOffsetsPiTodo
+      = ((GHC.Arr.listArray (0 :: Int, 3))
+         $ (scanl
+              (+)
+              (0 :: Int)
+              [Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth String),
+               Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth Day),
+               Database.Record.Persistable.runPersistableRecordWidth
+                 (Database.Record.Persistable.persistableWidth ::
+                    Database.Record.Persistable.PersistableRecordWidth (Maybe Int32))]))
+    instance Database.Record.Persistable.PersistableWidth PiTodo where
+      Database.Record.Persistable.persistableWidth
+        = (Database.Record.Persistable.unsafePersistableRecordWidth
+           $ (columnOffsetsPiTodo GHC.Arr.! 3))
+    piTodoTitle' :: Pi PiTodo String
+    piTodoTitle'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsPiTodo array-0.5.1.0:Data.Array.Base.! 0)
+    piTodoDate' :: Pi PiTodo Day
+    piTodoDate'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsPiTodo array-0.5.1.0:Data.Array.Base.! 1)
+    piTodoPrio' :: Pi PiTodo (Maybe Int32)
+    piTodoPrio'
+      = Database.Relational.Query.Pi.Unsafe.definePi
+          (columnOffsetsPiTodo array-0.5.1.0:Data.Array.Base.! 2)
+    instance ProductConstructor (String
+                                 -> Day -> Maybe Int32 -> PiTodo) where
+      productConstructor = PiTodo
+    fromSqlOfPiTodo ::
+      Database.Record.FromSql.RecordFromSql Database.HDBC.SqlValue.SqlValue PiTodo
+    fromSqlOfPiTodo
+      = ((((pure PiTodo) <*> Database.Record.FromSql.recordFromSql)
+          <*> Database.Record.FromSql.recordFromSql)
+         <*> Database.Record.FromSql.recordFromSql)
+    toSqlOfPiTodo ::
+      Database.Record.ToSql.RecordToSql Database.HDBC.SqlValue.SqlValue PiTodo
+    toSqlOfPiTodo
+      = Database.Record.ToSql.wrapToSql
+          (\ (PiTodo f1_ad35 f2_ad36 f3_ad38)
+             -> ((Database.Record.ToSql.putRecord f1_ad35)
+                 >>
+                   ((Database.Record.ToSql.putRecord f2_ad36)
+                    >>
+                      ((Database.Record.ToSql.putRecord f3_ad38)
+                       >>
+                         (Database.Record.ToSql.putEmpty ghc-prim-0.4.0.0:GHC.Tuple.())))))
+    instance Database.Record.FromSql.FromSql Database.HDBC.SqlValue.SqlValue PiTodo where
+      Database.Record.FromSql.recordFromSql = fromSqlOfPiTodo
+    instance Database.Record.ToSql.ToSql Database.HDBC.SqlValue.SqlValue PiTodo where
+      Database.Record.ToSql.recordToSql = toSqlOfPiTodo
+[5 of 7] Compiling HRR.Reports      ( src/HRR/Reports.hs, dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr-tmp/HRR/Reports.o )
+[6 of 7] Compiling HRR.Commands     ( src/HRR/Commands.hs, dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr-tmp/HRR/Commands.o )
+[7 of 7] Compiling Main             ( src/Main.hs, dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr-tmp/Main.o )
+Linking dist/build/haskellerz-sqlgen-hrr/haskellerz-sqlgen-hrr ...
+
