@@ -1,0 +1,144 @@
+Package has never been configured. Configuring with default flags. If this
+fails, please run configure manually.
+Resolving dependencies...
+Configuring haskellerz-sqlgen-opaleye-0.1.0.0...
+Building haskellerz-sqlgen-opaleye-0.1.0.0...
+Preprocessing executable 'haskellerz-sqlgen-opaleye' for
+haskellerz-sqlgen-opaleye-0.1.0.0...
+[1 of 8] Compiling OpaleyeDemo.Ids  ( src/OpaleyeDemo/Ids.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/OpaleyeDemo/Ids.o )
+src/OpaleyeDemo/Ids.hs:17:1-42: Splicing declarations
+    makeAdaptorAndInstance "pTodoId" ''TodoId'
+  ======>
+    pTodoId ::
+      forall p a1_0 a1_1. Data.Profunctor.Product.ProductProfunctor p =>
+      TodoId' (p a1_0 a1_1) -> p (TodoId' a1_0) (TodoId' a1_1)
+    pTodoId
+      = (((Data.Profunctor.Unsafe.dimap toTuple fromTuple)
+          . Data.Profunctor.Product.p1)
+         . toTuple)
+      where
+          toTuple (TodoId a1_) = (a1_)
+          fromTuple (a1_) = TodoId a1_
+    instance (Data.Profunctor.Product.ProductProfunctor p,
+              Data.Profunctor.Product.Default.Default p a1_0 a1_1) =>
+             Data.Profunctor.Product.Default.Default p (TodoId' a1_0) (TodoId' a1_1) where
+      Data.Profunctor.Product.Default.def
+        = pTodoId (TodoId Data.Profunctor.Product.Default.def)
+    instance Data.Profunctor.Product.Newtype.Newtype TodoId' where
+      Data.Profunctor.Product.Newtype.constructor = TodoId
+      Data.Profunctor.Product.Newtype.field = \ (TodoId x_a9mR) -> x_a9mR
+src/OpaleyeDemo/Ids.hs:28:1-38: Splicing declarations
+    makeAdaptorAndInstance "pPrio" ''Prio'
+  ======>
+    pPrio ::
+      forall p a1_0 a1_1. Data.Profunctor.Product.ProductProfunctor p =>
+      Prio' (p a1_0 a1_1) -> p (Prio' a1_0) (Prio' a1_1)
+    pPrio
+      = (((Data.Profunctor.Unsafe.dimap toTuple fromTuple)
+          . Data.Profunctor.Product.p1)
+         . toTuple)
+      where
+          toTuple (Prio a1_) = (a1_)
+          fromTuple (a1_) = Prio a1_
+    instance (Data.Profunctor.Product.ProductProfunctor p,
+              Data.Profunctor.Product.Default.Default p a1_0 a1_1) =>
+             Data.Profunctor.Product.Default.Default p (Prio' a1_0) (Prio' a1_1) where
+      Data.Profunctor.Product.Default.def
+        = pPrio (Prio Data.Profunctor.Product.Default.def)
+    instance Data.Profunctor.Product.Newtype.Newtype Prio' where
+      Data.Profunctor.Product.Newtype.constructor = Prio
+      Data.Profunctor.Product.Newtype.field = \ (Prio x_aa5I) -> x_aa5I
+src/OpaleyeDemo/Ids.hs:37:1-50: Splicing declarations
+    makeAdaptorAndInstance "pHashtagStr" ''HashtagStr'
+  ======>
+    pHashtagStr ::
+      forall p a1_0 a1_1. Data.Profunctor.Product.ProductProfunctor p =>
+      HashtagStr' (p a1_0 a1_1)
+      -> p (HashtagStr' a1_0) (HashtagStr' a1_1)
+    pHashtagStr
+      = (((Data.Profunctor.Unsafe.dimap toTuple fromTuple)
+          . Data.Profunctor.Product.p1)
+         . toTuple)
+      where
+          toTuple (HashtagStr a1_) = (a1_)
+          fromTuple (a1_) = HashtagStr a1_
+    instance (Data.Profunctor.Product.ProductProfunctor p,
+              Data.Profunctor.Product.Default.Default p a1_0 a1_1) =>
+             Data.Profunctor.Product.Default.Default p (HashtagStr' a1_0) (HashtagStr' a1_1) where
+      Data.Profunctor.Product.Default.def
+        = pHashtagStr (HashtagStr Data.Profunctor.Product.Default.def)
+    instance Data.Profunctor.Product.Newtype.Newtype HashtagStr' where
+      Data.Profunctor.Product.Newtype.constructor = HashtagStr
+      Data.Profunctor.Product.Newtype.field
+        = \ (HashtagStr x_aa9j) -> x_aa9j
+[2 of 8] Compiling OpaleyeDemo.Todo ( src/OpaleyeDemo/Todo.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/OpaleyeDemo/Todo.o )
+src/OpaleyeDemo/Todo.hs:33:1-38: Splicing declarations
+    makeAdaptorAndInstance "pTodo" ''Todo'
+  ======>
+    pTodo ::
+      forall p
+             a1_0
+             a2_0
+             a3_0
+             a4_0
+             a1_1
+             a2_1
+             a3_1
+             a4_1. Data.Profunctor.Product.ProductProfunctor p =>
+      Todo' (p a1_0 a1_1) (p a2_0 a2_1) (p a3_0 a3_1) (p a4_0 a4_1)
+      -> p (Todo' a1_0 a2_0 a3_0 a4_0) (Todo' a1_1 a2_1 a3_1 a4_1)
+    pTodo
+      = (((Data.Profunctor.Unsafe.dimap toTuple fromTuple)
+          . Data.Profunctor.Product.p4)
+         . toTuple)
+      where
+          toTuple (Todo a1_ a2_ a3_ a4_) = (a1_, a2_, a3_, a4_)
+          fromTuple (a1_, a2_, a3_, a4_) = Todo a1_ a2_ a3_ a4_
+    instance (Data.Profunctor.Product.ProductProfunctor p,
+              Data.Profunctor.Product.Default.Default p a1_0 a1_1,
+              Data.Profunctor.Product.Default.Default p a2_0 a2_1,
+              Data.Profunctor.Product.Default.Default p a3_0 a3_1,
+              Data.Profunctor.Product.Default.Default p a4_0 a4_1) =>
+             Data.Profunctor.Product.Default.Default p (Todo' a1_0 a2_0 a3_0 a4_0) (Todo' a1_1 a2_1 a3_1 a4_1) where
+      Data.Profunctor.Product.Default.def
+        = pTodo
+            (Todo
+               Data.Profunctor.Product.Default.def
+               Data.Profunctor.Product.Default.def
+               Data.Profunctor.Product.Default.def
+               Data.Profunctor.Product.Default.def)
+[3 of 8] Compiling OpaleyeDemo.Hashtag ( src/OpaleyeDemo/Hashtag.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/OpaleyeDemo/Hashtag.o )
+src/OpaleyeDemo/Hashtag.hs:21:1-44: Splicing declarations
+    makeAdaptorAndInstance "pHashtag" ''Hashtag'
+  ======>
+    pHashtag ::
+      forall p
+             a1_0
+             a2_0
+             a1_1
+             a2_1. Data.Profunctor.Product.ProductProfunctor p =>
+      Hashtag' (p a1_0 a1_1) (p a2_0 a2_1)
+      -> p (Hashtag' a1_0 a2_0) (Hashtag' a1_1 a2_1)
+    pHashtag
+      = (((Data.Profunctor.Unsafe.dimap toTuple fromTuple)
+          . Data.Profunctor.Product.p2)
+         . toTuple)
+      where
+          toTuple (Hashtag a1_ a2_) = (a1_, a2_)
+          fromTuple (a1_, a2_) = Hashtag a1_ a2_
+    instance (Data.Profunctor.Product.ProductProfunctor p,
+              Data.Profunctor.Product.Default.Default p a1_0 a1_1,
+              Data.Profunctor.Product.Default.Default p a2_0 a2_1) =>
+             Data.Profunctor.Product.Default.Default p (Hashtag' a1_0 a2_0) (Hashtag' a1_1 a2_1) where
+      Data.Profunctor.Product.Default.def
+        = pHashtag
+            (Hashtag
+               Data.Profunctor.Product.Default.def
+               Data.Profunctor.Product.Default.def)
+[4 of 8] Compiling OpaleyeDemo.Flags ( src/OpaleyeDemo/Flags.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/OpaleyeDemo/Flags.o )
+[5 of 8] Compiling OpaleyeDemo.Utils ( src/OpaleyeDemo/Utils.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/OpaleyeDemo/Utils.o )
+[6 of 8] Compiling OpaleyeDemo.Reports ( src/OpaleyeDemo/Reports.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/OpaleyeDemo/Reports.o )
+[7 of 8] Compiling OpaleyeDemo.Commands ( src/OpaleyeDemo/Commands.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/OpaleyeDemo/Commands.o )
+[8 of 8] Compiling Main             ( src/Main.hs, dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye-tmp/Main.o )
+Linking dist/build/haskellerz-sqlgen-opaleye/haskellerz-sqlgen-opaleye ...
+
