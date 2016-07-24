@@ -12,6 +12,10 @@ Note that we welcome guests and will happily adjust our schedule if they would l
 2016 meetups
 ============
 
+* 2016-07-22 - 2016-07-24: ZuriHac 2016
+  * 2016-07-22: Bas van Dijk - Functional Programming at LumiGuide (keynote)
+    ([slides](https://github.com/meiersi/HaskellerZ/raw/master/meetups/20160722-ZuriHac2016_Bas_van_Dijk_FP-at-LumiGuide/Bas_van_Dijk-FP_at_LumiGuide-ZuriHac2016.pptx))
+
 * 2016-02-25: Viktor Winschel - Modelling Economic Game Theory With Haskell 'n String Diagrams
   ([slides](meetups/20160225-Modelling_economic_game_theory_with_Haskell/HaskellerZ_2016_winschel.pdf),
   [video](https://www.youtube.com/watch?v=0XU5MYa0d1w))
