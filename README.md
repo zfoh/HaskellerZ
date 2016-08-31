@@ -9,6 +9,24 @@ The README moreover serves as a drafting document for upcoming meetups.
 In general, we'll have a HaskellerZ meetup every last thursday of January until October every year.
 Note that we welcome guests and will happily adjust our schedule if they would like to give a talk.
 
+
+Suggested topics for upcoming meetups
+=====================================
+
+This is a list of meetup topics suggested by HaskellerZ members. If you would like to give a talk about one of these topics or suggest a different one please message the organizers (preferably Martin O.) on [HaskellerZ meetup page](http://www.meetup.com/HaskellerZ/).
+
+* Type Level Programming (Phantom Types)
+* Yesod Framework
+* Software Transactional Memory (runtime characteristics)
+* Refinements Types (Liquid Haskell)
+* Dependent Types for Haskell
+* Web application in Haskell (from architecture and technology perspective)
+* Functional data types (abstractions) vs imperative data types (abstractions)
+* Ways of modeling side effects (I/O) in programming languages
+* Recent advances in parsing libraries in Haskell
+* Conduit, Pipes, IOStreams and similar streaming libraries
+
+
 2016 meetups
 ============
 
