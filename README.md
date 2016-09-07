@@ -30,11 +30,21 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 2016 meetups
 ============
 
-* 2016-07-22 - 2016-07-24: ZuriHac 2016
-  * 2016-07-22: Bas van Dijk - Functional Programming at LumiGuide (keynote)
-    ([slides](https://github.com/meiersi/HaskellerZ/raw/master/meetups/20160722-ZuriHac2016_Bas_van_Dijk_FP-at-LumiGuide/Bas_van_Dijk-FP_at_LumiGuide-ZuriHac2016.pptx))
-  * 2016-07-23: Edward Kmett - Monad Homomorphisms (keynote)
+* 2016-07-22 - 2016-07-24: [ZuriHac 2016](https://wiki.haskell.org/ZuriHac2016)
+  * 2016-07-22: *Bas van Dijk* - Functional Programming at LumiGuide (keynote)
+    ([slides](https://github.com/meiersi/HaskellerZ/raw/master/meetups/20160722-ZuriHac2016_Bas_van_Dijk_FP-at-LumiGuide/Bas_van_Dijk-FP_at_LumiGuide-ZuriHac2016.pptx), [video](https://www.youtube.com/watch?v=IKznN_TYjZk))
+  * 2016-07-22: *Francesco Mazzoli* - Parallelizing and distributing scientific software in Haskell
+    ([video](https://www.youtube.com/watch?v=4py8BYIw1DI))
+  * 2016-07-23: *Edward Kmett* - Monad Homomorphisms (keynote)
     ([video](https://www.youtube.com/watch?v=YTaNkWjd-ac))
+  * 2016-07-23: *David Luposchainsky* - Low-level Haskell: an interactive tour through the STG
+    ([video](https://www.youtube.com/watch?v=-MFk7PIKYsg))
+  * 2016-07-23: *Alexander Thiemann* - Spock - Powerful Elegant Web Applications
+    ([video](https://www.youtube.com/watch?v=-b-Oz6y-n_Y))
+  * 2016-07-24: *Andres Löh* - Generic (and type-level) programming with Generics-Sop (keynote)
+    ([video](https://www.youtube.com/watch?v=sQxH349HOik))
+  * 2016-07-24:	*Andrey Mokhov* - Meet Hadrian: a new build system for GHC
+    ([video](https://www.youtube.com/watch?v=uLzP8YEfl9o))
 
 * 2016-02-25: Viktor Winschel - Modelling Economic Game Theory With Haskell 'n String Diagrams
   ([slides](meetups/20160225-Modelling_economic_game_theory_with_Haskell/HaskellerZ_2016_winschel.pdf),
