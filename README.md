@@ -34,17 +34,20 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
   * 2016-07-22: *Bas van Dijk* - Functional Programming at LumiGuide (keynote)
     ([slides](https://github.com/meiersi/HaskellerZ/raw/master/meetups/20160722-ZuriHac2016_Bas_van_Dijk_FP-at-LumiGuide/Bas_van_Dijk-FP_at_LumiGuide-ZuriHac2016.pptx), [video](https://www.youtube.com/watch?v=IKznN_TYjZk))
   * 2016-07-22: *Francesco Mazzoli* - Parallelizing and distributing scientific software in Haskell
-    ([video](https://www.youtube.com/watch?v=4py8BYIw1DI))
+    ([video](https://www.youtube.com/watch?v=4py8BYIw1DI),
+    [slides](zurihac/2016/talks/ZuriHac%202016%20-%20Mazzoli%20-%20Parallelizing%20and%20distributing%20scientific%20software%20in%20Haskell.pdf)
   * 2016-07-23: *Edward Kmett* - Monad Homomorphisms (keynote)
     ([video](https://www.youtube.com/watch?v=YTaNkWjd-ac))
   * 2016-07-23: *David Luposchainsky* - Low-level Haskell: an interactive tour through the STG
-    ([video](https://www.youtube.com/watch?v=-MFk7PIKYsg))
+    ([video](https://www.youtube.com/watch?v=-MFk7PIKYsg),
+    [slides](https://github.com/quchen/talks/tree/master/2016-07-23_zurihac_stg))
   * 2016-07-23: *Alexander Thiemann* - Spock - Powerful Elegant Web Applications
     ([video](https://www.youtube.com/watch?v=-b-Oz6y-n_Y))
   * 2016-07-24: *Andres Löh* - Generic (and type-level) programming with Generics-Sop (keynote)
     ([video](https://www.youtube.com/watch?v=sQxH349HOik))
   * 2016-07-24:	*Andrey Mokhov* - Meet Hadrian: a new build system for GHC
-    ([video](https://www.youtube.com/watch?v=uLzP8YEfl9o))
+    ([video](https://www.youtube.com/watch?v=uLzP8YEfl9o),
+    [slides](zurihac/2016/talks/ZuriHac%202016%20-%20Mokhov%20-%20Meet%20Hadrian,%20a%20new%20build%20system%20of%20GHC.pptx))
 
 * 2016-02-25: Viktor Winschel - Modelling Economic Game Theory With Haskell 'n String Diagrams
   ([slides](meetups/20160225-Modelling_economic_game_theory_with_Haskell/HaskellerZ_2016_winschel.pdf),
