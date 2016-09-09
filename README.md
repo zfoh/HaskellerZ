@@ -42,7 +42,8 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
     ([video](https://www.youtube.com/watch?v=-MFk7PIKYsg),
     [slides](https://github.com/quchen/talks/tree/master/2016-07-23_zurihac_stg))
   * 2016-07-23: *Alexander Thiemann* - Spock - Powerful Elegant Web Applications
-    ([video](https://www.youtube.com/watch?v=-b-Oz6y-n_Y))
+    ([video](https://www.youtube.com/watch?v=-b-Oz6y-n_Y),
+    [slides](zurihac/2016/talks/ZuriHac%202016%20-%20Thiemann%20-%20Spock.pdf))
   * 2016-07-24: *Andres Löh* - Generic (and type-level) programming with Generics-Sop (keynote)
     ([video](https://www.youtube.com/watch?v=sQxH349HOik))
   * 2016-07-24:	*Andrey Mokhov* - Meet Hadrian: a new build system for GHC
