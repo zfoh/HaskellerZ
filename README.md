@@ -18,9 +18,7 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 * Type Level Programming (Phantom Types)
 * Yesod Framework
 * Software Transactional Memory (runtime characteristics)
-* Refinements Types (Liquid Haskell)
 * Dependent Types for Haskell
-* Web application in Haskell (from architecture and technology perspective)
 * Functional data types (abstractions) vs imperative data types (abstractions)
 * Ways of modeling side effects (I/O) in programming languages
 * Recent advances in parsing libraries in Haskell
