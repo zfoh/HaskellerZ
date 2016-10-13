@@ -4,3 +4,4 @@ We will look at fundamental concepts and goals which inspired their design. We w
 
 
 Slides: http://www.slideshare.net/MartinOckajak/comparing-haskell-and-scala
+
