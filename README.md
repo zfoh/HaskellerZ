@@ -30,7 +30,8 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 
 * 2016-10-27: Carl Baatz - Build yourself a Haskell web framework
   ([slides](https://cbaatz.github.io/build-a-haskell-web-framework/),
-  [code](https://github.com/cbaatz/build-a-haskell-web-framework/tree/master/demo))
+  [code](https://github.com/cbaatz/build-a-haskell-web-framework/tree/master/demo)
+  [video](https://www.youtube.com/watch?v=etuSnom2v2M))
 
 * 2016-07-22 - 2016-07-24: [ZuriHac 2016](https://wiki.haskell.org/ZuriHac2016)
   * 2016-07-22: *Bas van Dijk* - Functional Programming at LumiGuide (keynote)
