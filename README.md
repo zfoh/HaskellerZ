@@ -25,8 +25,32 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 * Conduit, Pipes, IOStreams and similar streaming libraries
 
 
+2017 meetups
+============
+
+There will be a ZuriHac 2017. We'll announce it at the beginning of 2017.
+
+* 2017-01-26 - Reserved slot
+* 2017-02-23 - Speaker: [Niklas Hambüchen](https://github.com/nh2)
+* 2017-03-30 - Speaker: [Mathias Körner](https://www.linkedin.com/in/mkoerner)
+* 2017-04-27 - open slot
+* 2017-05-25 - open slot
+* 2017-06-29 - open slot
+* 2017-07-27 - open slot
+* 2017-08-31 - open slot
+* 2017-09-28 - open slot
+* 2017-10-26 - open slot
+* 2017-11-30 - open slot
+
+
 2016 meetups
 ============
+
+* 2016-11-24: Andreas Herrmann -
+  Compiling a simple functional language with LLVM and Haskell
+  ([slides](https://github.com/aherrmann/simply_llvm/blob/master/slides/slides.md),
+   [code](https://github.com/aherrmann/simply_llvm),
+   video to be uploaded)
 
 * 2016-10-27: Carl Baatz - Build yourself a Haskell web framework
   ([slides](https://cbaatz.github.io/build-a-haskell-web-framework/),
