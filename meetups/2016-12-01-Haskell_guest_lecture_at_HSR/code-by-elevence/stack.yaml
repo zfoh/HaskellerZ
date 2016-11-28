@@ -1,0 +1,33 @@
+flags: {}
+packages:
+  # We list our internal packages in one of the linear orders compatible with
+  # their dependencies.
+
+  - location: libs/hs/elevence-base
+
+  - apps/hs/acme-wc
+
+    # Versions of the 'pretty' and 'pretty-show' libraries that were renamed to
+    # 'elevence-pretty' and 'pretty-show-elevence', as stack ghci gets
+    # confused when using a different version of 'pretty' than the one that
+    # GHC was built with.
+  - location:
+      git: https://github.com/elevence/pretty.git
+      commit: 1fe41e7efe17a772dbd859a09577e74704f6795b
+    extra-dep: true
+
+  - location:
+      git: https://github.com/elevence/pretty-show.git
+      commit: 886a2934f7c5567c551984c6659d90bed7363108
+    extra-dep: true
+
+resolver: lts-3.2
+
+system-ghc: false
+install-ghc: true
+require-stack-version: ">= 0.1.5.0"
+
+# We use these options for development only, as deployment is handled using
+# nix.
+ghc-options:
+  "*": -O0

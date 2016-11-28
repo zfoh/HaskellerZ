@@ -1,0 +1,105 @@
+name:                elevence-base
+version:             1.0.0
+synopsis:            Base library for Elevence Haskell code.
+description:         The libraries provided by Hackage adapted to the needs of
+                     Elevence.
+                     .
+                     The intention of this version of this library published
+                     as part of Simon Meier's HaskellerZ talk on 2016-01-27 is
+                     that it serves as an inspirational source for how to
+                     adapt Hackage to a company's needs. Elevence currently
+                     does not plan to provided an officially supported version
+                     of this library. However, we very much encourage people
+                     to take and reshape this code into a library that allows
+                     to share this kind of Hackage-adaption-code.
+
+license:             BSD3
+license-file:        LICENSE
+maintainer:          simon.meier@elevence.com
+copyright:           2015, 2016 Elevence Digital Finance AG
+category:            Industry
+build-type:          Simple
+
+cabal-version:       >=1.10
+
+
+library
+  default-language:    Haskell2010
+
+  ghc-options:         -Wall -fwarn-incomplete-uni-patterns -threaded -rtsopts
+  hs-source-dirs:      src
+  exposed-modules:
+      Bound.Extended
+
+    , Control.Monad.Trans.Either.Extended
+    , Control.Monad.Except.Extended
+
+    , Data.Either.Extended
+    , Data.Git
+    , Data.GrowingIntMap
+    , Data.IntKeyedQueue
+    , Data.IntSet.Extended
+    , Data.List.Extended
+    , Data.List.Extended.Tests
+    , Data.Map.Strict.Extended
+    , Data.Monoid.Extended
+    , Data.Relation.Binary.Ordered
+    , Data.Relation.Binary.Ordered.Tests
+    , Data.Set.Extended
+    , Data.Text.Extended
+
+    , Elevence.Prelude
+
+    , Test.Tasty.QuickCheck.Extended
+
+    , Text.PrettyPrint.Annotated.Extended
+
+  other-modules:
+      Orphans.Lib_base
+    , Orphans.Lib_aeson
+    , Orphans.Lib_hashable
+    , Orphans.Lib_parsec
+
+  build-depends:
+      bound
+    , aeson
+    , base >= 4.7 && < 5
+    , base64-bytestring
+    , binary
+    , bytestring
+    , containers
+    , crypto-pubkey-types
+    , directory
+    , either
+    , filepath
+    , ghc-prim
+    , hashable
+    , lens
+    , mtl
+    , parsec
+    , pretty-elevence
+    , random
+    , safe
+    , semigroups
+    , tagged
+    , tasty
+    , tasty-quickcheck
+    , template-haskell
+    , text
+    , time
+    , unordered-containers
+
+
+test-suite tests
+  type:                exitcode-stdio-1.0
+
+  default-language:    Haskell2010
+
+  ghc-options:         -Wall -fwarn-incomplete-uni-patterns -threaded -rtsopts
+  hs-source-dirs:      src-tests
+  main-is:             main.hs
+
+  build-depends:
+      elevence-base
+    , tasty
+

@@ -1,0 +1,12 @@
+.DS_Store
+._.DS_Store
+.stack-work/
+dist/
+result
+.project
+/ci-out/
+**/codex.tags
+/hscope.out
+\#*\#
+.\#*\#
+*.tix
