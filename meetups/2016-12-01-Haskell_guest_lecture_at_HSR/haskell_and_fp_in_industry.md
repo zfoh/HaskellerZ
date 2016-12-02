@@ -3,6 +3,14 @@
 % December 1st, 2016
 
 
+
+Goals of this talk
+==================
+
+- explain why I use Haskell and formal methods in my professional career
+- convey some of the lessons I learned
+- provide pointers for further learning
+
 About me
 ========
 
@@ -13,14 +21,6 @@ About me
 - post-doctoral researcher at IBM Research (2014 - 2015)
 - Haskell software engineer/architect at Elevence Digital Finance AG (2015 - 2016)
 - Haskell and formal methods expert at Digital Asset (2016 -)
-
-
-Goals of this talk
-==================
-
-- explain why I use Haskell and formal methods in my professional career
-- convey some of the lessons I learned
-- provide pointers for further learning
 
 
 Commercial Haskell development - my view on it
