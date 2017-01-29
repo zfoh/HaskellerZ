@@ -30,7 +30,7 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 
 There will be a ZuriHac 2017. We'll announce it at the beginning of 2017.
 
-* 2017-01-26 - [Ben Lippmeier](http://benl.ouroborus.net/) - [The Disciplined Disciple Compiler (DDC)](http://disciple.ouroborus.net/)
+* 2017-02-08 - [Ben Lippmeier](http://benl.ouroborus.net/) - [The Disciplined Disciple Compiler (DDC)](http://disciple.ouroborus.net/)
 * 2017-02-23 - Speaker: [Niklas Hambüchen](https://github.com/nh2)
 * 2017-03-30 - Speaker: [Mathias Körner](https://www.linkedin.com/in/mkoerner)
 * 2017-04-27 - Speaker: Roland Senn. Topic: reflex-dom 
