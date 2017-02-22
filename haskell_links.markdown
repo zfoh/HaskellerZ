@@ -51,19 +51,7 @@ Learning Haskell:
     libraries by name and/or type
 
 -   The [Haskell
-    Prelude](http://www.inf.ethz.ch/personal/meiersi/teaching/fmfp08/material/Prelude.hs)
-    (Hugs version):
-
-    -   [Syntax highlighted
-        version](http://www.inf.ethz.ch/personal/meiersi/teaching/fmfp08/material/Prelude.html)
-
-    -   [Postscript file ideal for
-        printing](http://www.inf.ethz.ch/personal/meiersi/teaching/fmfp08/material/Prelude.hs.ps)
-
-    -   [Commented
-        version](http://haskell.org/ghc/docs/latest/html/libraries/base/Prelude.html)
-        (note that the source code of this version is slightly different
-        from the Hugs version, as it is optimized for speed).
+    Prelude](https://hackage.haskell.org/package/base/docs/Prelude.html)
 
 -   Free online version of the excellent books [**Real World
     Haskell**](http://book.realworldhaskell.org/read) and [**Learn You a
