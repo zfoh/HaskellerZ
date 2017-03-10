@@ -30,11 +30,16 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 
 There will be a ZuriHac 2017. We'll announce it at the beginning of 2017.
 
-* 2017-01-26 - [Ben Lippmeier](http://benl.ouroborus.net/) - [The Disciplined Disciple Compiler (DDC)](http://disciple.ouroborus.net/)
-* 2017-02-23 - Speaker: [Niklas Hambüchen](https://github.com/nh2)
-* 2017-03-30 - Speaker: [Mathias Körner](https://www.linkedin.com/in/mkoerner)
+* 2017-02-08 - [Ben Lippmeier](http://benl.ouroborus.net/) - [The Disciplined Disciple Compiler (DDC)](http://disciple.ouroborus.net/)
+               ([video](https://www.youtube.com/watch?v=QShfhs7nToI),
+                [slides](meetups/20170208-Automatically_escaping_monads/2017-Escape.pdf))
+* 2017-02-23 - [Niklas Hambüchen](https://github.com/nh2) - FRP browser programming with Reflex
+               ([video](https://youtu.be/dNGClNsnn24),
+                [code](https://github.com/nh2/reflex-platform/blob/haskellerz-reflex-tutorial-2017/haskellerz-reflex-tutorial.hs),
+                [slides](meetups/20170223-Reflex_tutorial/haskellerz-reflex-tutorial-slides.pdf))
+* 2017-03-30 - open slot
 * 2017-04-27 - open slot 
-* 2017-05-25 - Speaker: Michal Terepeta, Topic: Serialization in Haskells
+* 2017-05-25 - Speaker: Michal Terepeta, Topic: Serialization in Haskell
 * 2017-06-29 - open slot
 * 2017-07-27 - open slot
 * 2017-08-31 - open slot
