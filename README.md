@@ -41,7 +41,7 @@ There will be a ZuriHac 2017. We'll announce it at the beginning of 2017.
 * 2017-04-27 - open slot 
 * 2017-05-25 - Speaker: Michal Terepeta, Topic: Serialization in Haskell
 * 2017-06-29 - open slot
-* 2017-07-27 - open slot
+* 2017-07-27 - [Tom Sydney Kerckhove](https://cs-syd.eu) - [Signature Inference for Property Discovery with EasySpec](https://github.com/NorfairKing/easyspec)
 * 2017-08-31 - open slot
 * 2017-09-28 - open slot
 * 2017-10-26 - open slot
