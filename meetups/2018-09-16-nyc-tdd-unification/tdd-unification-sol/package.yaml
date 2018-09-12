@@ -25,6 +25,7 @@ dependencies:
 - hedgehog
 - mtl
 - text
+- transformers
 
 ghc-options:
 - -Wall

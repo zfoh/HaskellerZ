@@ -82,14 +82,16 @@ valid s = S.null (domain s `S.intersection` foldMap vars (MS.elems s))
 data UnificationFailure
   = DoesNotUnify
   | VarOccursInTerm VarId Term
+  | DifferentConstructors Term Term
+  | DifferentArity Term Term
   deriving (Eq, Show)
 
-type UnifyM a = StateT Subst (ExceptT UnificationFailure a)
+type UnifyM = StateT Subst (Except UnificationFailure)
 
 
 
 mgu :: Term -> Term -> Either UnificationFailure Subst
-mgu t1 t2 = execState (solve1 t1 t2) empty
+mgu t1 t2 = runExcept $ execStateT (solve1 t1 t2) empty
 
 {-
   | t1 == t2  = pure empty
@@ -113,23 +115,26 @@ solve1 ta0 tb0 = do
     let tb = apply s tb0
     -- see what equation there is to solve
     case (ta, tb) of
-      (Var va, _)      -> elim va vb
-      (_     , Var vb) -> elim vb va
-      (App ca tsa, App cb tsb) -> do
+      (Var va, Var vb) | va == vb -> pure ()
+      (Var va, _)                 -> elim va tb
+      (_     , Var vb)            -> elim vb ta
+      (App ca tsa, App cb tsb)    -> do
         ensure (ca == cb) $ DifferentConstructors ta tb
         ensure (length tsa == length tsb) $ DifferentArity ta tb
-        forM_ (zip tsa tsb) $ \ta' tb' -> solve1 ta' tb'
+        forM_ (zip tsa tsb) (uncurry solve1)
   where
     ensure b err = unless b $ throwError err
 
 -- | Eliminate a variable with a term provided the variable does not occur in
 -- there.
-elim :: VarId -> Term -> UnifyM Subst
+elim :: VarId -> Term -> UnifyM ()
 elim v t = do
-  when (v `S.member` vars t) $ throwError $ VarOccursInTerm v t
-  modify $ MS.insert v t
+    when (v `S.member` vars t) $ throwError $ VarOccursInTerm v t
+    modify $ substExtend v t
 
 
+substExtend :: VarId -> Term -> Subst -> Subst
+substExtend v t = MS.insert v t . MS.map (apply (singleton v t))
 
 
 
@@ -176,6 +181,8 @@ unifiableG = do
     pure (t1, t2, s)
 
 
+-- TODO: non-unifiable
+
 ------------------------------------------------------------------------------
 -- Testing: Properties
 ------------------------------------------------------------------------------
@@ -203,7 +210,9 @@ prop_mgu_valid = property $ do
     t2 <- forAll termG
     case mgu t1 t2 of
       Left _err -> pure ()
-      Right s   -> assert (valid s)
+      Right s   -> do
+        annotateShow s
+        assert (valid s)
 
 prop_mgu_result_unifies :: Property
 prop_mgu_result_unifies = property $ do
@@ -215,11 +224,14 @@ prop_mgu_result_unifies = property $ do
 
 
 prop_mgu_unifiable_unifies :: Property
-prop_mgu_unifiable_unifies = property $ do
-    (t1, t2, _s0) <- forAll unifiableG
+prop_mgu_unifiable_unifies = withDiscards 10000 $ property $ do
+    (t1, t2, s0) <- forAll unifiableG
     case mgu t1 t2 of
       Left err -> annotateShow err >> failure
-      Right s  -> apply s t1 === apply s t2
+      Right s  -> do
+        annotate ("original subst:" ++ show s0)
+        annotate ("mgu subst:" ++ show s)
+        apply s t1 === apply s t2
 
 
 allTests :: Group
