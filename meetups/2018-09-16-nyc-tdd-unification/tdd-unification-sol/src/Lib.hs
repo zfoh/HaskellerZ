@@ -12,6 +12,7 @@ import           Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Map.Strict as MS
 import qualified Data.Set        as S
+import           Data.String
 
 import           Hedgehog hiding (Var)
 import qualified Hedgehog.Gen as Gen
@@ -115,7 +116,7 @@ solve1 ta0 tb0 = do
     let tb = apply s tb0
     -- see what equation there is to solve
     case (ta, tb) of
-      (Var va, Var vb) | va == vb -> pure ()
+      -- (Var va, Var vb) | va == vb -> pure ()
       (Var va, _)                 -> elim va tb
       (_     , Var vb)            -> elim vb ta
       (App ca tsa, App cb tsb)    -> do
@@ -187,6 +188,26 @@ unifiableG = do
 -- Testing: Properties
 ------------------------------------------------------------------------------
 
+data TestCase c = TestCase
+  { tcName      :: !String
+  , tcUnitTests :: ![c]
+  , tcGen       :: !(Gen c)
+  }
+
+runTestCase :: Show c => TestCase c -> (c -> PropertyT IO ()) -> [(PropertyName, Property)]
+runTestCase tc mkProp =
+    zipWith unitTest [1..] (tcUnitTests tc) ++ [ rndTest ]
+  where
+    name         = tcName tc
+    unitTest i c =
+      ( fromString (name ++ "_unit_" ++ show i)
+      , withTests 1 $ property $ mkProp c
+      )
+    rndTest      =
+      ( fromString (name ++ "_rnd")
+      , property $ do c <- forAll (tcGen tc); mkProp c
+      )
+
 
 prop_apply_empty :: Property
 prop_apply_empty = property $ do
@@ -214,17 +235,28 @@ prop_mgu_valid = property $ do
         annotateShow s
         assert (valid s)
 
-prop_mgu_result_unifies :: Property
-prop_mgu_result_unifies = property $ do
-    t1 <- forAll termG
-    t2 <- forAll termG
-    case mgu t1 t2 of
-      Left _err -> pure ()
-      Right s   -> apply s t1 === apply s t2
-
+group_mgu_result_unifies :: [(PropertyName, Property)]
+group_mgu_result_unifies =
+    runTestCase tc $ \(t1, t2) -> do
+        case mgu t1 t2 of
+          Left _err -> pure ()
+          Right s   -> apply s t1 === apply s t2
+  where
+    tc = TestCase
+      { tcName = "mgu_result_unifies"
+      , tcUnitTests =
+          [ ( App "Either" [ Var "a" , Var "a" ]
+            , App "Either" [ App "Int" [] , Var "b" ]
+            )
+          , ( App "Either" [ Var "a" , App "Int" [] ]
+            , App "Either" [ Var "b" , Var "a" ]
+            )
+          ]
+      , tcGen = (,) <$> termG <*> termG
+      }
 
 prop_mgu_unifiable_unifies :: Property
-prop_mgu_unifiable_unifies = withDiscards 10000 $ property $ do
+prop_mgu_unifiable_unifies = withTests 1000 $ withDiscards 10000 $ property $ do
     (t1, t2, s0) <- forAll unifiableG
     case mgu t1 t2 of
       Left err -> annotateShow err >> failure
@@ -235,4 +267,7 @@ prop_mgu_unifiable_unifies = withDiscards 10000 $ property $ do
 
 
 allTests :: Group
-allTests = $$(discover)
+allTests =
+    props { groupProperties = group_mgu_result_unifies ++ groupProperties props }
+  where
+    props = $$(discover)

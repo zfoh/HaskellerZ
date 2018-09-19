@@ -35,4 +35,8 @@ ghcid -c'stack repl tdd-unification-sol:tdd-unification-sol-test' -t':main'
 
 
 
+Slides
+------
 
+HPC:
+- https://docs.haskellstack.org/en/stable/coverage/
