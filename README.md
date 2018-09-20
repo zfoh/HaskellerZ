@@ -30,6 +30,7 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 * 2017-02-08 - [Simon Meier](http://github.com/meiersi) - Test-Driven Development of a Unification Algorithm
                (video - tbd,
                 [slides](meetups/2018-09-16-nyc-tdd-unification/slides/tdd_unif.md))
+
 2017 meetups
 ============
 
