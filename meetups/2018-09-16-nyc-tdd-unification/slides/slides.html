@@ -76,11 +76,11 @@ Simon Meier, Digital Asset
 |                           |                                     |
 | Int()                     | Int                                 |
 |                           |                                     |
-| Pair(Pair(a, b), Int())   | ((a, b), Int)                       |
-|                           |                                     |
-| FunArr(a, FunArr(b, c))   | a -&gt; b -&gt; c                         |
+| a                         | a                                   |
 |                           |                                     |
 | Maybe(Pair(b,a))          | Maybe (b, a)                        |
+|                           |                                     |
+| FunArr(a, FunArr(b, c))   | a -&gt; b -&gt; c                         |
 |                           |                                     |
 | Char(Int(),Int())         | Char Int Int   -- ill-kinded type   |
 |                           |                                     |</code></pre>
@@ -99,29 +99,48 @@ Simon Meier, Digital Asset
 </ul></li>
 </ul>
 <p>Example:</p>
-<pre><code>(Pair(a, b)){b ↦ Int()}  ==  Pair(a,Int())</code></pre>
+<pre><code>Int {b ↦ a} == Int
+
+(Pair(a, b)){b ↦ Int}  ==  Pair(a,Int)
+
+(Pair(a, b)){b ↦ a, c ↦ d} ==  Pair(a,a)</code></pre>
 </div>
 <div id="theory-unification-problem-simplified" class="slide section level1">
 <h1>Theory: Unification Problem (Simplified)</h1>
 <p>Given terms <em>t₁</em> and <em>t₂</em>, determine existence of substitution <em>σ</em> such that <em>t₁σ = t₂σ</em>.</p>
 </div>
-<div id="theory-unification-problem-simplified-1" class="slide section level1">
-<h1>Theory: Unification Problem (Simplified)</h1>
-<p>Given terms <em>t₁</em> and <em>t₂</em>, determine existence of substitution <em>σ</em> such that <em>t₁σ = t₂σ</em>.</p>
-<ul>
-<li>usually one is interested in the most-general unifier</li>
-<li>further reading <a href="http://www.cs.bu.edu/~snyder/publications/UnifChapter.pdf">Franz Baader and Wayne Snyder (2001). “Unification Theory”.</a></li>
-</ul>
-</div>
 <div id="example-unification" class="slide section level1">
 <h1>Example: Unification</h1>
-<pre><code>Pair(a,b) ~ Pair(Int, Int)  solved only by {a ↦ Int, b ↦ Int}
+<pre><code>a ~ Int                     solved by {a ↦ Int}
 
-Pair(a,b) ~ Pair(a, Int)    solved by {a ↦ Int, b ↦ Int} and {b ↦ Int}
+Int ~ Maybe a               unsolvable
+
+a ~ Maybe a                 unsolvable
+
+Pair(a,b) ~ Maybe(a)        unsolvable
+
+Pair(Int) ~ Pair(Int, Int)  unsolvable
+
+Pair(a,b) ~ Pair(a, Int)    solved by {b ↦ Int} and {a ↦ Int, b ↦ Int} 
 
 Pair(a,b) ~ Pair(b, Int)    solved only by {a ↦ Int, b ↦ Int}
 
-Pair(a,b) ~ Pair(b,a)       solved by {a ↦ b} and {b ↦ a} and others</code></pre>
+Pair(a,b) ~ Pair(b,a)       solved by {a ↦ b} and {b ↦ a} and others
+</code></pre>
+</div>
+<div id="theory-unification-problem" class="slide section level1">
+<h1>Theory: Unification Problem</h1>
+<ul>
+<li>usually one is interested in the most-general unifier
+<ul>
+<li>Given terms <em>t₁</em> and <em>t₂</em>, determine existence of substitution <em>σ</em> such that
+<ol style="list-style-type: decimal">
+<li><em>t₁σ = t₂σ</em> and</li>
+<li>for all other substitutions <em>ρ</em> with <em>t₁ρ = t₂ρ</em> there exists a substitution <em>τ</em> with <em>ρ = τ ∘ σ</em>.</li>
+</ol></li>
+</ul></li>
+<li>further reading <a href="http://www.cs.bu.edu/~snyder/publications/UnifChapter.pdf">Franz Baader and Wayne Snyder (2001). “Unification Theory”.</a></li>
+</ul>
 </div>
 <div id="test-driven-development" class="slide section level1">
 <h1>Test-Driven Development</h1>
@@ -130,36 +149,42 @@ Pair(a,b) ~ Pair(b,a)       solved by {a ↦ b} and {b ↦ a} and others</code><
 <div id="test-driven-development-1" class="slide section level1">
 <h1>Test-Driven Development</h1>
 <ul>
-<li>systematic process for writing testable code that is tested</li>
+<li><strong>systematic process for writing testable code that is tested</strong></li>
 <li>caveat: tests are often an incomplete specification
 <ul>
-<li><a href="https://link.springer.com/article/10.1007/s10664-016-9470-4">2017 - Automatic repair of real bugs in java: a large-scale experiment on the defects4j dataset</a>: 47 out of 224 bugs auto-patchable to pass test-suite, 9 correct</li>
+<li><a href="https://link.springer.com/article/10.1007/s10664-016-9470-4">2017 - Automatic repair of real bugs in java: a large-scale experiment on the defects4j dataset</a>:
+<ul>
+<li>9 correct auto-repairs out of</li>
+<li>47 test-suite passing auto-generated patches</li>
+<li>out of a total of 224 failing tests</li>
+</ul></li>
 </ul></li>
 </ul>
 </div>
-<div id="property-based-testing-example" class="slide section level1">
-<h1>Property-based testing: Example</h1>
+<div id="property-based-testing" class="slide section level1">
+<h1>Property-Based Testing</h1>
 <ul>
-<li>Approach
-<ul>
-<li>assume properties have many, small(ish) counter-examples</li>
-<li>replace universals by (random) sampling</li>
-<li>replace existentials by functions computing witnesses</li>
-</ul></li>
 <li>Example:
 <ul>
 <li><code>unify :: Term -&gt; Term -&gt; Maybe Subst</code></li>
 <li>property: <em>∀ t₁ t₂. (∃ σ. t₁σ = t₂σ) ⇔ (∃ σ’. <code>unify</code> t₁ t₂ = <code>Just</code> σ’ ∧ t₁σ’ = t₂σ’)</em></li>
 </ul></li>
+<li>Approach
+<ul>
+<li>assume properties have many, small(ish) counter-examples</li>
+<li>replace universal quantifiers by random sampling</li>
+<li>replace existential quanitifers by functions computing witnesses</li>
+</ul></li>
 </ul>
 </div>
 <div id="property-based-testing-caveats" class="slide section level1">
-<h1>Property-based testing: Caveats</h1>
+<h1>Property-Based Testing: Caveats</h1>
 <ul>
 <li>beware of sampling bias</li>
 <li>not all properties have small(ish) counter-examples</li>
 <li>corner cases can be very hard to sample</li>
 <li>exponentially large spaces are LARGE</li>
+<li>no replacement for unit tests</li>
 </ul>
 </div>
 <div id="tdd-time" class="slide section level1">
@@ -210,7 +235,7 @@ stack test --coverage --file-watch</code></pre>
 </ul></li>
 <li>testing
 <ul>
-<li>sampling bias is real</li>
+<li>sampling bias is real =&gt; use unit tests and property based tests</li>
 <li>incomplete specifications leave room for wrong implementations</li>
 </ul></li>
 <li>implementing unification algorithms requires diligence and care</li>

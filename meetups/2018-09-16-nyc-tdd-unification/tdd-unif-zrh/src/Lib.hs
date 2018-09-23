@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module Lib where
 
@@ -10,10 +11,9 @@ import qualified Data.Map.Strict as MS
 
 import           Hedgehog hiding (Var)
 import qualified Hedgehog.Gen as Gen
--- import qualified Hedgehog.Range as Range
 
 ------------------------------------------------------------------------------
--- Terms
+-- Types
 ------------------------------------------------------------------------------
 
 type VarId = String
@@ -22,26 +22,178 @@ type ConId = String
 data Term = Var VarId | App ConId [Term]
   deriving (Eq, Show)
 
-
-pair x y = App "Pair" [x, y]
-int      = App "Int" []
-
-------------------------------------------------------------------------------
--- Substitutions
-------------------------------------------------------------------------------
 type Subst = MS.Map VarId Term
+
+
+------------------------------------------------------------------------------
+-- Unit Test Specification
+------------------------------------------------------------------------------
+
+-- smart constructors
+---------------------
+
+vaT, vbT, intT :: Term
+vaT       = Var "a"
+vbT       = Var "b"
+intT      = App "Int" []
+
+maybeT :: Term -> Term
+maybeT x  = App "Maybe" [x]
+
+pairT :: Term -> Term -> Term
+pairT x y = App "Pair" [x, y]
+
+mkSubst :: [(VarId, Term)] -> Subst
+mkSubst = MS.fromList
+
+
+-- test data
+------------
+
+applyTestCases :: [(Term, Subst, Term)]
+applyTestCases =
+  [ (intT,          mkSubst [("b", vaT)            ], intT)
+  , (pairT vaT vbT, mkSubst [("b", intT)           ], pairT vaT intT)
+  , (pairT vaT vbT, mkSubst [("b", vaT), ("a", vbT)], pairT vbT vaT)
+  ]
+
+
+unifyTestCases :: [(Term, Term, Maybe Subst)]
+unifyTestCases =
+  [ (vaT,               intT,            solvable [("a", intT)])
+  , (intT,              maybeT vaT,      unsolvable)
+  , (vaT,               maybeT vaT,      unsolvable)
+  , (pairT vaT vbT,     maybeT vaT,      unsolvable)
+  , (App "Pair" [intT], pairT intT intT, unsolvable)
+  , (pairT vaT vaT,     pairT vbT intT,  solvable [("a", intT), ("b", intT)])
+  , (pairT vaT vbT,     pairT vaT intT,  solvable [("b", intT)             ])
+  , (pairT vaT vbT,     pairT vbT intT,  solvable [("a", intT), ("b", intT)])
+  , (pairT vaT vbT,     pairT intT vaT,  solvable [("a", intT), ("b", intT)])
+  , (pairT vaT vbT,     pairT vbT vaT,   solvable [("a", vbT)              ])
+  ]
+  where
+    solvable   = Just . mkSubst
+    unsolvable = Nothing
+
+-- test case executors
+----------------------
+
+unit_test_apply :: (Term, Subst, Term) -> IO ()
+unit_test_apply tc@(t, s, result) = checkUnitTest $ do
+    annotateShow tc
+    apply s t === result
+
+unit_test_unifies :: (Term, Term, Maybe Subst) -> IO ()
+unit_test_unifies tc@(t1, t2, result) = checkUnitTest $ do
+    annotateShow tc
+
+    -- check test case validity (as far as possible)
+    case result of
+      Just s  -> apply s t1 === apply s t2
+      Nothing -> pure () -- cannot test
+
+    unify t1 t2 === result
+
+-- | Helper function to run a unit-test.
+checkUnitTest :: PropertyT IO () -> IO ()
+checkUnitTest = void . check . withTests 1 . withDiscards 1 . property
+
+
+------------------------------------------------------------------------------
+-- Property Test Specifications
+------------------------------------------------------------------------------
+
+-- ∀ t₁ t₂ σ. t₁σ = t₂σ
+--   ⇒ (∃ σ’. unify t₁ t₂ = Just σ’ ∧ t₁σ’ = t₂σ’)
+
+prop_unifiable_unifies :: Property
+prop_unifiable_unifies = withDiscards 10000 $ withTests 100 $ property $ do
+    t1 <- forAll termG
+    t2 <- forAll termG
+    s  <- forAll substG
+    unless (apply s t1 == apply s t2) discard
+    case unify t1 t2 of
+      Nothing -> failure
+      Just s' -> apply s' t1 === apply s' t2
+
+prop_compose :: Property
+prop_compose = property $ do
+    t  <- forAll termG
+    s1 <- forAll substG
+    s2 <- forAll substG
+    apply (compose s1 s2) t === apply s1 (apply s2 t)
+
+prop_compose1 :: Property
+prop_compose1 = property $ do
+    v <- forAll varG
+    t <- forAll termG
+    s <- forAll substG
+    compose1 v t s === compose (MS.singleton v t) s
+
+varG :: Gen VarId
+varG = Gen.element ["a", "b"]
+
+termG :: Gen Term
+termG = Gen.recursive Gen.choice [
+      -- non-recursive generators
+      Var <$> varG
+    , pure (App "Int" [])
+    ] [
+      -- recursive generators
+      Gen.subterm  termG maybeT
+    , Gen.subterm2 termG termG pairT
+    ]
+
+substG :: Gen Subst
+substG = do
+   ta <- termG
+   tb <- termG
+   pure $ MS.fromList [ (v, t) | (v, t) <- [("a",ta), ("b",tb)] , Var v /= t ]
+
+
+
+------------------------------------------------------------------------------
+-- Test Execution
+------------------------------------------------------------------------------
+
+runTests :: IO ()
+runTests = do
+    mapM_ unit_test_apply applyTestCases
+    mapM_ unit_test_unifies unifyTestCases
+    void $ checkParallel $$(discover)
+
+
+------------------------------------------------------------------------------
+-- Substitutions and Unification
+------------------------------------------------------------------------------
+
+vars :: Term -> S.Set VarId
+vars t = case t of
+    Var v     -> S.singleton v
+    App _c ts -> foldMap vars ts
 
 empty :: Subst
 empty = MS.empty
 
-apply :: Term -> Subst -> Term
-apply t s = case t of
+apply :: Subst -> Term -> Term
+apply s t = case t of
   Var v    -> MS.findWithDefault (Var v) v s
-  App c ts -> App c (map (`apply` s) ts)
+  App c ts -> App c (map (apply s) ts)
+
+-- | @compose1 (v, t) s = compose (MS.singleton v t) s@
+compose1 :: VarId -> Term -> Subst -> Subst
+compose1 v t s =
+    MS.insertWith (\_new old -> old) v t $ MS.map (apply (MS.singleton v t)) s
+
+-- | @apply (compose s1 s2) t == apply s1 (apply s2 t)@
+compose :: Subst -> Subst -> Subst
+compose s1 s2 = MS.union (MS.map (apply s1) s2) s1
+
 
 unify :: Term -> Term -> Maybe Subst
 unify t1 t2 = solve empty [(t1, t2)]
 
+{-
 solve :: Subst -> [(Term, Term)] -> Maybe Subst
 solve s []            = Just s
 solve s ((t1,t2):eqs)
@@ -60,102 +212,28 @@ solve s ((t1,t2):eqs)
     elim v t
       | v `S.member` vars t = Nothing
       | otherwise           = solve (compose1 v t s) eqs
+-}
 
-compose1 :: VarId -> Term -> Subst -> Subst
-compose1 v t s = MS.insert v t $ MS.map (`apply` MS.singleton v t) s
+solve :: Subst -> [(Term, Term)] -> Maybe Subst
+solve s []            = Just s
+solve s ((t1,t2):eqs) =
+  case t1 of
+    Var v1 ->
+      case MS.lookup v1 s of
+        Just t1'                   -> solve s ((t1',t2):eqs)
+        Nothing
+          | t1 == t2'              -> solve s eqs
+          | v1 `S.member` vars t2' -> Nothing
+          | otherwise              -> solve (compose1 v1 t2' s) eqs
+          where
+            t2' = apply s t2
 
+    App c1 ts1 ->
+      case t2 of
+        Var _      -> solve s ((t2,t1):eqs)
+        App c2 ts2 -> do
+          guard (c1 == c2)
+          guard (length ts1 == length ts2)
+          solve s (zip ts1 ts2 ++ eqs)
 
-vars :: Term -> S.Set VarId
-vars t = case t of
-  Var v    -> S.singleton v
-  App c ts -> foldMap vars ts
-
-
-------------------------------------------------------------------------------
--- Testing
-------------------------------------------------------------------------------
-
-runTests :: IO ()
-runTests = void $
-  checkParallel $$(discover)
-
-
-------------------------------------------------------------------------------
--- Generators
-------------------------------------------------------------------------------
-
-termG :: Gen Term
-termG = Gen.recursive Gen.choice [
-      -- non-recursive generators
-      Var <$> Gen.element ["a", "b", "c"]
-    , pure (App "Int" [])
-    ] [
-      -- recursive generators
-      Gen.subterm  termG (\t -> App "Maybe" [t])
-    , Gen.subterm2 termG termG (\t1 t2 -> App "Pair" [t1, t2])
-    ]
-
-
-
-substG :: Gen Subst
-substG = do
-   ta <- termG
-   tb <- termG
-   tc <- termG
-   let s = MS.fromList
-         [ (v, t)
-         | (v, t) <- [("a",ta), ("b",tb), ("c",tc)]
-         , Var v /= t
-         ]
-   pure s
-
-
-------------------------------------------------------------------------------
--- Properties
-------------------------------------------------------------------------------
-
-prop_apply_unitTest1 :: Property
-prop_apply_unitTest1 = withTests 1 $ property $ do
-    apply t s === r
-  where
-    t   = Var "a"
-    s   = MS.fromList [("a", int)]
-    r   = int
-    int = App "Int" []
-
--- ∀ t₁ t₂ σ. t₁σ = t₂σ
---   ⇒ (∃ σ’. unify t₁ t₂ = Just σ’ ∧ t₁σ’ = t₂σ’)
-
-
-prop_unifiable_unifies :: Property
-prop_unifiable_unifies = withDiscards 10000 $ withTests 100 $ property $ do
-    t1 <- forAll termG
-    t2 <- forAll termG
-    s  <- forAll substG
-    unless (apply t1 s == apply t2 s) discard
-    case unify t1 t2 of
-      Nothing -> failure
-      Just s' -> apply t1 s' === apply t2 s'
-
-prop_unifiable_unitTest1 :: Property
-prop_unifiable_unitTest1 = withTests 1 $ property $ do
-    case unify t1 t2 of
-      Nothing -> pure ()
-      Just s' -> do
-        annotateShow s'
-        failure
-  where
-    t1 = pair (Var "a") (Var "a")
-    t2 = Var "a"
-
-prop_unifiable_unitTest2 :: Property
-prop_unifiable_unitTest2 = withTests 1 $ property $ do
-    case unify t1 t2 of
-      Nothing -> failure
-      Just s' -> do
-        annotateShow s'
-        apply t1 s' === apply t2 s'
-  where
-    t1 = pair (Var "a") (Var "b")
-    t2 = pair (Var "b") int
 

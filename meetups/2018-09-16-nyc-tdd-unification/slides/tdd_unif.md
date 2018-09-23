@@ -64,11 +64,11 @@ Example Terms:
 |                           |                                     |
 | Int()                     | Int                                 |
 |                           |                                     |
-| Pair(Pair(a, b), Int())   | ((a, b), Int)                       |
-|                           |                                     |
-| FunArr(a, FunArr(b, c))   | a -> b -> c                         |
+| a                         | a                                   |
 |                           |                                     |
 | Maybe(Pair(b,a))          | Maybe (b, a)                        |
+|                           |                                     |
+| FunArr(a, FunArr(b, c))   | a -> b -> c                         |
 |                           |                                     |
 | Char(Int(),Int())         | Char Int Int   -- ill-kinded type   |
 |                           |                                     |
@@ -84,10 +84,14 @@ Theory: Substitutions
   - postfix notation: *tσ*
   - *t { x₁ ↦ t₁, …, xₖ ↦ tₖ }* means to simultaneously replace every *xᵢ* in *t* by *tᵢ*
 
-Example: 
+Example:
 
 ```
-(Pair(a, b)){b ↦ Int()}  ==  Pair(a,Int())
+Int {b ↦ a} == Int
+
+(Pair(a, b)){b ↦ Int}  ==  Pair(a,Int)
+
+(Pair(a, b)){b ↦ a, c ↦ d} ==  Pair(a,a)
 ```
 
 
@@ -96,31 +100,40 @@ Theory: Unification Problem (Simplified)
 
 Given terms *t₁* and *t₂*,
 determine existence of substitution *σ* such that *t₁σ = t₂σ*.
-
-
-Theory: Unification Problem (Simplified)
-==============
-
-Given terms *t₁* and *t₂*,
-determine existence of substitution *σ* such that *t₁σ = t₂σ*.
-
-
-- usually one is interested in the most-general unifier
-- further reading [Franz Baader and Wayne Snyder (2001). "Unification Theory".](http://www.cs.bu.edu/~snyder/publications/UnifChapter.pdf)
 
 
 Example: Unification
 ===========
 
 ```
-Pair(a,b) ~ Pair(Int, Int)  solved only by {a ↦ Int, b ↦ Int}
+a ~ Int                     solved by {a ↦ Int}
 
-Pair(a,b) ~ Pair(a, Int)    solved by {a ↦ Int, b ↦ Int} and {b ↦ Int}
+Int ~ Maybe a               unsolvable
+
+a ~ Maybe a                 unsolvable
+
+Pair(a,b) ~ Maybe(a)        unsolvable
+
+Pair(Int) ~ Pair(Int, Int)  unsolvable
+
+Pair(a,b) ~ Pair(a, Int)    solved by {b ↦ Int} and {a ↦ Int, b ↦ Int} 
 
 Pair(a,b) ~ Pair(b, Int)    solved only by {a ↦ Int, b ↦ Int}
 
 Pair(a,b) ~ Pair(b,a)       solved by {a ↦ b} and {b ↦ a} and others
+
 ```
+
+
+Theory: Unification Problem
+==============
+
+- usually one is interested in the most-general unifier
+  - Given terms *t₁* and *t₂*, determine existence of substitution *σ* such that 
+    1. *t₁σ = t₂σ* and
+    2. for all other substitutions *ρ* with *t₁ρ = t₂ρ* there exists a substitution *τ* with *ρ = τ ∘ σ*.
+- further reading [Franz Baader and Wayne Snyder (2001). "Unification Theory".](http://www.cs.bu.edu/~snyder/publications/UnifChapter.pdf)
+
 
 
 Test-Driven Development
@@ -132,32 +145,36 @@ Test-Driven Development
 Test-Driven Development
 ===========
 
-- systematic process for writing testable code that is tested
+- **systematic process for writing testable code that is tested**
 - caveat: tests are often an incomplete specification
-  - [2017 - Automatic repair of real bugs in java: a large-scale experiment on the defects4j dataset](https://link.springer.com/article/10.1007/s10664-016-9470-4): 47 out of 224 bugs auto-patchable to pass test-suite, 9 correct
-  
+  - [2017 - Automatic repair of real bugs in java: a large-scale experiment on the defects4j dataset](https://link.springer.com/article/10.1007/s10664-016-9470-4):
+    - 9 correct auto-repairs out of
+    - 47 test-suite passing auto-generated patches
+    - out of a total of 224 failing tests
 
 
-Property-based testing: Example
+Property-Based Testing
 ================
 
-- Approach
-  - assume properties have many, small(ish) counter-examples
-  - replace universals by (random) sampling
-  - replace existentials by functions computing witnesses
 
 - Example:
   - `unify :: Term -> Term -> Maybe Subst`
   - property: *∀ t₁ t₂. (∃ σ. t₁σ = t₂σ) ⇔ (∃ σ'. `unify` t₁ t₂ = `Just` σ' ∧ t₁σ' = t₂σ')*
 
+- Approach
+  - assume properties have many, small(ish) counter-examples
+  - replace universal quantifiers by random sampling
+  - replace existential quanitifers by functions computing witnesses
 
-Property-based testing: Caveats
+
+Property-Based Testing: Caveats
 ==========
 
 - beware of sampling bias
 - not all properties have small(ish) counter-examples
 - corner cases can be very hard to sample
 - exponentially large spaces are LARGE
+- no replacement for unit tests
 
 
 
@@ -204,11 +221,11 @@ Conclusions
 =========
 
 
-- TDD 
+- TDD
   - works for writing testable code that is tested
   - no replacement for understanding the problem domain
 - testing
-  - sampling bias is real
+  - sampling bias is real => use unit tests and property based tests
   - incomplete specifications leave room for wrong implementations
 - implementing unification algorithms requires diligence and care
 
