@@ -227,6 +227,7 @@ Conclusions
 - testing
   - sampling bias is real => use unit tests and property based tests
   - incomplete specifications leave room for wrong implementations
+  - for adverserial settings: [consider proofs](https://isabelle.in.tum.de/library/HOL/HOL-ex/Unification.html)
 - implementing unification algorithms requires diligence and care
 
 *If you like what you've seen in this talk: Digital Asset is hiring [language engineers](https://www.digitalasset.com/careers/978901/language-engineer) :-)*
