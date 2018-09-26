@@ -1,7 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wall #-}
-
-module Lib where
+-- {-# OPTIONS_GHC -Wall #-}
+module LibNyc where
 
 
 import           Control.Monad
@@ -13,7 +12,7 @@ import           Hedgehog hiding (Var)
 import qualified Hedgehog.Gen as Gen
 
 ------------------------------------------------------------------------------
--- Types
+-- Terms, Substitutions, and Unification
 ------------------------------------------------------------------------------
 
 type VarId = String
@@ -24,14 +23,16 @@ data Term = Var VarId | App ConId [Term]
 
 type Subst = MS.Map VarId Term
 
+
+
 ------------------------------------------------------------------------------
 -- Test Execution
 ------------------------------------------------------------------------------
 
 runTests :: IO ()
 runTests = do
-    mapM_ unit_test_apply applyTestCases
-    mapM_ unit_test_unifies unifyTestCases
+    mapM_ unit_test_apply $ applyTestCases
+    mapM_ unit_test_unifies $ take 2 unifyTestCases
     void $ checkParallel $$(discover)
 
 
@@ -126,20 +127,6 @@ prop_unifiable_unifies = withDiscards 10000 $ withTests 100 $ property $ do
       Nothing -> failure
       Just s' -> apply s' t1 === apply s' t2
 
-prop_compose :: Property
-prop_compose = property $ do
-    t  <- forAll termG
-    s1 <- forAll substG
-    s2 <- forAll substG
-    apply (compose s1 s2) t === apply s1 (apply s2 t)
-
-prop_compose1 :: Property
-prop_compose1 = property $ do
-    v <- forAll varG
-    t <- forAll termG
-    s <- forAll substG
-    compose1 v t s === compose (MS.singleton v t) s
-
 varG :: Gen VarId
 varG = Gen.element ["a", "b"]
 
@@ -160,90 +147,5 @@ substG = do
    tb <- termG
    pure $ MS.fromList [ (v, t) | (v, t) <- [("a",ta), ("b",tb)] , Var v /= t ]
 
-
-
-------------------------------------------------------------------------------
--- Test Execution
-------------------------------------------------------------------------------
-
-runTests :: IO ()
-runTests = do
-    mapM_ unit_test_apply applyTestCases
-    mapM_ unit_test_unifies unifyTestCases
-    void $ checkParallel $$(discover)
-
-
-------------------------------------------------------------------------------
--- Substitutions and Unification
-------------------------------------------------------------------------------
-
-vars :: Term -> S.Set VarId
-vars t = case t of
-    Var v     -> S.singleton v
-    App _c ts -> foldMap vars ts
-
-empty :: Subst
-empty = MS.empty
-
-apply :: Subst -> Term -> Term
-apply s t = case t of
-  Var v    -> MS.findWithDefault (Var v) v s
-  App c ts -> App c (map (apply s) ts)
-
--- | @compose1 (v, t) s = compose (MS.singleton v t) s@
-compose1 :: VarId -> Term -> Subst -> Subst
-compose1 v t s =
-    MS.insertWith (\_new old -> old) v t $ MS.map (apply (MS.singleton v t)) s
-
--- | @apply (compose s1 s2) t == apply s1 (apply s2 t)@
-compose :: Subst -> Subst -> Subst
-compose s1 s2 = MS.union (MS.map (apply s1) s2) s1
-
-
-unify :: Term -> Term -> Maybe Subst
-unify t1 t2 = solve empty [(t1, t2)]
-
-{-
-solve :: Subst -> [(Term, Term)] -> Maybe Subst
-solve s []            = Just s
-solve s ((t1,t2):eqs)
-  | t1' == t2' = solve s eqs
-  | otherwise  = case (t1', t2') of
-      (Var v1, _     )          -> elim v1 t2'
-      (_     , Var v2)          -> elim v2 t1'
-      (App c1 ts1 , App c2 ts2) -> do
-        guard (c1 == c2)
-        guard (length ts1 == length ts2)
-        solve s (zip ts1 ts2 ++ eqs)
-  where
-    t1' = apply t1 s
-    t2' = apply t2 s
-
-    elim v t
-      | v `S.member` vars t = Nothing
-      | otherwise           = solve (compose1 v t s) eqs
--}
-
-solve :: Subst -> [(Term, Term)] -> Maybe Subst
-solve s []            = Just s
-solve s ((t1,t2):eqs) =
-  case t1 of
-    Var v1 ->
-      case MS.lookup v1 s of
-        Just t1'                   -> solve s ((t1',t2):eqs)
-        Nothing
-          | t1 == t2'              -> solve s eqs
-          | v1 `S.member` vars t2' -> Nothing
-          | otherwise              -> solve (compose1 v1 t2' s) eqs
-          where
-            t2' = apply s t2
-
-    App c1 ts1 ->
-      case t2 of
-        Var _      -> solve s ((t2,t1):eqs)
-        App c2 ts2 -> do
-          guard (c1 == c2)
-          guard (length ts1 == length ts2)
-          solve s (zip ts1 ts2 ++ eqs)
 
 

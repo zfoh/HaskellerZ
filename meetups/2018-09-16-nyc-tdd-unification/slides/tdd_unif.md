@@ -139,13 +139,13 @@ Theory: Unification Problem
 Test-Driven Development
 ===========
 
-![](img/tdd.png)
+![](img/tdd-scaled.png)
 
 
 Test-Driven Development
 ===========
 
-- **systematic process for writing testable code that is tested**
+- *systematic process for writing testable code that is tested*
 - caveat: tests are often an incomplete specification
   - [2017 - Automatic repair of real bugs in java: a large-scale experiment on the defects4j dataset](https://link.springer.com/article/10.1007/s10664-016-9470-4):
     - 9 correct auto-repairs out of
@@ -230,7 +230,24 @@ Conclusions
   - for adverserial settings: [consider proofs](https://isabelle.in.tum.de/library/HOL/HOL-ex/Unification.html)
 - implementing unification algorithms requires diligence and care
 
-*If you like what you've seen in this talk: Digital Asset is hiring [language engineers](https://www.digitalasset.com/careers/978901/language-engineer) :-)*
+
+Keen to apply this in practice?
+==========
+
+
+- [Tools and Infrastructure Software Engineer](https://www.digitalasset.com/careers/564257/software-engineer-tools-infrastructure) at Digital Asset (NYC, LON, BUD, ZRH)
+  - development infrastructure as code
+  - tooling: Python and Haskell
+  - build: Buck/Bazel, Nix, SBT, Haskell’s Stack, and yarn
+  - CI: Jenkins, Hydra
+  - infrastructure: AWS, GCP, Kubernetes, and Docker
+
+- [Language Engineer](https://www.digitalasset.com/careers/978901/language-engineer) at Digital Asset (NYC, ZRH)
+  - DAML language tools: IDE, compiler, RTS, testing and analysis
+  - implemented in: Haskell, Scala, TypeScript
+
+
+e-mail inquiries to [Grace Pfisterer](mailto:Grace.Pfisterer@digitalasset.com)
 
 
 Background: Unification Algorithm - Take 1
