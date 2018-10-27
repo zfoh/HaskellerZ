@@ -27,9 +27,10 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 2018 meetups
 ============
 
-* 2017-02-08 - [Simon Meier](http://github.com/meiersi) - Test-Driven Development of a Unification Algorithm
+* 2018-09-20 - [Simon Meier](https://github.com/meiersi) - Test-Driven Development of a Unification Algorithm
                (video - tbd,
                 [slides](meetups/2018-09-16-nyc-tdd-unification/slides/tdd_unif.md))
+* 2018-10-25 - [Roman Kashitsyn](https://github.com/roman-kashitsyn) - Embracing the Failure: Unit testing with matchers ([slides](meetups/2018-10-25-embracing-the-failure/Slides.pdf))
 
 2017 meetups
 ============
