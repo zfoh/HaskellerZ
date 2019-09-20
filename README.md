@@ -24,6 +24,13 @@ This is a list of meetup topics suggested by HaskellerZ members. If you would li
 * Recent advances in parsing libraries in Haskell
 * Conduit, Pipes, IOStreams and similar streaming libraries
 
+2019 meetups
+============
+
+* 2019-03-28 - [Niklas Hambüchen](https://github.com/nh2) - [hatrace](https://github.com/nh2/reflex-platform): A syscall tracing library in Haskell
+               ([video](https://www.youtube.com/watch?v=CZJghAptsEI),
+                [slides](https://nh2.github.io/hatrace-haskellerz-presentation/presentation.html))
+
 2018 meetups
 ============
 
